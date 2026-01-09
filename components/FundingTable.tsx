@@ -14,11 +14,25 @@ type Row = {
   updated: string;
 };
 
+type SortKey = "exchange" | "market" | "1d" | "3d" | "7d" | "15d" | "30d" | "60d";
+type SortDir = "asc" | "desc";
+
+const EXCHANGE_LABEL: Record<string, string> = {
+  bybit: "Bybit",
+  mexc: "MEXC",
+  bingx: "BingX",
+};
+
+const formatExchange = (ex: string) => EXCHANGE_LABEL[ex] ?? ex;
+
 export default function FundingTable({ rows }: { rows: Row[] }) {
   const [search, setSearch] = useState("");
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
   const [limit, setLimit] = useState<number>(50);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  const [sortKey, setSortKey] = useState<SortKey>("15d");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const exchanges = useMemo(
     () => Array.from(new Set(rows.map((r) => r.exchange))).sort(),
@@ -38,6 +52,20 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
     return <span className={`${cls} font-mono`}>{v.toFixed(2)}%</span>;
   };
 
+  const onSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc"); // дефолт: сверху самые большие значения
+    }
+  };
+
+  const sortIndicator = (key: SortKey) => {
+    if (sortKey !== key) return <span className="ml-1 opacity-30">⇅</span>;
+    return <span className="ml-1 text-blue-300">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
+
   // 1) фильтрация (без лимита)
   const filteredAll = useMemo(() => {
     let data = rows;
@@ -55,11 +83,52 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
     return data;
   }, [rows, search, selectedExchanges]);
 
-  // 2) лимит отображения
+  // 2) сортировка (после фильтра)
+  const sortedAll = useMemo(() => {
+    const data = [...filteredAll];
+
+    const dir = sortDir === "asc" ? 1 : -1;
+
+    data.sort((a, b) => {
+      const ak = a[sortKey as keyof Row];
+      const bk = b[sortKey as keyof Row];
+
+      // строки
+      if (sortKey === "exchange") {
+        const av = formatExchange(String(ak ?? ""));
+        const bv = formatExchange(String(bk ?? ""));
+        return av.localeCompare(bv) * dir;
+      }
+      if (sortKey === "market") {
+        const av = String(ak ?? "");
+        const bv = String(bk ?? "");
+        return av.localeCompare(bv) * dir;
+      }
+
+      // числа (APR)
+      const av = typeof ak === "number" ? ak : null;
+      const bv = typeof bk === "number" ? bk : null;
+
+      // null всегда вниз (и в asc, и в desc)
+      const aNull = av === null || Number.isNaN(av);
+      const bNull = bv === null || Number.isNaN(bv);
+      if (aNull && bNull) return 0;
+      if (aNull) return 1;
+      if (bNull) return -1;
+
+      if (av! < bv!) return -1 * dir;
+      if (av! > bv!) return 1 * dir;
+      return 0;
+    });
+
+    return data;
+  }, [filteredAll, sortKey, sortDir]);
+
+  // 3) лимит отображения
   const visible = useMemo(() => {
-    if (limit === -1) return filteredAll;
-    return filteredAll.slice(0, limit);
-  }, [filteredAll, limit]);
+    if (limit === -1) return sortedAll;
+    return sortedAll.slice(0, limit);
+  }, [sortedAll, limit]);
 
   return (
     <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
@@ -69,7 +138,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
       <div className="flex flex-wrap gap-3 mb-4 items-center">
         <input
           className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-          placeholder="Search market (BT...)"
+          placeholder="Search market"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -85,7 +154,6 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                 : "border-gray-700 text-gray-200"
             }`}
           >
-            {/* без иконок пока */}
             <span className="opacity-80">▾</span>
             <span>Exchanges</span>
             {selectedExchanges.length > 0 && (
@@ -114,8 +182,8 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                         onChange={() => toggleExchange(ex)}
                         className="accent-blue-500"
                       />
-                      <span className="uppercase text-xs tracking-wide text-gray-300">
-                        {ex}
+                      <span className="text-sm text-gray-200">
+                        {formatExchange(ex)}
                       </span>
                     </label>
                   ))}
@@ -141,18 +209,27 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
         <table className="w-full text-sm">
           <thead className="bg-gray-900 sticky top-0">
             <tr className="border-b border-gray-700">
-              <th className="px-4 py-3 text-left font-medium text-gray-300">
-                Exchange
+              <th
+                onClick={() => onSort("exchange")}
+                className="px-4 py-3 text-left font-medium text-gray-300 cursor-pointer select-none hover:text-white"
+              >
+                Exchange{sortIndicator("exchange")}
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-300">
-                Market
+              <th
+                onClick={() => onSort("market")}
+                className="px-4 py-3 text-left font-medium text-gray-300 cursor-pointer select-none hover:text-white"
+              >
+                Market{sortIndicator("market")}
               </th>
-              {["1d", "3d", "7d", "15d", "30d", "60d"].map((h) => (
+
+              {(["1d", "3d", "7d", "15d", "30d", "60d"] as SortKey[]).map((h) => (
                 <th
                   key={h}
-                  className="px-4 py-3 text-left font-medium text-gray-300"
+                  onClick={() => onSort(h)}
+                  className="px-4 py-3 text-left font-medium text-gray-300 cursor-pointer select-none hover:text-white"
                 >
                   {h}
+                  {sortIndicator(h)}
                 </th>
               ))}
             </tr>
@@ -164,8 +241,8 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                 key={`${r.exchange}:${r.market}`}
                 className="border-b border-gray-800 hover:bg-gray-700/40"
               >
-                <td className="px-4 py-2 text-xs uppercase text-gray-400">
-                  {r.exchange}
+                <td className="px-4 py-2 text-xs text-gray-300">
+                  {formatExchange(r.exchange)}
                 </td>
                 <td className="px-4 py-2 font-mono font-semibold">{r.market}</td>
                 <td className="px-4 py-2">{formatAPR(r["1d"])}</td>
@@ -179,10 +256,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
 
             {visible.length === 0 && (
               <tr>
-                <td
-                  className="px-4 py-10 text-center text-gray-500"
-                  colSpan={8}
-                >
+                <td className="px-4 py-10 text-center text-gray-500" colSpan={8}>
                   No markets found.
                 </td>
               </tr>
@@ -208,7 +282,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
 
         <div>
           Showing <span className="text-gray-200">{visible.length}</span> of{" "}
-          <span className="text-gray-200">{filteredAll.length}</span> markets
+          <span className="text-gray-200">{sortedAll.length}</span> markets
         </div>
       </div>
     </main>
