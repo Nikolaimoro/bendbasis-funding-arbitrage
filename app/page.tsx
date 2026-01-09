@@ -5,6 +5,7 @@ export default async function HomePage() {
   const { data, error } = await supabase
     .from("funding_dashboard_mv")
     .select("*")
+    .range(0, 10000)
     .order("15d", { ascending: true });
 
   if (error) {
