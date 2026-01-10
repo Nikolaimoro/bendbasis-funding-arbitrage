@@ -33,7 +33,7 @@ ChartJS.register(
 /* ================= TYPES ================= */
 
 export type FundingChartPoint = {
-  funding_time: string; // ISO
+  funding_time: string; // ISO string
   apr: number;
 };
 
@@ -45,7 +45,7 @@ type FundingChartProps = {
 /* ================= COMPONENT ================= */
 
 export default function FundingChart({ title, data }: FundingChartProps) {
-  /* ---------- data ---------- */
+  /* ---------- chart data ---------- */
   const chartData = useMemo(() => {
     return {
       datasets: [
@@ -54,7 +54,7 @@ export default function FundingChart({ title, data }: FundingChartProps) {
           data: data
             .filter(d => Number.isFinite(d.apr))
             .map(d => ({
-              x: new Date(d.funding_time).getTime(), // ms timestamp
+              x: new Date(d.funding_time).getTime(),
               y: d.apr,
             })),
           borderColor: "#60a5fa", // blue-400
@@ -67,7 +67,7 @@ export default function FundingChart({ title, data }: FundingChartProps) {
     };
   }, [data]);
 
-  /* ---------- options ---------- */
+  /* ---------- chart options ---------- */
   const options = useMemo<ChartOptions<"line">>(() => ({
     responsive: true,
     maintainAspectRatio: false,
@@ -81,7 +81,16 @@ export default function FundingChart({ title, data }: FundingChartProps) {
       legend: { display: false },
 
       title: title
-        ? { display: true, text: title }
+        ? {
+            display: true,
+            text: title,
+            color: "#e5e7eb",
+            font: {
+              size: 14,
+              weight: 500, // ✅ FIXED
+            },
+            padding: { bottom: 12 },
+          }
         : { display: false },
 
       tooltip: {
@@ -93,7 +102,11 @@ export default function FundingChart({ title, data }: FundingChartProps) {
         },
       },
 
-      /* pan only */
+      /* =========================
+         PAN / ZOOM — ВРЕМЕННО ВЫКЛЮЧЕНО
+         (оставлено для будущего)
+      ========================== */
+      /*
       zoom: {
         pan: {
           enabled: true,
@@ -106,6 +119,7 @@ export default function FundingChart({ title, data }: FundingChartProps) {
           mode: "x",
         },
       },
+      */
     },
 
     scales: {
@@ -117,20 +131,32 @@ export default function FundingChart({ title, data }: FundingChartProps) {
         ticks: {
           autoSkip: true,
           maxRotation: 0,
+          color: "#9ca3af",
         },
         grid: {
-          display: true,
+          color: "rgba(148, 163, 184, 0.06)",
         },
       },
 
       y: {
         beginAtZero: false,
+
         ticks: {
+          color: "#9ca3af",
           callback: (value) =>
             typeof value === "number" ? `${value}%` : "",
         },
+
+        /* ---------- zero line ---------- */
         grid: {
-          display: true,
+          color: (ctx) => {
+            if (ctx.tick && ctx.tick.value === 0) {
+              return "rgba(148, 163, 184, 0.35)";
+            }
+            return "rgba(148, 163, 184, 0.08)";
+          },
+          lineWidth: (ctx) =>
+            ctx.tick && ctx.tick.value === 0 ? 1.2 : 1,
         },
       },
     },

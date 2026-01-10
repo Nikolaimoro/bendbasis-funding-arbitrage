@@ -68,39 +68,34 @@ function SortableHeader({
   dir: SortDir;
   onClick: () => void;
 }) {
+  // Требование:
+  // - без hover: текст серый, стрелок нет
+  // - на hover: текст ярче, появляются две стрелки ↑↓ (серые)
+  // - если active: текст как обычно (не синий), но показываем одну стрелку направления синюю и чуть больше
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="group inline-flex items-center gap-1 cursor-pointer select-none"
+      className="group inline-flex items-center gap-1 cursor-pointer select-none text-left"
     >
-      {/* TEXT */}
-      <span
-        className={`transition-colors ${
-          active
-            ? "text-gray-300" // active — как обычный
-            : "text-gray-400 group-hover:text-gray-200"
-        }`}
-      >
+      <span className="text-gray-400 transition-colors group-hover:text-gray-200">
         {label}
       </span>
 
-      {/* ICONS */}
-      <span className="relative flex items-center w-3 justify-center">
-        {/* hover arrows (⇅) */}
-        {!active && (
-          <span className="absolute text-[10px] text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-            ⇅
-          </span>
-        )}
+      {/* Hover arrows (only when NOT active) */}
+      {!active && (
+        <span className="ml-1 text-xs opacity-0 transition-opacity group-hover:opacity-70 text-gray-500">
+          ↑↓
+        </span>
+      )}
 
-        {/* active arrow */}
-        {active && (
-          <span className="text-sm font-semibold text-blue-400">
-            {dir === "asc" ? "↑" : "↓"}
-          </span>
-        )}
-      </span>
-    </div>
+      {/* Active arrow */}
+      {active && (
+        <span className="ml-1 text-[13px] leading-none text-blue-400">
+          {dir === "asc" ? "↑" : "↓"}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -126,6 +121,10 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
 
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [chartLoading, setChartLoading] = useState(false);
+  const [chartError, setChartError] = useState<string | null>(null);
+
+  // simple in-memory cache per user session (per tab)
+  const [chartCache, setChartCache] = useState<Record<number, ChartPoint[]>>({});
 
   /* ---------- reset page ---------- */
   useEffect(() => {
@@ -147,10 +146,11 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   /* ---------- formatting ---------- */
   const formatAPR = (v: number | null) => {
     if (v === null || Number.isNaN(v)) {
-      return <span className="text-gray-200">–</span>;
+      return <span className="text-gray-600">–</span>;
     }
+    // Один цвет (без красного/зелёного)
     return (
-      <span className="text-gray-200 font-mono">
+      <span className="text-gray-300 font-mono tabular-nums">
         {v.toFixed(2)}%
       </span>
     );
@@ -172,9 +172,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
 
     const q = search.trim().toLowerCase();
     if (q) {
-      data = data.filter(r =>
-        r.market.toLowerCase().startsWith(q)
-      );
+      data = data.filter(r => r.market.toLowerCase().startsWith(q));
     }
 
     if (selectedExchanges.length > 0) {
@@ -188,7 +186,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   /* ---------- sorting ---------- */
   const sortedAll = useMemo(() => {
     const data = [...filteredAll];
-    const dir = sortDir === "asc" ? 1 : -1;
+    const dirMul = sortDir === "asc" ? 1 : -1;
 
     data.sort((a, b) => {
       const ak = a[sortKey as keyof Row];
@@ -196,13 +194,13 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
 
       if (sortKey === "exchange") {
         return (
-          formatExchange(String(ak))
-            .localeCompare(formatExchange(String(bk))) * dir
+          formatExchange(String(ak)).localeCompare(formatExchange(String(bk))) *
+          dirMul
         );
       }
 
       if (sortKey === "market") {
-        return String(ak).localeCompare(String(bk)) * dir;
+        return String(ak).localeCompare(String(bk)) * dirMul;
       }
 
       const av = typeof ak === "number" ? ak : null;
@@ -212,15 +210,14 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
       if (av === null) return 1;
       if (bv === null) return -1;
 
-      return av < bv ? -1 * dir : av > bv ? 1 * dir : 0;
+      return av < bv ? -1 * dirMul : av > bv ? 1 * dirMul : 0;
     });
 
     return data;
   }, [filteredAll, sortKey, sortDir]);
 
   /* ---------- pagination ---------- */
-  const totalPages =
-    limit === -1 ? 1 : Math.ceil(sortedAll.length / limit);
+  const totalPages = limit === -1 ? 1 : Math.ceil(sortedAll.length / limit);
 
   const visible = useMemo(() => {
     if (limit === -1) return sortedAll;
@@ -232,47 +229,60 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   useEffect(() => {
     if (!chartMarket?.id) return;
 
+    // cache hit
+    const cached = chartCache[chartMarket.id];
+    if (cached) {
+      setChartData(cached);
+      setChartLoading(false);
+      setChartError(null);
+      return;
+    }
+
     let active = true;
     setChartLoading(true);
+    setChartError(null);
 
     supabase
-      .rpc("get_funding_chart", {
-        p_market_id: chartMarket.id,
-      })
+      .rpc("get_funding_chart", { p_market_id: chartMarket.id })
       .then(({ data, error }) => {
         if (!active) return;
+
         if (error) {
           console.error(error);
+          setChartError(error.message || "Failed to load chart");
           setChartData([]);
         } else {
-          setChartData((data ?? []) as ChartPoint[]);
+          const points = (data ?? []) as ChartPoint[];
+          setChartData(points);
+          setChartCache(prev => ({ ...prev, [chartMarket.id]: points }));
         }
+
         setChartLoading(false);
       });
 
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartMarket]);
 
   const closeChart = () => {
     setChartMarket(null);
     setChartData([]);
     setChartLoading(false);
+    setChartError(null);
   };
 
   /* ================= RENDER ================= */
 
   return (
-    <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
-      <h1 className="text-2xl font-semibold mb-4">
-        Funding Rates Dashboard
-      </h1>
+    <main className="min-h-screen bg-gray-900 p-6 text-gray-100">
+      <h1 className="text-3xl font-bold mb-6">Funding Rates Dashboard</h1>
 
       {/* ---------- Controls ---------- */}
       <div className="flex flex-wrap gap-3 mb-4 items-center">
         <input
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
           placeholder="Search market"
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -280,8 +290,9 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
 
         <div className="relative">
           <button
+            type="button"
             onClick={() => setFilterOpen(v => !v)}
-            className="bg-gray-800 border border-gray-700 px-3 py-2 rounded text-sm"
+            className="bg-gray-800 border border-gray-700 px-3 py-2 rounded text-sm hover:border-gray-600 transition-colors"
           >
             Exchanges
             {selectedExchanges.length > 0 && (
@@ -297,11 +308,11 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                 className="fixed inset-0 z-10"
                 onClick={() => setFilterOpen(false)}
               />
-              <div className="absolute z-20 mt-2 bg-gray-800 border border-gray-700 rounded w-56 p-2">
+              <div className="absolute z-20 mt-2 bg-gray-800 border border-gray-700 rounded w-56 p-2 shadow-lg">
                 {exchanges.map(ex => (
                   <label
                     key={ex}
-                    className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-gray-700"
+                    className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded"
                   >
                     <input
                       type="checkbox"
@@ -319,10 +330,22 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
 
       {/* ---------- Table ---------- */}
       <div className="overflow-auto rounded border border-gray-800 bg-gray-800">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
+          <colgroup>
+            <col style={{ width: "110px" }} /> {/* Exchange */}
+            <col /> {/* Market */}
+            <col style={{ width: "70px" }} /> {/* History */}
+            <col style={{ width: "90px" }} />
+            <col style={{ width: "90px" }} />
+            <col style={{ width: "90px" }} />
+            <col style={{ width: "90px" }} />
+            <col style={{ width: "90px" }} />
+            <col style={{ width: "90px" }} />
+          </colgroup>
+
           <thead className="bg-gray-900 sticky top-0">
             <tr className="border-b border-gray-700">
-              <th className="px-4 py-3">
+              <th className="px-4 py-3 text-left">
                 <SortableHeader
                   label="Exchange"
                   active={sortKey === "exchange"}
@@ -330,7 +353,8 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                   onClick={() => onSort("exchange")}
                 />
               </th>
-              <th className="px-4 py-3">
+
+              <th className="px-4 py-3 text-left">
                 <SortableHeader
                   label="Market"
                   active={sortKey === "market"}
@@ -338,9 +362,11 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                   onClick={() => onSort("market")}
                 />
               </th>
-              <th className="px-4 py-3 text-center">History</th>
-              {(["1d","3d","7d","15d","30d","60d"] as SortKey[]).map(h => (
-                <th key={h} className="px-4 py-3">
+
+              <th className="px-4 py-3 text-center text-gray-500">History</th>
+
+              {(["1d", "3d", "7d", "15d", "30d", "60d"] as SortKey[]).map(h => (
+                <th key={h} className="px-4 py-3 text-right">
                   <SortableHeader
                     label={h}
                     active={sortKey === h}
@@ -358,11 +384,11 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                 key={`${r.exchange}:${r.market}`}
                 className="border-b border-gray-800 hover:bg-gray-700/40"
               >
-                <td className="px-4 py-2">
+                <td className="px-4 py-3 text-sm text-gray-200">
                   {formatExchange(r.exchange)}
                 </td>
 
-                <td className="px-4 py-2 font-mono font-semibold">
+                <td className="px-4 py-3 font-mono font-semibold text-sm">
                   {r.ref_url ? (
                     <a
                       href={r.ref_url}
@@ -377,30 +403,32 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                   )}
                 </td>
 
-                <td className="px-4 py-2 text-center">
+                <td className="px-4 py-3 text-center">
                   {r.market_id ? (
                     <button
+                      type="button"
                       onClick={() =>
                         setChartMarket({
                           id: r.market_id!,
                           title: `${formatExchange(r.exchange)} · ${r.market}`,
                         })
                       }
-                      className="text-gray-400 hover:text-blue-400 transition-colors"
+                      className="text-gray-500 hover:text-blue-400 transition-colors"
+                      title="Open chart"
                     >
                       📈
                     </button>
                   ) : (
-                    "–"
+                    <span className="text-gray-600">–</span>
                   )}
                 </td>
 
-                <td className="px-4 py-2">{formatAPR(r["1d"])}</td>
-                <td className="px-4 py-2">{formatAPR(r["3d"])}</td>
-                <td className="px-4 py-2">{formatAPR(r["7d"])}</td>
-                <td className="px-4 py-2">{formatAPR(r["15d"])}</td>
-                <td className="px-4 py-2">{formatAPR(r["30d"])}</td>
-                <td className="px-4 py-2">{formatAPR(r["60d"])}</td>
+                <td className="px-4 py-3 text-right">{formatAPR(r["1d"])}</td>
+                <td className="px-4 py-3 text-right">{formatAPR(r["3d"])}</td>
+                <td className="px-4 py-3 text-right">{formatAPR(r["7d"])}</td>
+                <td className="px-4 py-3 text-right">{formatAPR(r["15d"])}</td>
+                <td className="px-4 py-3 text-right">{formatAPR(r["30d"])}</td>
+                <td className="px-4 py-3 text-right">{formatAPR(r["60d"])}</td>
               </tr>
             ))}
           </tbody>
@@ -408,70 +436,90 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
       </div>
 
       {/* ---------- Pagination ---------- */}
-      <div className="flex justify-between items-center mt-3 text-sm text-gray-400">
+      <div className="flex justify-between items-center mt-4 text-sm text-gray-400">
         <div>
-          Rows:
-          <select
-            className="ml-2 bg-gray-800 border border-gray-700 rounded px-2 py-1"
-            value={limit}
-            onChange={e => setLimit(Number(e.target.value))}
-          >
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-            <option value={-1}>All</option>
-          </select>
+          Showing {visible.length} of {sortedAll.length} markets
         </div>
 
-        {limit !== -1 && totalPages > 1 && (
-          <div className="flex gap-3 items-center">
-            <button
-              disabled={page === 0}
-              onClick={() => setPage(p => Math.max(0, p - 1))}
-              className="border border-gray-700 px-3 py-1 rounded disabled:opacity-40"
+        <div className="flex gap-4 items-center">
+          <div>
+            Rows:
+            <select
+              className="ml-2 bg-gray-800 border border-gray-700 rounded px-2 py-1"
+              value={limit}
+              onChange={e => setLimit(Number(e.target.value))}
             >
-              Prev
-            </button>
-            <span>
-              Page {page + 1} / {totalPages}
-            </span>
-            <button
-              disabled={page + 1 >= totalPages}
-              onClick={() => setPage(p => p + 1)}
-              className="border border-gray-700 px-3 py-1 rounded disabled:opacity-40"
-            >
-              Next
-            </button>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+              <option value={-1}>All</option>
+            </select>
           </div>
-        )}
+
+          {limit !== -1 && totalPages > 1 && (
+            <div className="flex gap-3 items-center">
+              <button
+                disabled={page === 0}
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                className="border border-gray-700 px-3 py-1 rounded disabled:opacity-40 hover:border-gray-600 transition-colors"
+              >
+                Prev
+              </button>
+              <span>
+                Page {page + 1} / {totalPages}
+              </span>
+              <button
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+                className="border border-gray-700 px-3 py-1 rounded disabled:opacity-40 hover:border-gray-600 transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ---------- Chart Modal ---------- */}
       {chartMarket && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-[900px] max-w-[95vw]">
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center"
+          onClick={closeChart}
+        >
+          <div
+            className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl p-6 w-[900px] max-w-[95vw]"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">
-                {chartMarket.title}
-              </h2>
+              <h2 className="text-lg font-semibold">{chartMarket.title}</h2>
               <button
                 onClick={closeChart}
-                className="text-gray-400 hover:text-gray-200"
+                className="text-gray-400 hover:text-gray-200 text-2xl leading-none"
               >
                 ✕
               </button>
             </div>
 
             {chartLoading && (
-              <div className="text-gray-400">Loading…</div>
+              <div className="text-gray-400 h-[420px] flex items-center justify-center">
+                <div className="animate-pulse">Loading chart...</div>
+              </div>
             )}
-            {!chartLoading && chartData.length === 0 && (
-              <div className="text-gray-500">No data</div>
+
+            {chartError && (
+              <div className="p-4 bg-red-900/20 border border-red-700 rounded text-red-400">
+                {chartError}
+              </div>
             )}
-            {!chartLoading && chartData.length > 0 && (
-              <FundingChart
-                title={chartMarket.title}
-                data={chartData}
-              />
+
+            {!chartLoading && !chartError && chartData.length === 0 && (
+              <div className="text-gray-500 h-[420px] flex items-center justify-center">
+                No data available
+              </div>
+            )}
+
+            {!chartLoading && !chartError && chartData.length > 0 && (
+              <FundingChart title={chartMarket.title} data={chartData} />
             )}
           </div>
         </div>
