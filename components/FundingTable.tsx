@@ -120,7 +120,6 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState<string | null>(null);
-
   const [chartCache, setChartCache] = useState<Record<number, ChartPoint[]>>({});
 
   /* ---------- reset page ---------- */
@@ -133,6 +132,12 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
     () => Array.from(new Set(rows.map(r => r.exchange))).sort(),
     [rows]
   );
+
+  const toggleExchange = (ex: string) => {
+    setSelectedExchanges(prev =>
+      prev.includes(ex) ? prev.filter(e => e !== ex) : [...prev, ex]
+    );
+  };
 
   /* ---------- helpers ---------- */
   const formatAPR = (v: number | null) =>
@@ -241,7 +246,55 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
     <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
       <h1 className="text-2xl font-semibold mb-4">Funding Rates Dashboard</h1>
 
-      {/* table */}
+      {/* ---------- Controls ---------- */}
+      <div className="flex flex-wrap gap-3 mb-4 items-center">
+        <input
+          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+          placeholder="Search market"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+
+        <div className="relative">
+          <button
+            onClick={() => setFilterOpen(v => !v)}
+            className="bg-gray-800 border border-gray-700 px-3 py-2 rounded text-sm hover:border-gray-600 transition"
+          >
+            Exchanges
+            {selectedExchanges.length > 0 && (
+              <span className="text-blue-400 ml-1">
+                ({selectedExchanges.length})
+              </span>
+            )}
+          </button>
+
+          {filterOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setFilterOpen(false)}
+              />
+              <div className="absolute z-20 mt-2 bg-gray-800 border border-gray-700 rounded w-56 p-2 shadow-lg">
+                {exchanges.map(ex => (
+                  <label
+                    key={ex}
+                    className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedExchanges.includes(ex)}
+                      onChange={() => toggleExchange(ex)}
+                    />
+                    {formatExchange(ex)}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ---------- Table ---------- */}
       <div className="overflow-auto rounded border border-gray-800 bg-gray-800">
         <table className="w-full text-sm">
           <thead className="bg-gray-900 sticky top-0">
@@ -262,7 +315,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                   onClick={() => onSort("market")}
                 />
               </th>
-              <th className="px-4 py-3 text-center">Chart</th>
+              <th className="px-4 py-3 text-center">History</th>
               {(["1d","3d","7d","15d","30d","60d"] as SortKey[]).map(h => (
                 <th key={h} className="px-4 py-3 text-right">
                   <SortableHeader
@@ -324,7 +377,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
         </table>
       </div>
 
-      {/* pagination */}
+      {/* ---------- Pagination ---------- */}
       <div className="flex justify-between items-center mt-4 text-sm text-gray-400">
         <div>
           Rows:
@@ -340,19 +393,33 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
         </div>
 
         {limit !== -1 && totalPages > 1 && (
-          <div className="flex gap-3 items-center">
-            <button onClick={() => setPage(0)}>First</button>
-            <button onClick={() => setPage(p => Math.max(0, p - 1))}>Prev</button>
-            <span>
+          <div className="flex gap-2 items-center">
+            {[
+              { label: "First", onClick: () => setPage(0), disabled: page === 0 },
+              { label: "Prev", onClick: () => setPage(p => Math.max(0, p - 1)), disabled: page === 0 },
+              { label: "Next", onClick: () => setPage(p => Math.min(totalPages - 1, p + 1)), disabled: page + 1 >= totalPages },
+              { label: "Last", onClick: () => setPage(totalPages - 1), disabled: page + 1 >= totalPages },
+            ].map(b => (
+              <button
+                key={b.label}
+                disabled={b.disabled}
+                onClick={b.onClick}
+                className="border border-gray-700 px-3 py-1 rounded
+                           hover:border-gray-500 hover:text-gray-200
+                           disabled:opacity-40 disabled:cursor-not-allowed
+                           transition"
+              >
+                {b.label}
+              </button>
+            ))}
+            <span className="ml-2">
               Page {page + 1} / {totalPages}
             </span>
-            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>Next</button>
-            <button onClick={() => setPage(totalPages - 1)}>Last</button>
           </div>
         )}
       </div>
 
-      {/* modal */}
+      {/* ---------- Modal ---------- */}
       {chartMarket && (
         <div
           className="fixed inset-0 z-50 backdrop-blur-md transition-[backdrop-filter] duration-300 ease-out"
