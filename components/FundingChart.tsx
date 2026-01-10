@@ -80,18 +80,7 @@ export default function FundingChart({ title, data }: FundingChartProps) {
     plugins: {
       legend: { display: false },
 
-      title: title
-        ? {
-            display: true,
-            text: title,
-            color: "#e5e7eb",
-            font: {
-              size: 14,
-              weight: 500, // ✅ FIXED
-            },
-            padding: { bottom: 12 },
-          }
-        : { display: false },
+    
 
       tooltip: {
         callbacks: {
