@@ -57,7 +57,7 @@ export default function FundingChart({ title, data }: FundingChartProps) {
               x: new Date(d.funding_time).getTime(),
               y: d.apr,
             })),
-          borderColor: "#60a5fa", // blue-400
+          borderColor: "#60a5fa",
           borderWidth: 2,
           pointRadius: 0,
           pointHitRadius: 8,
@@ -87,7 +87,7 @@ export default function FundingChart({ title, data }: FundingChartProps) {
             color: "#e5e7eb",
             font: {
               size: 14,
-              weight: 500, // ✅ FIXED
+              weight: 500,
             },
             padding: { bottom: 12 },
           }
@@ -103,23 +103,33 @@ export default function FundingChart({ title, data }: FundingChartProps) {
       },
 
       /* =========================
-         PAN / ZOOM — ВРЕМЕННО ВЫКЛЮЧЕНО
-         (оставлено для будущего)
+         ZOOM & PAN (ACTIVE)
       ========================== */
-      /*
       zoom: {
+        limits: {
+          x: { min: "original", max: "original" },
+        },
+
         pan: {
           enabled: true,
           mode: "x",
+          modifierKey: undefined, // можно поставить "shift" если нужно
         },
+
         zoom: {
-          wheel: { enabled: false },
-          pinch: { enabled: false },
-          drag: { enabled: false },
+          wheel: {
+            enabled: true,
+            speed: 0.05, // мягкий зум
+          },
+          pinch: {
+            enabled: true,
+          },
+          drag: {
+            enabled: false,
+          },
           mode: "x",
         },
       },
-      */
     },
 
     scales: {
@@ -167,6 +177,11 @@ export default function FundingChart({ title, data }: FundingChartProps) {
     <div className="w-full">
       <div className="h-[420px] w-full">
         <Line data={chartData} options={options} />
+      </div>
+
+      {/* подсказка */}
+      <div className="mt-2 text-xs text-gray-400 text-right">
+        Scroll — zoom · Drag — pan · Double click — reset
       </div>
     </div>
   );
