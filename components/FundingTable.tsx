@@ -147,10 +147,10 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   /* ---------- formatting ---------- */
   const formatAPR = (v: number | null) => {
     if (v === null || Number.isNaN(v)) {
-      return <span className="text-gray-500">–</span>;
+      return <span className="text-gray-200">–</span>;
     }
     return (
-      <span className="text-gray-500 font-mono">
+      <span className="text-gray-200 font-mono">
         {v.toFixed(2)}%
       </span>
     );
