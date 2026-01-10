@@ -108,7 +108,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("15d");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(0);
 
   /* ---------- chart ---------- */
@@ -393,6 +393,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
             value={limit}
             onChange={e => setLimit(Number(e.target.value))}
           >
+            <option value={20}>20</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
             <option value={-1}>All</option>
