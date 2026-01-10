@@ -198,12 +198,14 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
       })
       .then(({ data, error }) => {
         if (!active) return;
+
         if (error) {
           console.error(error);
           setChartData([]);
         } else {
           setChartData((data ?? []) as ChartPoint[]);
         }
+
         setChartLoading(false);
       });
 
@@ -220,84 +222,23 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
         Funding Rates Dashboard
       </h1>
 
-      {/* ---------- Controls ---------- */}
-      <div className="flex flex-wrap gap-3 mb-4 items-center">
-        <input
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
-          placeholder="Search market"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-
-        <div className="relative">
-          <button
-            onClick={() => setFilterOpen(v => !v)}
-            className="bg-gray-800 border border-gray-700 px-3 py-2 rounded text-sm"
-          >
-            Exchanges
-            {selectedExchanges.length > 0 && (
-              <span className="text-blue-400 ml-1">
-                ({selectedExchanges.length})
-              </span>
-            )}
-          </button>
-
-          {filterOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setFilterOpen(false)}
-              />
-              <div className="absolute z-20 mt-2 bg-gray-800 border border-gray-700 rounded w-56 p-2">
-                {exchanges.map(ex => (
-                  <label
-                    key={ex}
-                    className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-gray-700"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedExchanges.includes(ex)}
-                      onChange={() => toggleExchange(ex)}
-                    />
-                    {formatExchange(ex)}
-                  </label>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* ---------- Table ---------- */}
       <div className="overflow-auto rounded border border-gray-800 bg-gray-800">
         <table className="w-full text-sm">
           <thead className="bg-gray-900 sticky top-0">
             <tr className="border-b border-gray-700">
-              <th onClick={() => onSort("exchange")} className="px-4 py-3 cursor-pointer">
-                Exchange{sortIndicator("exchange")}
-              </th>
-              <th onClick={() => onSort("market")} className="px-4 py-3 cursor-pointer">
-                Market{sortIndicator("market")}
-              </th>
+              <th className="px-4 py-3">Exchange</th>
+              <th className="px-4 py-3">Market</th>
               <th className="px-4 py-3 text-center">Chart</th>
               {(["1d","3d","7d","15d","30d","60d"] as SortKey[]).map(h => (
-                <th
-                  key={h}
-                  onClick={() => onSort(h)}
-                  className="px-4 py-3 cursor-pointer"
-                >
-                  {h}{sortIndicator(h)}
-                </th>
+                <th key={h} className="px-4 py-3">{h}</th>
               ))}
             </tr>
           </thead>
 
           <tbody>
             {visible.map(r => (
-              <tr
-                key={`${r.exchange}:${r.market}`}
-                className="border-b border-gray-800 hover:bg-gray-700/40"
-              >
+              <tr key={`${r.exchange}:${r.market}`} className="border-b border-gray-800">
                 <td className="px-4 py-2">{formatExchange(r.exchange)}</td>
 
                 <td className="px-4 py-2 font-mono font-semibold">
@@ -339,44 +280,6 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
         </table>
       </div>
 
-      {/* ---------- Pagination ---------- */}
-      <div className="flex justify-between items-center mt-3 text-sm text-gray-400">
-        <div>
-          Rows:
-          <select
-            className="ml-2 bg-gray-800 border border-gray-700 rounded px-2 py-1"
-            value={limit}
-            onChange={e => setLimit(Number(e.target.value))}
-          >
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-            <option value={-1}>All</option>
-          </select>
-        </div>
-
-        {limit !== -1 && totalPages > 1 && (
-          <div className="flex gap-3 items-center">
-            <button
-              disabled={page === 0}
-              onClick={() => setPage(p => Math.max(0, p - 1))}
-              className="border border-gray-700 px-3 py-1 rounded disabled:opacity-40"
-            >
-              Prev
-            </button>
-            <span>
-              Page {page + 1} / {totalPages}
-            </span>
-            <button
-              disabled={page + 1 >= totalPages}
-              onClick={() => setPage(p => p + 1)}
-              className="border border-gray-700 px-3 py-1 rounded disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* ---------- Chart Modal ---------- */}
       {chartMarket && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
@@ -385,24 +288,16 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
               <h2 className="text-lg font-semibold">
                 {chartMarket.title}
               </h2>
-              <button
-                onClick={() => setChartMarket(null)}
-                className="text-gray-400 hover:text-gray-200"
-              >
-                ✕
-              </button>
+              <button onClick={() => setChartMarket(null)}>✕</button>
             </div>
 
-            {chartLoading && (
-              <div className="text-gray-400">Loading…</div>
-            )}
-
-            {!chartLoading && chartData.length === 0 && (
-              <div className="text-gray-500">No data</div>
-            )}
+            {chartLoading && <div className="text-gray-400">Loading…</div>}
 
             {!chartLoading && chartData.length > 0 && (
-              <FundingChart data={chartData} />
+              <FundingChart
+                title={chartMarket.title}
+                data={chartData}
+              />
             )}
           </div>
         </div>
