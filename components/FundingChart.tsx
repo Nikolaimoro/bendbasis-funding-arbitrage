@@ -44,7 +44,7 @@ type FundingChartProps = {
 
 /* ================= COMPONENT ================= */
 
-export default function FundingChart({ title, data }: FundingChartProps) {
+export default function FundingChart({ data }: FundingChartProps) {
   /* ---------- chart data ---------- */
   const chartData = useMemo(() => {
     return {
