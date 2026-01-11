@@ -1,6 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import FundingTable from "@/components/FundingTable";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const PAGE_SIZE = 1000;
 
 export default async function HomePage() {
