@@ -18,6 +18,10 @@ type Row = {
   market: string;
   ref_url: string | null;
 
+  open_interest: number | null;
+  volume_24h: number | null;
+  funding_rate_now: number | null;
+
   "1d": number | null;
   "3d": number | null;
   "7d": number | null;
@@ -30,6 +34,9 @@ type Row = {
 type SortKey =
   | "exchange"
   | "market"
+  | "funding_rate_now"
+  | "open_interest"
+  | "volume_24h"
   | "1d"
   | "3d"
   | "7d"
@@ -123,7 +130,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const [sortKey, setSortKey] = useState<SortKey>("15d");
+  const [sortKey, setSortKey] = useState<SortKey>("volume_24h");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const [limit, setLimit] = useState(20);
@@ -166,6 +173,15 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
         {v.toFixed(2)}%
       </span>
     );
+
+  const formatUSD = (v: number | null) =>
+  v == null || Number.isNaN(v) ? (
+    <span className="text-gray-600">–</span>
+  ) : (
+    <span className="text-gray-300 font-mono tabular-nums">
+      ${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+    </span>
+  );  
 
   const onSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -340,6 +356,34 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                 />
               </th>
               <th className="px-4 py-3 text-center">History</th>
+              
+<th className="px-4 py-3 text-right">
+  <SortableHeader
+    label="Open Interest"
+    active={sortKey === "open_interest"}
+    dir={sortDir}
+    onClick={() => onSort("open_interest")}
+  />
+</th>
+
+<th className="px-4 py-3 text-right">
+  <SortableHeader
+    label="Volume 24h"
+    active={sortKey === "volume_24h"}
+    dir={sortDir}
+    onClick={() => onSort("volume_24h")}
+  />
+</th>
+
+<th className="px-4 py-3 text-right">
+  <SortableHeader
+    label="Now"
+    active={sortKey === "funding_rate_now"}
+    dir={sortDir}
+    onClick={() => onSort("funding_rate_now")}
+  />
+</th>
+
               {(["1d","3d","7d","15d","30d"] as SortKey[]).map(h => (
                 <th key={h} className="px-4 py-3 text-right">
                   <SortableHeader
@@ -389,6 +433,19 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                     </button>
                   )}
                 </td>
+
+<td className="px-4 py-2 text-right">
+  {formatUSD(r.open_interest)}
+</td>
+
+<td className="px-4 py-2 text-right">
+  {formatUSD(r.volume_24h)}
+</td>
+
+<td className="px-4 py-2 text-right">
+  {formatAPR(r.funding_rate_now)}
+</td>
+
                 <td className="px-4 py-2 text-right">{formatAPR(r["1d"])}</td>
                 <td className="px-4 py-2 text-right">{formatAPR(r["3d"])}</td>
                 <td className="px-4 py-2 text-right">{formatAPR(r["7d"])}</td>
