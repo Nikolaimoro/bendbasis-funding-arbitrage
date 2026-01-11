@@ -23,7 +23,6 @@ type Row = {
   "7d": number | null;
   "15d": number | null;
   "30d": number | null;
-  "60d": number | null;
 
   updated: string;
 };
@@ -36,7 +35,6 @@ type SortKey =
   | "7d"
   | "15d"
   | "30d"
-  | "60d";
 
 type SortDir = "asc" | "desc";
 
@@ -323,7 +321,7 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                 />
               </th>
               <th className="px-4 py-3 text-center">History</th>
-              {(["1d","3d","7d","15d","30d","60d"] as SortKey[]).map(h => (
+              {(["1d","3d","7d","15d","30d"] as SortKey[]).map(h => (
                 <th key={h} className="px-4 py-3 text-right">
                   <SortableHeader
                     label={h}
@@ -377,7 +375,6 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                 <td className="px-4 py-2 text-right">{formatAPR(r["7d"])}</td>
                 <td className="px-4 py-2 text-right">{formatAPR(r["15d"])}</td>
                 <td className="px-4 py-2 text-right">{formatAPR(r["30d"])}</td>
-                <td className="px-4 py-2 text-right">{formatAPR(r["60d"])}</td>
               </tr>
             ))}
           </tbody>
