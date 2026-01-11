@@ -165,6 +165,21 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   };
 
   /* ---------- helpers ---------- */
+
+const compactUSD = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const formatCompactUSD = (v: number | null) =>
+  v == null || Number.isNaN(v) ? (
+    <span className="text-gray-600">–</span>
+  ) : (
+    <span className="text-gray-300 font-mono tabular-nums">
+      ${compactUSD.format(v)}
+    </span>
+  );
+
   const formatAPR = (v: number | null) =>
     v == null || Number.isNaN(v) ? (
       <span className="text-gray-600">–</span>
@@ -435,11 +450,11 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
                 </td>
 
 <td className="px-4 py-2 text-right">
-  {formatUSD(r.open_interest)}
+  {formatCompactUSD(r.open_interest)}
 </td>
 
 <td className="px-4 py-2 text-right">
-  {formatUSD(r.volume_24h)}
+  {formatCompactUSD(r.volume_24h)}
 </td>
 
 <td className="px-4 py-2 text-right">
