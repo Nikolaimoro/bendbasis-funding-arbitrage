@@ -49,6 +49,7 @@ const EXCHANGE_LABEL: Record<string, string> = {
   bybit: "Bybit",
   mexc: "MEXC",
   bingx: "BingX",
+  paradex: "Paradex",
 };
 
 const formatExchange = (ex: string) => EXCHANGE_LABEL[ex] ?? ex;
