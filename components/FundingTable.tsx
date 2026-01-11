@@ -54,6 +54,24 @@ const EXCHANGE_LABEL: Record<string, string> = {
 
 const formatExchange = (ex: string) => EXCHANGE_LABEL[ex] ?? ex;
 
+const MULTIPLIERS = ["1000000000", "1000000", "1000"] as const;
+
+function normalizeSymbol(s: string): string {
+  let x = (s ?? "").toUpperCase().trim();
+
+  // убираем только "кратные 1000" слева
+  for (const m of MULTIPLIERS) {
+    while (x.startsWith(m)) x = x.slice(m.length);
+  }
+
+  // и справа
+  for (const m of MULTIPLIERS) {
+    while (x.endsWith(m)) x = x.slice(0, -m.length);
+  }
+
+  return x;
+}
+
 /* ================= UI ================= */
 
 function SortableHeader({
@@ -161,11 +179,10 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   const sortedAll = useMemo(() => {
     let data = rows;
 
-    const q = search.trim().toLowerCase();
-    if (q) {
-      data = data.filter(r =>
-        r.market.toLowerCase().startsWith(q)
-      );
+    const qRaw = search.trim();
+    if (qRaw) {
+      const q = normalizeSymbol(qRaw);
+      data = data.filter(r => normalizeSymbol(r.market).startsWith(q));
     }
 
     if (selectedExchanges.length) {
