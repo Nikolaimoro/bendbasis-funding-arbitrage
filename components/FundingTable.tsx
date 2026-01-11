@@ -54,7 +54,7 @@ const EXCHANGE_LABEL: Record<string, string> = {
 
 const formatExchange = (ex: string) => EXCHANGE_LABEL[ex] ?? ex;
 
-const MULTIPLIERS = ["1000000000", "1000000", "1000"] as const;
+const MULTIPLIERS = ["1000000", "100000", "10000", "1000"] as const;
 
 function normalizeSymbol(s: string): string {
   let x = (s ?? "").toUpperCase().trim();
