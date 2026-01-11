@@ -1,8 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import FundingTable from "@/components/FundingTable";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 const PAGE_SIZE = 1000;
 
