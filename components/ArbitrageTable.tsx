@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import ArbitrageChart from "@/components/ArbitrageChart";
+import { ExternalLink } from "lucide-react";
 
 /* ================= TYPES ================= */
 
@@ -14,6 +16,9 @@ export type ArbRow = {
   stability: number | null;
   samples: number | null;
   coverage: number | null;
+
+  long_market_id: number;
+  short_market_id: number;
 
   short_exchange: string;
   short_quote: string | null;
@@ -110,6 +115,7 @@ function LongButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
       className="
         inline-flex items-center px-3 py-1 rounded-md
         bg-green-500/20 text-green-400
@@ -137,6 +143,7 @@ function ShortButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
       className="
         inline-flex items-center px-3 py-1 rounded-md
         bg-red-500/20 text-red-400
@@ -166,6 +173,14 @@ export default function ArbitrageTable() {
 
   const [sortKey, setSortKey] = useState<SortKey>("stability");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const [chartOpen, setChartOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<ArbRow | null>(null);
+
+  function openChart(r: ArbRow) {
+    setSelectedRow(r);
+    setChartOpen(true);
+}
 
   function toggleSort(key: SortKey) {
   if (sortKey === key) {
@@ -362,17 +377,17 @@ export default function ArbitrageTable() {
               <th className="px-4 py-3 text-right">Volume 24h</th>
 
 
-              <th
-  onClick={() => toggleSort("stability")}
-  className="px-4 py-3 text-right cursor-pointer select-none"
->
-  Stability
-  {sortKey === "stability" && (
-    <span className="ml-1 text-xs">
-      {sortDir === "asc" ? "▲" : "▼"}
-    </span>
-  )}
-</th>
+              <th onClick={() => toggleSort("stability")} 
+                className="px-4 py-3 text-right cursor-pointer select-none"
+                >Stability
+                {sortKey === "stability" && (
+                <span className="ml-1 text-xs">
+                  {sortDir === "asc" ? "▲" : "▼"}
+                </span>
+                )}
+              </th>
+
+              <th className="px-4 py-3 text-right"></th>
 
             </tr>
           </thead>
@@ -381,8 +396,9 @@ export default function ArbitrageTable() {
             {!loading &&
               visible.map((r) => (
                 <tr
-                  key={`${r.base_asset}-${r.long_exchange}-${r.short_exchange}-${r.long_quote}-${r.short_quote}`}
-                  className="border-b border-gray-800 hover:bg-gray-700/40"
+                  key={`${r.base_asset}-${r.long_market_id}-${r.short_market_id}`}
+                  onClick={() => openChart(r)}
+                  className="border-b border-gray-800 hover:bg-gray-700/40 cursor-pointer"
                 >
                   <td className="px-4 py-2 font-mono font-semibold">
                     {r.base_asset}
@@ -395,18 +411,14 @@ export default function ArbitrageTable() {
                   <td className="px-4 py-2">
                     <LongButton
                       href={r.long_url}
-                      label={`${formatExchange(r.long_exchange)}${
-                        r.long_quote ? ` (${r.long_quote})` : ""
-                      }`}
+                      label={`${formatExchange(r.long_exchange)}${ r.long_quote ? ` (${r.long_quote})` : ""}`}
                     />
                   </td>
 
                   <td className="px-4 py-2">
                     <ShortButton
                       href={r.short_url}
-                      label={`${formatExchange(r.short_exchange)}${
-                        r.short_quote ? ` (${r.short_quote})` : ""
-                      }`}
+                      label={`${formatExchange(r.short_exchange)}${ r.short_quote ? ` (${r.short_quote})` : ""}`}
                     />
                   </td>
 
@@ -425,6 +437,11 @@ export default function ArbitrageTable() {
                   <td className="px-4 py-2 text-right font-mono text-emerald-400">
                     {r.stability?.toFixed(2)}
                   </td>
+
+                  <td className="px-4 py-2 text-right text-gray-500">
+                    <ExternalLink size={16} />
+                  </td>
+
                 </tr>
               ))}
           </tbody>
@@ -491,6 +508,25 @@ export default function ArbitrageTable() {
           </div>
         )}
       </div>
+
+<ArbitrageChart
+  open={chartOpen}
+  onClose={() => setChartOpen(false)}
+  baseAsset={selectedRow?.base_asset ?? ""}
+  longMarketId={selectedRow?.long_market_id ?? 0}
+  shortMarketId={selectedRow?.short_market_id ?? 0}
+  longLabel={
+    selectedRow
+      ? `${formatExchange(selectedRow.long_exchange)}${selectedRow.long_quote ? ` (${selectedRow.long_quote})` : ""}`
+      : ""
+  }
+  shortLabel={
+    selectedRow
+      ? `${formatExchange(selectedRow.short_exchange)}${selectedRow.short_quote ? ` (${selectedRow.short_quote})` : ""}`
+      : ""
+  }
+/>
+
     </div>
   );
 }
