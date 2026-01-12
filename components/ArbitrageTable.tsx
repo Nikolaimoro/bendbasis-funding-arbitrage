@@ -31,16 +31,23 @@ export type ArbRow = {
   volume_24h: number | null;
 };
 
+type SortKey = "opportunity_apr" | "stability";
+type SortDir = "asc" | "desc";
+
+const [sortKey, setSortKey] = useState<SortKey>("stability");
+const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+function toggleSort(key: SortKey) {
+  if (sortKey === key) {
+    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+  } else {
+    setSortKey(key);
+    setSortDir("desc");
+  }
+}
+
 /* ================= CONSTS ================= */
 
-const WINDOWS = [
-  { label: "Now", value: 0 },
-  { label: "1d", value: 1 },
-  { label: "3d", value: 3 },
-  { label: "7d", value: 7 },
-  { label: "15d", value: 15 },
-  { label: "30d", value: 30 },
-] as const;
 
 const EXCHANGE_LABEL: Record<string, string> = {
   bybit: "Bybit",
@@ -161,8 +168,6 @@ export default function ArbitrageTable() {
   const [rows, setRows] = useState<ArbRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [windowDays, setWindowDays] = useState<number>(0);
-
   const [search, setSearch] = useState("");
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -170,8 +175,9 @@ export default function ArbitrageTable() {
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(0);
 
-  // кэш по окну, чтобы не перезагружать одни и те же 16k строк
-  const [cache, setCache] = useState<Record<number, ArbRow[]>>({});
+  const [sortKey, setSortKey] = useState<SortKey>("stability");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
 
   /* ---------- reset page on filters ---------- */
   useEffect(() => {
@@ -180,20 +186,11 @@ export default function ArbitrageTable() {
 
   /* ---------- load data (per window) ---------- */
   useEffect(() => {
-    // если есть в кэше — берём оттуда
-    const cached = cache[windowDays];
-    if (cached) {
-      setRows(cached);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
+  setLoading(true);
 
     supabase
       .from("arb_opportunities_enriched")
       .select("*")
-      .eq("window_days", windowDays)
       .order("stability", { ascending: false })
       .order("opportunity_apr", { ascending: false })
       .then(({ data, error }) => {
@@ -201,13 +198,11 @@ export default function ArbitrageTable() {
           console.error("arb fetch error:", error);
           setRows([]);
         } else {
-          const r = (data ?? []) as ArbRow[];
-          setRows(r);
-          setCache((p) => ({ ...p, [windowDays]: r }));
+          setRows((data ?? []) as ArbRow[]);
         }
         setLoading(false);
-      });
-  }, [windowDays, cache]);
+    });
+}, []);
 
   /* ---------- exchanges list ---------- */
   const exchanges = useMemo(() => {
@@ -252,8 +247,12 @@ export default function ArbitrageTable() {
 
     // MV уже отсортирована по opportunity_apr desc,
     // но после фильтров порядок может "плыть" — перестрахуемся
-    return [...data].sort((a, b) => (b.opportunity_apr ?? 0) - (a.opportunity_apr ?? 0));
-  }, [rows, search, selectedExchanges]);
+    return [...data].sort((a, b) => {
+  const av = a[sortKey] ?? 0;
+  const bv = b[sortKey] ?? 0;
+  return sortDir === "asc" ? av - bv : bv - av;
+});
+  }, [rows, search, selectedExchanges, sortKey, sortDir]);
 
   /* ---------- pagination ---------- */
   const totalPages =
@@ -326,31 +325,7 @@ export default function ArbitrageTable() {
         </div>
 
         {/* ---------- window selector ---------- */}
-        <div className="flex gap-2 flex-wrap">
-          {WINDOWS.map((w) => (
-            <button
-              key={w.value}
-              onClick={() => {
-                setWindowDays(w.value);
-                setPage(0);
-
-                // важно: чтобы не казалось, что окно "не работает"
-                // (можно убрать, если не хочешь сбрасывать)
-                // setSearch("");
-                // setSelectedExchanges([]);
-              }}
-              className={`px-3 py-1 rounded-md border text-sm
-                ${
-                  windowDays === w.value
-                    ? "bg-blue-500/20 border-blue-400 text-blue-300"
-                    : "border-gray-700 text-gray-400 hover:border-gray-500"
-                }`}
-              type="button"
-            >
-              {w.label}
-            </button>
-          ))}
-        </div>
+       
       </div>
 
       {/* ---------- Loading / Empty ---------- */}
@@ -370,12 +345,37 @@ export default function ArbitrageTable() {
           <thead className="bg-gray-900 sticky top-0">
             <tr className="border-b border-gray-700">
               <th className="px-4 py-3 text-left">Token</th>
-              <th className="px-4 py-3 text-right">APR</th>
+
+             <th
+  onClick={() => toggleSort("opportunity_apr")}
+  className="px-4 py-3 text-right cursor-pointer select-none"
+>
+  APR
+  {sortKey === "opportunity_apr" && (
+    <span className="ml-1 text-xs">
+      {sortDir === "asc" ? "▲" : "▼"}
+    </span>
+  )}
+</th>
+
               <th className="px-4 py-3 text-left">Long</th>
               <th className="px-4 py-3 text-left">Short</th>
               <th className="px-4 py-3 text-right">Open Interest</th>
               <th className="px-4 py-3 text-right">Volume 24h</th>
-              <th className="px-4 py-3 text-right">Stability</th>
+
+
+              <th
+  onClick={() => toggleSort("stability")}
+  className="px-4 py-3 text-right cursor-pointer select-none"
+>
+  Stability
+  {sortKey === "stability" && (
+    <span className="ml-1 text-xs">
+      {sortDir === "asc" ? "▲" : "▼"}
+    </span>
+  )}
+</th>
+
             </tr>
           </thead>
 
@@ -383,7 +383,7 @@ export default function ArbitrageTable() {
             {!loading &&
               visible.map((r) => (
                 <tr
-                  key={`${r.base_asset}-${r.window_days}-${r.long_exchange}-${r.short_exchange}-${r.long_quote}-${r.short_quote}`}
+                  key={`${r.base_asset}-${r.long_exchange}-${r.short_exchange}-${r.long_quote}-${r.short_quote}`}
                   className="border-b border-gray-800 hover:bg-gray-700/40"
                 >
                   <td className="px-4 py-2 font-mono font-semibold">
