@@ -37,14 +37,6 @@ type SortDir = "asc" | "desc";
 const [sortKey, setSortKey] = useState<SortKey>("stability");
 const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-function toggleSort(key: SortKey) {
-  if (sortKey === key) {
-    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-  } else {
-    setSortKey(key);
-    setSortDir("desc");
-  }
-}
 
 /* ================= CONSTS ================= */
 
@@ -177,6 +169,15 @@ export default function ArbitrageTable() {
 
   const [sortKey, setSortKey] = useState<SortKey>("stability");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  function toggleSort(key: SortKey) {
+  if (sortKey === key) {
+    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+  } else {
+    setSortKey(key);
+    setSortDir("desc");
+  }
+}
 
 
   /* ---------- reset page on filters ---------- */
