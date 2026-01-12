@@ -168,7 +168,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
     };
   }, [rows, longLabel, shortLabel]);
 
-  const options = useMemo<ChartOptions<"line">>(
+  const options = useMemo<ChartOptions<"bar">>(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
@@ -257,7 +257,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
           {err && <div className="text-red-400 text-sm mb-3">{err}</div>}
 
           <div className="h-[520px] w-full">
-            <Chart type="line" data={chartData as any} options={options} />
+            <Chart type="bar" data={chartData as any} options={options} />
           </div>
 
           <div className="mt-3 text-xs text-gray-500">
