@@ -11,6 +11,10 @@ export type ArbRow = {
 
   opportunity_apr: number;
 
+  stability: number | null;
+  samples: number | null;
+  coverage: number | null;
+
   short_exchange: string;
   short_quote: string | null;
   short_open_interest: number | null;
@@ -187,9 +191,10 @@ export default function ArbitrageTable() {
     setLoading(true);
 
     supabase
-      .from("arb_opportunities_mv")
+      .from("arb_opportunities_enriched")
       .select("*")
       .eq("window_days", windowDays)
+      .order("stability", { ascending: false })
       .order("opportunity_apr", { ascending: false })
       .then(({ data, error }) => {
         if (error) {
@@ -370,6 +375,7 @@ export default function ArbitrageTable() {
               <th className="px-4 py-3 text-left">Short</th>
               <th className="px-4 py-3 text-right">Open Interest</th>
               <th className="px-4 py-3 text-right">Volume 24h</th>
+              <th className="px-4 py-3 text-right">Stability</th>
             </tr>
           </thead>
 
@@ -416,6 +422,10 @@ export default function ArbitrageTable() {
                     {formatCompactUSD(r.long_volume_24h)}
                     <span className="text-gray-500"> / </span>
                     {formatCompactUSD(r.short_volume_24h)}
+                  </td>
+
+                  <td className="px-4 py-2 text-right font-mono text-emerald-400">
+                    {r.stability?.toFixed(2)}
                   </td>
                 </tr>
               ))}
