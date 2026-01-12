@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { LineChart } from "lucide-react";
 import dynamic from "next/dynamic";
 
 /* chart — client only */
@@ -445,7 +446,7 @@ const formatCompactUSD = (v: number | null) =>
                       }
                       className="text-blue-300 hover:text-blue-200"
                     >
-                      📈
+                      <LineChart size={16} />
                     </button>
                   )}
                 </td>
