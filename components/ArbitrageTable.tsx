@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 /* ================= TYPES ================= */
@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 export type ArbRow = {
   base_asset: string;
   window_days: number;
+
   opportunity_apr: number;
 
   short_exchange: string;
@@ -35,7 +36,7 @@ const WINDOWS = [
   { label: "7d", value: 7 },
   { label: "15d", value: 15 },
   { label: "30d", value: 30 },
-] as const;
+];
 
 const EXCHANGE_LABEL: Record<string, string> = {
   bybit: "Bybit",
@@ -46,148 +47,137 @@ const EXCHANGE_LABEL: Record<string, string> = {
   hyperliquid: "Hyperliquid",
 };
 
-const BATCH_SIZE = 1000;
+const formatExchange = (ex: string) => EXCHANGE_LABEL[ex] ?? ex;
 
 /* ================= HELPERS ================= */
-
-function isArbRowArray(x: unknown): x is ArbRow[] {
-  return (
-    Array.isArray(x) &&
-    (x.length === 0 ||
-      (typeof x[0] === "object" &&
-        x[0] !== null &&
-        "base_asset" in x &&
-        "opportunity_apr" in x))
-  );
-}
-
-const MULTIPLIERS = ["1000000", "100000", "10000", "1000", "100", "10"] as const;
-
-function normalizeToken(s: string): string {
-  let x = (s ?? "").toUpperCase().trim();
-  for (const m of MULTIPLIERS) {
-    while (x.startsWith(m)) x = x.slice(m.length);
-    while (x.endsWith(m)) x = x.slice(0, -m.length);
-  }
-  return x;
-}
 
 const compactUSD = new Intl.NumberFormat("en", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
 
-const formatUSD = (v: number | null) =>
-  v == null ? "–" : `$${compactUSD.format(v)}`;
+const formatCompactUSD = (v: number | null) =>
+  v == null || Number.isNaN(v) ? (
+    <span className="text-gray-600">–</span>
+  ) : (
+    <span className="font-mono tabular-nums">${compactUSD.format(v)}</span>
+  );
 
-const formatAPR = (v: number | null) =>
-  v == null ? "–" : `${v.toFixed(2)}%`;
+const formatAPR = (v: number) => (
+  <span className="font-mono tabular-nums">{v.toFixed(2)}%</span>
+);
+
+/* ================= BUTTONS ================= */
+
+function LongButton({ href, label }: { href: string | null; label: string }) {
+  if (!href) return <span className="text-gray-600">–</span>;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block px-3 py-1 rounded-full
+                 bg-green-500/20 text-green-400
+                 border border-green-500/30
+                 hover:bg-green-500/30 transition"
+    >
+      {label}
+    </a>
+  );
+}
+
+function ShortButton({ href, label }: { href: string | null; label: string }) {
+  if (!href) return <span className="text-gray-600">–</span>;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block px-3 py-1 rounded-full
+                 bg-red-500/20 text-red-400
+                 border border-red-500/30
+                 hover:bg-red-500/30 transition"
+    >
+      {label}
+    </a>
+  );
+}
 
 /* ================= COMPONENT ================= */
 
 export default function ArbitrageTable() {
+  /* ---------- state ---------- */
   const [rows, setRows] = useState<ArbRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [windowDays, setWindowDays] = useState<number>(0);
+
   const [search, setSearch] = useState("");
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
 
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(0);
 
-  /** кэш: window_days → rows */
-  const cacheRef = useRef<Record<number, ArbRow[]>>({});
-
-  /** защита от гонок */
-  const loadIdRef = useRef(0);
-
-  /* ---------- load all rows for window (batched) ---------- */
+  /* ---------- load data ---------- */
   useEffect(() => {
-    const cached = cacheRef.current[windowDays];
-    if (cached) {
-      setRows(cached);
-      return;
-    }
+  setLoading(true);
 
-    let cancelled = false;
-    const loadId = ++loadIdRef.current;
-
-    async function loadAll() {
-      setLoading(true);
-      let from = 0;
-      let all: ArbRow[] = [];
-
-      while (true) {
-        if (cancelled || loadIdRef.current !== loadId) return;
-
-        const { data, error } = await supabase
-          .from("arb_opportunities_mv")
-          .select("*")
-          .eq("window_days", windowDays)
-          .order("opportunity_apr", { ascending: false })
-          .range(from, from + BATCH_SIZE - 1);
-
-        if (error) {
-          console.error("arb fetch error:", error);
-          break;
-        }
-
-        if (!isArbRowArray(data)) {
-          console.error("Unexpected data shape", data);
-          break;
-        }
-
-        all = all.concat(data);
-
-        if (data.length < BATCH_SIZE) break;
-
-        from += BATCH_SIZE;
+  supabase
+    .from("arb_opportunities_mv")
+    .select("*")
+    .eq("window_days", windowDays)
+    .order("opportunity_apr", { ascending: false })
+    .then(({ data, error }) => {
+      if (error) {
+        console.error("arb fetch error:", error);
+        setRows([]);
+      } else {
+        setRows((data ?? []) as ArbRow[]);
       }
-
-      if (cancelled || loadIdRef.current !== loadId) return;
-
-      cacheRef.current[windowDays] = all;
-      setRows(all);
       setLoading(false);
-    }
+    });
+}, [windowDays]);
 
-    loadAll();
+  /* ---------- exchanges ---------- */
+  const exchanges = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          rows.flatMap(r => [r.long_exchange, r.short_exchange])
+        )
+      ).sort(),
+    [rows]
+  );
 
-    return () => {
-      cancelled = true;
-    };
-  }, [windowDays]);
-
-  /* ---------- derived exchanges ---------- */
-  const exchanges = useMemo(() => {
-    const s = new Set<string>();
-    for (const r of rows) {
-      s.add(r.long_exchange);
-      s.add(r.short_exchange);
-    }
-    return Array.from(s).sort();
-  }, [rows]);
+  const toggleExchange = (ex: string) => {
+    setSelectedExchanges(prev =>
+      prev.includes(ex) ? prev.filter(e => e !== ex) : [...prev, ex]
+    );
+  };
 
   /* ---------- filtering ---------- */
   const filtered = useMemo(() => {
     let data = rows;
 
     if (search.trim()) {
-      const q = normalizeToken(search);
-      data = data.filter((r) =>
-        normalizeToken(r.base_asset).startsWith(q)
-      );
+      const q = search.trim().toUpperCase();
+      data = data.filter(r => r.base_asset.startsWith(q));
     }
 
     if (selectedExchanges.length) {
       const set = new Set(selectedExchanges);
       data = data.filter(
-        (r) => set.has(r.long_exchange) && set.has(r.short_exchange)
+        r =>
+          set.has(r.long_exchange) &&
+          set.has(r.short_exchange)
       );
     }
 
-    return data;
+    return [...data].sort(
+      (a, b) => b.opportunity_apr - a.opportunity_apr
+    );
   }, [rows, search, selectedExchanges]);
 
   /* ---------- pagination ---------- */
@@ -198,103 +188,170 @@ export default function ArbitrageTable() {
     if (limit === -1) return filtered;
     const start = page * limit;
     return filtered.slice(start, start + limit);
-  }, [filtered, page, limit]);
+  }, [filtered, limit, page]);
 
   /* ================= RENDER ================= */
 
   return (
     <div>
-      {/* Controls */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <input
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
-          placeholder="Search token"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* ---------- Controls ---------- */}
+      <div className="flex flex-wrap justify-between gap-4 mb-4">
+        <div className="flex gap-3 items-center">
+          <input
+            className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+            placeholder="Search token"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
 
-        <select
-          className="bg-gray-800 border border-gray-700 rounded px-2 py-2 text-sm"
-          value={windowDays}
-          onChange={(e) => {
-            setWindowDays(Number(e.target.value));
-            setPage(0);
-          }}
-        >
-          {WINDOWS.map((w) => (
-            <option key={w.value} value={w.value}>
+          <div className="relative">
+            <details className="group">
+              <summary className="cursor-pointer bg-gray-800 border border-gray-700 px-3 py-2 rounded text-sm">
+                Exchanges
+                {selectedExchanges.length > 0 && (
+                  <span className="text-blue-400 ml-1">
+                    ({selectedExchanges.length})
+                  </span>
+                )}
+              </summary>
+
+              <div className="absolute z-20 mt-2 bg-gray-800 border border-gray-700 rounded w-56 p-2">
+                {exchanges.map(ex => (
+                  <label
+                    key={ex}
+                    className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedExchanges.includes(ex)}
+                      onChange={() => toggleExchange(ex)}
+                    />
+                    {formatExchange(ex)}
+                  </label>
+                ))}
+              </div>
+            </details>
+          </div>
+        </div>
+
+        {/* ---------- window selector ---------- */}
+        <div className="flex gap-2">
+          {WINDOWS.map(w => (
+            <button
+              key={w.value}
+              onClick={() => {
+                setWindowDays(w.value);
+                setPage(0);
+              }}
+              className={`px-3 py-1 rounded-md border text-sm
+                ${
+                  windowDays === w.value
+                    ? "bg-blue-500/20 border-blue-400 text-blue-300"
+                    : "border-gray-700 text-gray-400 hover:border-gray-500"
+                }`}
+            >
               {w.label}
-            </option>
+            </button>
           ))}
-        </select>
+        </div>
       </div>
 
-      {loading && (
-        <div className="text-gray-400 text-sm mb-3">Loading…</div>
-      )}
-
+      {/* ---------- Table ---------- */}
       <div className="overflow-auto rounded border border-gray-800 bg-gray-800">
         <table className="w-full text-sm">
           <thead className="bg-gray-900 sticky top-0">
-            <tr>
+            <tr className="border-b border-gray-700">
               <th className="px-4 py-3 text-left">Token</th>
               <th className="px-4 py-3 text-right">APR</th>
               <th className="px-4 py-3 text-left">Long</th>
               <th className="px-4 py-3 text-left">Short</th>
-              <th className="px-4 py-3 text-right">OI</th>
-              <th className="px-4 py-3 text-right">Vol 24h</th>
+              <th className="px-4 py-3 text-right">Open Interest</th>
+              <th className="px-4 py-3 text-right">Volume 24h</th>
             </tr>
           </thead>
+
           <tbody>
-            {visible.map((r) => (
-              <tr
-                key={`${r.base_asset}-${r.window_days}-${r.long_exchange}-${r.short_exchange}-${r.opportunity_apr}`}
-                className="border-b border-gray-700 hover:bg-gray-700/40"
-              >
-                <td className="px-4 py-2 font-mono">{r.base_asset}</td>
-                <td className="px-4 py-2 text-right text-blue-300">
-                  {formatAPR(r.opportunity_apr)}
-                </td>
-                <td className="px-4 py-2">
-                  {EXCHANGE_LABEL[r.long_exchange] ?? r.long_exchange}
-                </td>
-                <td className="px-4 py-2">
-                  {EXCHANGE_LABEL[r.short_exchange] ?? r.short_exchange}
-                </td>
-                <td className="px-4 py-2 text-right">
-                  {formatUSD(r.open_interest)}
-                </td>
-                <td className="px-4 py-2 text-right">
-                  {formatUSD(r.volume_24h)}
-                </td>
-              </tr>
-            ))}
+            {!loading &&
+              visible.map(r => (
+                <tr
+                  key={`${r.base_asset}-${r.window_days}`}
+                  className="border-b border-gray-800 hover:bg-gray-700/40"
+                >
+                  <td className="px-4 py-2 font-mono font-semibold">
+                    {r.base_asset}
+                  </td>
+
+                  <td className="px-4 py-2 text-right text-blue-300">
+                    {formatAPR(r.opportunity_apr)}
+                  </td>
+
+                  <td className="px-4 py-2">
+                    <LongButton
+                      href={r.long_url}
+                      label={`${formatExchange(r.long_exchange)}`}
+                    />
+                  </td>
+
+                  <td className="px-4 py-2">
+                    <ShortButton
+                      href={r.short_url}
+                      label={`${formatExchange(r.short_exchange)}`}
+                    />
+                  </td>
+
+                  <td className="px-4 py-2 text-right">
+                    {formatCompactUSD(r.long_open_interest)}{" "}
+                    <span className="text-gray-500">/</span>{" "}
+                    {formatCompactUSD(r.short_open_interest)}
+                  </td>
+
+                  <td className="px-4 py-2 text-right">
+                    {formatCompactUSD(r.long_volume_24h)}{" "}
+                    <span className="text-gray-500">/</span>{" "}
+                    {formatCompactUSD(r.short_volume_24h)}
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
-      {limit !== -1 && totalPages > 1 && (
-        <div className="flex gap-2 mt-4 items-center text-sm">
-          <button
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
-            className="border px-2 py-1 rounded disabled:opacity-40"
+      {/* ---------- Pagination ---------- */}
+      <div className="flex justify-between items-center mt-4 text-sm text-gray-400">
+        <div>
+          Rows:
+          <select
+            className="ml-2 bg-gray-800 border border-gray-700 rounded px-2 py-1"
+            value={limit}
+            onChange={e => setLimit(Number(e.target.value))}
           >
-            Prev
-          </button>
-          <span>
-            {page + 1} / {totalPages}
-          </span>
-          <button
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="border px-2 py-1 rounded disabled:opacity-40"
-          >
-            Next
-          </button>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={-1}>All</option>
+          </select>
         </div>
-      )}
+
+        {limit !== -1 && totalPages > 1 && (
+          <div className="flex gap-2 items-center">
+            <button onClick={() => setPage(0)}>First</button>
+            <button onClick={() => setPage(p => Math.max(0, p - 1))}>
+              Prev
+            </button>
+            <span>
+              {page + 1} / {totalPages}
+            </span>
+            <button
+              onClick={() =>
+                setPage(p => Math.min(totalPages - 1, p + 1))
+              }
+            >
+              Next
+            </button>
+            <button onClick={() => setPage(totalPages - 1)}>Last</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
