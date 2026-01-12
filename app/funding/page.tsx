@@ -1,9 +1,8 @@
-import { redirect } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import FundingTable from "@/components/FundingTable";
 
-<<<<<<< HEAD
 
-export const revalidate = 100;
-
+export const revalidate = 0;
 
 const PAGE_SIZE = 1000;
 
@@ -15,7 +14,7 @@ export default async function HomePage() {
     const { data, error } = await supabase
       .from("funding_dashboard_mv")
       .select("*")
-      .order("15d", { ascending: true })
+      .order("volume_24h", { ascending: false, nullsFirst: false })
       .range(from, from + PAGE_SIZE - 1);
 
     if (error) {
@@ -36,8 +35,4 @@ export default async function HomePage() {
   }
 
   return <FundingTable rows={allRows} />;
-=======
-export default function Home() {
-  redirect("/funding");
->>>>>>> dev
 }
