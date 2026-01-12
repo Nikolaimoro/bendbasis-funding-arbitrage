@@ -36,7 +36,7 @@ const WINDOWS = [
   { label: "7d", value: 7 },
   { label: "15d", value: 15 },
   { label: "30d", value: 30 },
-];
+] as const;
 
 const EXCHANGE_LABEL: Record<string, string> = {
   bybit: "Bybit",
@@ -49,7 +49,27 @@ const EXCHANGE_LABEL: Record<string, string> = {
 
 const formatExchange = (ex: string) => EXCHANGE_LABEL[ex] ?? ex;
 
-/* ================= HELPERS ================= */
+/* ================= SEARCH NORMALIZATION (как в FundingTable) ================= */
+
+const MULTIPLIERS = ["1000000", "100000", "10000", "1000", "100", "10"] as const;
+
+function normalizeToken(s: string): string {
+  let x = (s ?? "").toUpperCase().trim();
+
+  // убираем только "кратные 1000/100/10" слева
+  for (const m of MULTIPLIERS) {
+    while (x.startsWith(m)) x = x.slice(m.length);
+  }
+
+  // и справа
+  for (const m of MULTIPLIERS) {
+    while (x.endsWith(m)) x = x.slice(0, -m.length);
+  }
+
+  return x;
+}
+
+/* ================= FORMATTERS ================= */
 
 const compactUSD = new Intl.NumberFormat("en", {
   notation: "compact",
@@ -60,16 +80,29 @@ const formatCompactUSD = (v: number | null) =>
   v == null || Number.isNaN(v) ? (
     <span className="text-gray-600">–</span>
   ) : (
-    <span className="font-mono tabular-nums">${compactUSD.format(v)}</span>
+    <span className="text-gray-300 font-mono tabular-nums">
+      ${compactUSD.format(v)}
+    </span>
   );
 
-const formatAPR = (v: number) => (
-  <span className="font-mono tabular-nums">{v.toFixed(2)}%</span>
-);
+const formatAPR = (v: number | null) =>
+  v == null || Number.isNaN(v) ? (
+    <span className="text-gray-600">–</span>
+  ) : (
+    <span className="text-gray-300 font-mono tabular-nums">
+      {v.toFixed(2)}%
+    </span>
+  );
 
 /* ================= BUTTONS ================= */
 
-function LongButton({ href, label }: { href: string | null; label: string }) {
+function LongButton({
+  href,
+  label,
+}: {
+  href: string | null;
+  label: string;
+}) {
   if (!href) return <span className="text-gray-600">–</span>;
 
   return (
@@ -77,17 +110,26 @@ function LongButton({ href, label }: { href: string | null; label: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-block px-3 py-1 rounded-full
-                 bg-green-500/20 text-green-400
-                 border border-green-500/30
-                 hover:bg-green-500/30 transition"
+      className="
+        inline-flex items-center px-3 py-1 rounded-md
+        bg-green-500/20 text-green-400
+        border border-green-500/30
+        hover:bg-green-500/30 transition
+        whitespace-nowrap
+      "
     >
       {label}
     </a>
   );
 }
 
-function ShortButton({ href, label }: { href: string | null; label: string }) {
+function ShortButton({
+  href,
+  label,
+}: {
+  href: string | null;
+  label: string;
+}) {
   if (!href) return <span className="text-gray-600">–</span>;
 
   return (
@@ -95,10 +137,13 @@ function ShortButton({ href, label }: { href: string | null; label: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-block px-3 py-1 rounded-full
-                 bg-red-500/20 text-red-400
-                 border border-red-500/30
-                 hover:bg-red-500/30 transition"
+      className="
+        inline-flex items-center px-3 py-1 rounded-md
+        bg-red-500/20 text-red-400
+        border border-red-500/30
+        hover:bg-red-500/30 transition
+        whitespace-nowrap
+      "
     >
       {label}
     </a>
@@ -116,68 +161,93 @@ export default function ArbitrageTable() {
 
   const [search, setSearch] = useState("");
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(0);
 
-  /* ---------- load data ---------- */
+  // кэш по окну, чтобы не перезагружать одни и те же 16k строк
+  const [cache, setCache] = useState<Record<number, ArbRow[]>>({});
+
+  /* ---------- reset page on filters ---------- */
   useEffect(() => {
-  setLoading(true);
+    setPage(0);
+  }, [search, selectedExchanges, limit]);
 
-  supabase
-    .from("arb_opportunities_mv")
-    .select("*")
-    .eq("window_days", windowDays)
-    .order("opportunity_apr", { ascending: false })
-    .then(({ data, error }) => {
-      if (error) {
-        console.error("arb fetch error:", error);
-        setRows([]);
-      } else {
-        setRows((data ?? []) as ArbRow[]);
-      }
+  /* ---------- load data (per window) ---------- */
+  useEffect(() => {
+    // если есть в кэше — берём оттуда
+    const cached = cache[windowDays];
+    if (cached) {
+      setRows(cached);
       setLoading(false);
-    });
-}, [windowDays]);
+      return;
+    }
 
-  /* ---------- exchanges ---------- */
-  const exchanges = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          rows.flatMap(r => [r.long_exchange, r.short_exchange])
-        )
-      ).sort(),
-    [rows]
-  );
+    setLoading(true);
+
+    supabase
+      .from("arb_opportunities_mv")
+      .select("*")
+      .eq("window_days", windowDays)
+      .order("opportunity_apr", { ascending: false })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("arb fetch error:", error);
+          setRows([]);
+        } else {
+          const r = (data ?? []) as ArbRow[];
+          setRows(r);
+          setCache((p) => ({ ...p, [windowDays]: r }));
+        }
+        setLoading(false);
+      });
+  }, [windowDays, cache]);
+
+  /* ---------- exchanges list ---------- */
+  const exchanges = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) {
+      if (r.long_exchange) set.add(r.long_exchange);
+      if (r.short_exchange) set.add(r.short_exchange);
+    }
+    return Array.from(set).sort();
+  }, [rows]);
 
   const toggleExchange = (ex: string) => {
-    setSelectedExchanges(prev =>
-      prev.includes(ex) ? prev.filter(e => e !== ex) : [...prev, ex]
+    setSelectedExchanges((prev) =>
+      prev.includes(ex) ? prev.filter((e) => e !== ex) : [...prev, ex]
     );
   };
 
-  /* ---------- filtering ---------- */
+  // если после смены окна выбранные биржи недоступны — убираем их
+  useEffect(() => {
+    if (!selectedExchanges.length) return;
+    const available = new Set(exchanges);
+    setSelectedExchanges((prev) => prev.filter((ex) => available.has(ex)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exchanges.join("|")]);
+
+  /* ---------- filtering + sorting ---------- */
   const filtered = useMemo(() => {
     let data = rows;
 
-    if (search.trim()) {
-      const q = search.trim().toUpperCase();
-      data = data.filter(r => r.base_asset.startsWith(q));
+    const qRaw = search.trim();
+    if (qRaw) {
+      const q = normalizeToken(qRaw);
+      data = data.filter((r) => normalizeToken(r.base_asset).startsWith(q));
     }
 
     if (selectedExchanges.length) {
       const set = new Set(selectedExchanges);
       data = data.filter(
-        r =>
-          set.has(r.long_exchange) &&
-          set.has(r.short_exchange)
+        (r) => set.has(r.long_exchange) && set.has(r.short_exchange)
       );
     }
 
-    return [...data].sort(
-      (a, b) => b.opportunity_apr - a.opportunity_apr
-    );
+    // MV уже отсортирована по opportunity_apr desc,
+    // но после фильтров порядок может "плыть" — перестрахуемся
+    return [...data].sort((a, b) => (b.opportunity_apr ?? 0) - (a.opportunity_apr ?? 0));
   }, [rows, search, selectedExchanges]);
 
   /* ---------- pagination ---------- */
@@ -195,53 +265,74 @@ export default function ArbitrageTable() {
   return (
     <div>
       {/* ---------- Controls ---------- */}
-      <div className="flex flex-wrap justify-between gap-4 mb-4">
-        <div className="flex gap-3 items-center">
+      <div className="flex flex-wrap justify-between gap-4 mb-4 items-center">
+        <div className="flex flex-wrap gap-3 items-center">
           <input
             className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
             placeholder="Search token"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
 
+          {/* Exchanges dropdown (как в FundingTable, без <details>) */}
           <div className="relative">
-            <details className="group">
-              <summary className="cursor-pointer bg-gray-800 border border-gray-700 px-3 py-2 rounded text-sm">
-                Exchanges
-                {selectedExchanges.length > 0 && (
-                  <span className="text-blue-400 ml-1">
-                    ({selectedExchanges.length})
-                  </span>
-                )}
-              </summary>
+            <button
+              onClick={() => setFilterOpen((v) => !v)}
+              className="bg-gray-800 border border-gray-700 px-3 py-2 rounded text-sm hover:border-gray-600 transition"
+              type="button"
+            >
+              Exchanges
+              {selectedExchanges.length > 0 && (
+                <span className="text-blue-400 ml-1">
+                  ({selectedExchanges.length})
+                </span>
+              )}
+            </button>
 
-              <div className="absolute z-20 mt-2 bg-gray-800 border border-gray-700 rounded w-56 p-2">
-                {exchanges.map(ex => (
-                  <label
-                    key={ex}
-                    className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedExchanges.includes(ex)}
-                      onChange={() => toggleExchange(ex)}
-                    />
-                    {formatExchange(ex)}
-                  </label>
-                ))}
-              </div>
-            </details>
+            {filterOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setFilterOpen(false)}
+                />
+                <div className="absolute z-20 mt-2 bg-gray-800 border border-gray-700 rounded w-56 p-2 shadow-lg">
+                  {exchanges.map((ex) => (
+                    <label
+                      key={ex}
+                      className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedExchanges.includes(ex)}
+                        onChange={() => toggleExchange(ex)}
+                      />
+                      {formatExchange(ex)}
+                    </label>
+                  ))}
+                  {exchanges.length === 0 && (
+                    <div className="px-2 py-2 text-gray-500 text-sm">
+                      No exchanges
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* ---------- window selector ---------- */}
-        <div className="flex gap-2">
-          {WINDOWS.map(w => (
+        <div className="flex gap-2 flex-wrap">
+          {WINDOWS.map((w) => (
             <button
               key={w.value}
               onClick={() => {
                 setWindowDays(w.value);
                 setPage(0);
+
+                // важно: чтобы не казалось, что окно "не работает"
+                // (можно убрать, если не хочешь сбрасывать)
+                // setSearch("");
+                // setSelectedExchanges([]);
               }}
               className={`px-3 py-1 rounded-md border text-sm
                 ${
@@ -249,12 +340,24 @@ export default function ArbitrageTable() {
                     ? "bg-blue-500/20 border-blue-400 text-blue-300"
                     : "border-gray-700 text-gray-400 hover:border-gray-500"
                 }`}
+              type="button"
             >
               {w.label}
             </button>
           ))}
         </div>
       </div>
+
+      {/* ---------- Loading / Empty ---------- */}
+      {loading && (
+        <div className="text-gray-400 text-sm mb-3">Loading…</div>
+      )}
+
+      {!loading && filtered.length === 0 && (
+        <div className="text-gray-500 text-sm mb-3">
+          No opportunities for this filter.
+        </div>
+      )}
 
       {/* ---------- Table ---------- */}
       <div className="overflow-auto rounded border border-gray-800 bg-gray-800">
@@ -272,9 +375,9 @@ export default function ArbitrageTable() {
 
           <tbody>
             {!loading &&
-              visible.map(r => (
+              visible.map((r) => (
                 <tr
-                  key={`${r.base_asset}-${r.window_days}`}
+                  key={`${r.base_asset}-${r.window_days}-${r.long_exchange}-${r.short_exchange}-${r.long_quote}-${r.short_quote}`}
                   className="border-b border-gray-800 hover:bg-gray-700/40"
                 >
                   <td className="px-4 py-2 font-mono font-semibold">
@@ -288,26 +391,30 @@ export default function ArbitrageTable() {
                   <td className="px-4 py-2">
                     <LongButton
                       href={r.long_url}
-                      label={`${formatExchange(r.long_exchange)}`}
+                      label={`${formatExchange(r.long_exchange)}${
+                        r.long_quote ? ` (${r.long_quote})` : ""
+                      }`}
                     />
                   </td>
 
                   <td className="px-4 py-2">
                     <ShortButton
                       href={r.short_url}
-                      label={`${formatExchange(r.short_exchange)}`}
+                      label={`${formatExchange(r.short_exchange)}${
+                        r.short_quote ? ` (${r.short_quote})` : ""
+                      }`}
                     />
                   </td>
 
                   <td className="px-4 py-2 text-right">
-                    {formatCompactUSD(r.long_open_interest)}{" "}
-                    <span className="text-gray-500">/</span>{" "}
+                    {formatCompactUSD(r.long_open_interest)}
+                    <span className="text-gray-500"> / </span>
                     {formatCompactUSD(r.short_open_interest)}
                   </td>
 
                   <td className="px-4 py-2 text-right">
-                    {formatCompactUSD(r.long_volume_24h)}{" "}
-                    <span className="text-gray-500">/</span>{" "}
+                    {formatCompactUSD(r.long_volume_24h)}
+                    <span className="text-gray-500"> / </span>
                     {formatCompactUSD(r.short_volume_24h)}
                   </td>
                 </tr>
@@ -323,7 +430,7 @@ export default function ArbitrageTable() {
           <select
             className="ml-2 bg-gray-800 border border-gray-700 rounded px-2 py-1"
             value={limit}
-            onChange={e => setLimit(Number(e.target.value))}
+            onChange={(e) => setLimit(Number(e.target.value))}
           >
             <option value={20}>20</option>
             <option value={50}>50</option>
@@ -334,21 +441,45 @@ export default function ArbitrageTable() {
 
         {limit !== -1 && totalPages > 1 && (
           <div className="flex gap-2 items-center">
-            <button onClick={() => setPage(0)}>First</button>
-            <button onClick={() => setPage(p => Math.max(0, p - 1))}>
+            <button
+              onClick={() => setPage(0)}
+              disabled={page === 0}
+              className="border border-gray-700 px-3 py-1 rounded hover:border-gray-500 hover:text-gray-200 transition disabled:opacity-40"
+              type="button"
+            >
+              First
+            </button>
+
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="border border-gray-700 px-3 py-1 rounded hover:border-gray-500 hover:text-gray-200 transition disabled:opacity-40"
+              type="button"
+            >
               Prev
             </button>
-            <span>
+
+            <span className="px-2 min-w-[64px] text-center tabular-nums text-gray-300">
               {page + 1} / {totalPages}
             </span>
+
             <button
-              onClick={() =>
-                setPage(p => Math.min(totalPages - 1, p + 1))
-              }
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page + 1 >= totalPages}
+              className="border border-gray-700 px-3 py-1 rounded hover:border-gray-500 hover:text-gray-200 transition disabled:opacity-40"
+              type="button"
             >
               Next
             </button>
-            <button onClick={() => setPage(totalPages - 1)}>Last</button>
+
+            <button
+              onClick={() => setPage(totalPages - 1)}
+              disabled={page + 1 >= totalPages}
+              className="border border-gray-700 px-3 py-1 rounded hover:border-gray-500 hover:text-gray-200 transition disabled:opacity-40"
+              type="button"
+            >
+              Last
+            </button>
           </div>
         )}
       </div>
