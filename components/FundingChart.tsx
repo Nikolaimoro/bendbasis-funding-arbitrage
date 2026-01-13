@@ -60,7 +60,7 @@ async function fetchFundingChartData(params: {
 }): Promise<FundingChartPoint[]> {
   const { marketId, days = 30 } = params;
 
-  const { data, error } = await supabase.rpc("get_funding_chart_data", {
+  const { data, error } = await supabase.rpc("get_funding_chart", {
     p_market_id: marketId,
     p_days: days,
   });
