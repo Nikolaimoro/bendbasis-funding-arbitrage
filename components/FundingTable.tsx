@@ -287,11 +287,11 @@ const formatUSD = (v: number | null) =>
             className={`${TAILWIND.input.default} hover:border-gray-600 transition`}
           >
             Filters
-            {(minOI > 0 || minVolume > 0) && (
+            {(typeof minOI === "number" && minOI > 0) || (typeof minVolume === "number" && minVolume > 0) ? (
               <span className="text-blue-400 ml-1">
-                ({(minOI > 0 ? 1 : 0) + (minVolume > 0 ? 1 : 0)})
+                ({(typeof minOI === "number" && minOI > 0 ? 1 : 0) + (typeof minVolume === "number" && minVolume > 0 ? 1 : 0)})
               </span>
-            )}
+            ) : null}
           </button>
 
           {filtersOpen && (
