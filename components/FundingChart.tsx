@@ -55,8 +55,7 @@ export default function FundingChart({ data, loading = false }: FundingChartProp
               x: new Date(d.funding_time).getTime(),
               y: d.apr,
             })),
-          parsing: false as const,
-          normalized: true,  
+          parsing: false as const, 
           borderColor: "#60a5fa", // blue-400
           borderWidth: 2,
           pointRadius: 0,
@@ -96,8 +95,25 @@ const MIN_RANGE = 7 * 24 * 60 * 60 * 1000; // 7 дней
       responsive: true,
       maintainAspectRatio: false,
 
+          animation: {
+      duration: 300, // только первый рендер
+    },
+
+    transitions: {
+      zoom: {
+        animation: {
+          duration: 0, // ❗️убираем анимацию при zoom
+        },
+      },
+      pan: {
+        animation: {
+          duration: 0, // ❗️убираем анимацию при pan
+        },
+      },
+    },
+
       interaction: {
-        mode: "nearest",
+        mode: "x",
         intersect: false,
       },
 
@@ -120,10 +136,9 @@ zoom: {
       animation: false
     },
     zoom: {
-      wheel: { enabled: true },
+      wheel: { enabled: true, speed: 0.05 },
       pinch: { enabled: true },
       mode: "x",
-      animation: false, // ускоряет
     },
     limits: {
       x: {
