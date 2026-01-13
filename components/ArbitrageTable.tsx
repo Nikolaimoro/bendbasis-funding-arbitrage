@@ -320,7 +320,9 @@ export default function ArbitrageTable() {
                   </td>
 
                   <td className="px-4 py-2 text-right text-blue-300">
-                    {formatAPR(r.opportunity_apr)}
+                    <span className="text-gray-300 font-mono tabular-nums">
+                      {formatAPR(r.opportunity_apr)}
+                    </span>
                   </td>
 
                   <td className="px-4 py-2">
@@ -338,15 +340,23 @@ export default function ArbitrageTable() {
                   </td>
 
                   <td className="px-4 py-2 text-right">
-                    {formatCompactUSD(r.long_open_interest)}
+                    <span className="text-gray-300 font-mono tabular-nums">
+                      {formatCompactUSD(r.long_open_interest)}
+                    </span>
                     <span className="text-gray-500"> / </span>
-                    {formatCompactUSD(r.short_open_interest)}
+                    <span className="text-gray-300 font-mono tabular-nums">
+                      {formatCompactUSD(r.short_open_interest)}
+                    </span>
                   </td>
 
                   <td className="px-4 py-2 text-right">
-                    {formatCompactUSD(r.long_volume_24h)}
+                    <span className="text-gray-300 font-mono tabular-nums">
+                      {formatCompactUSD(r.long_volume_24h)}
+                    </span>
                     <span className="text-gray-500"> / </span>
-                    {formatCompactUSD(r.short_volume_24h)}
+                    <span className="text-gray-300 font-mono tabular-nums">
+                      {formatCompactUSD(r.short_volume_24h)}
+                    </span>
                   </td>
 
                   <td className="px-4 py-2 text-right font-mono text-emerald-400">

@@ -1,11 +1,10 @@
 /**
  * Data formatters for USD, percentages, tokens, etc.
  * Used across tables and components
+ * Returns strings and objects only - NO JSX here!
  */
 
-import React from "react";
 import { EXCHANGE_LABEL, MULTIPLIERS } from "./constants";
-import { COLORS, TAILWIND } from "./theme";
 
 /* ================= NUMBER FORMATTERS ================= */
 
@@ -14,48 +13,32 @@ const compactUSDFormatter = new Intl.NumberFormat("en", {
   maximumFractionDigits: 1,
 });
 
-export function formatCompactUSD(v: number | null): React.ReactNode {
+export function formatCompactUSD(v: number | null): string {
   if (v == null || Number.isNaN(v)) {
-    return <span className={TAILWIND.text.muted}>–</span>;
+    return "–";
   }
-  return (
-    <span className="text-gray-300 font-mono tabular-nums">
-      ${compactUSDFormatter.format(v)}
-    </span>
-  );
+  return `$${compactUSDFormatter.format(v)}`;
 }
 
-export function formatUSD(v: number | null): React.ReactNode {
+export function formatUSD(v: number | null): string {
   if (v == null || Number.isNaN(v)) {
-    return <span className={TAILWIND.text.muted}>–</span>;
+    return "–";
   }
-  return (
-    <span className="text-gray-300 font-mono tabular-nums">
-      ${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-    </span>
-  );
+  return `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
-export function formatAPR(v: number | null): React.ReactNode {
+export function formatAPR(v: number | null): string {
   if (v == null || Number.isNaN(v)) {
-    return <span className={TAILWIND.text.muted}>–</span>;
+    return "–";
   }
-  return (
-    <span className="text-gray-300 font-mono tabular-nums">
-      {v.toFixed(2)}%
-    </span>
-  );
+  return `${v.toFixed(2)}%`;
 }
 
-export function formatPercent(v: number | null, decimals = 2): React.ReactNode {
+export function formatPercent(v: number | null, decimals = 2): string {
   if (v == null || Number.isNaN(v)) {
-    return <span className={TAILWIND.text.muted}>–</span>;
+    return "–";
   }
-  return (
-    <span className="text-gray-300 font-mono tabular-nums">
-      {v.toFixed(decimals)}%
-    </span>
-  );
+  return `${v.toFixed(decimals)}%`;
 }
 
 /* ================= TEXT FORMATTERS ================= */

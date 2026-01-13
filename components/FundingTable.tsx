@@ -115,9 +115,23 @@ export default function FundingTable({ rows }: { rows: FundingRow[] }) {
 
   /* ---------- helpers ---------- */
 
-const formatCompactUSDNode = (v: number | null) => formatCompactUSD(v);
+const formatCompactUSDNode = (v: number | null) => {
+  const text = formatCompactUSD(v);
+  return (
+    <span className="text-gray-300 font-mono tabular-nums">
+      {text}
+    </span>
+  );
+};
 
-const formatAPRNode = (v: number | null) => formatAPR(v);
+const formatAPRNode = (v: number | null) => {
+  const text = formatAPR(v);
+  return (
+    <span className="text-gray-300 font-mono tabular-nums">
+      {text}
+    </span>
+  );
+};
 
 const formatUSD = (v: number | null) =>
   v == null || Number.isNaN(v) ? (
