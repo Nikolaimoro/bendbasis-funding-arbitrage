@@ -220,7 +220,7 @@ export default function ArbitrageTable() {
     // Apply OI filter
     const minOIValue = typeof minOI === "number" ? minOI : 0;
     if (minOIValue > 0) {
-      data = data.filter(r => (r.long_oi ?? 0) >= minOIValue && (r.short_oi ?? 0) >= minOIValue);
+      data = data.filter(r => (r.long_open_interest ?? 0) >= minOIValue && (r.short_open_interest ?? 0) >= minOIValue);
     }
 
     // Apply Volume filter
