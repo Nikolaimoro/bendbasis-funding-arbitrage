@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { LineChart } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -45,11 +44,6 @@ type SortKey =
   | "30d"
 
 type SortDir = "asc" | "desc";
-
-type ChartPoint = {
-  funding_time: string;
-  apr: number;
-};
 
 /* ================= CONSTS ================= */
 
@@ -139,15 +133,15 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
   const [page, setPage] = useState(0);
 
   /* ---------- chart ---------- */
-  const [chartMarket, setChartMarket] = useState<{
-    id: number;
-    title: string;
-  } | null>(null);
+  const [chartOpen, setChartOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<Row | null>(null);
 
-  const [chartData, setChartData] = useState<ChartPoint[]>([]);
-  const [chartLoading, setChartLoading] = useState(false);
-  const [chartError, setChartError] = useState<string | null>(null);
-  const [chartCache, setChartCache] = useState<Record<number, ChartPoint[]>>({});
+  function openChart(r: Row) {
+    if (r.market_id) {
+      setSelectedRow(r);
+      setChartOpen(true);
+    }
+  }
 
   /* ---------- reset page ---------- */
   useEffect(() => {
@@ -265,35 +259,8 @@ const formatCompactUSD = (v: number | null) =>
 
   /* ---------- chart loading + cache ---------- */
   useEffect(() => {
-    if (!chartMarket?.id) return;
-
-    const cached = chartCache[chartMarket.id];
-    if (cached) {
-      setChartData(cached);
-      setChartError(null);
-      return;
-    }
-
-    setChartLoading(true);
-    setChartError(null);
-
-    supabase
-      .rpc("get_funding_chart", { p_market_id: chartMarket.id })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error("Funding chart error:", error);
-          setChartError(
-            "Failed to load funding history. Please try again."
-          );
-          setChartData([]);
-        } else {
-          const points = (data ?? []) as ChartPoint[];
-          setChartData(points);
-          setChartCache(p => ({ ...p, [chartMarket.id!]: points }));
-        }
-        setChartLoading(false);
-      });
-  }, [chartMarket, chartCache]);
+    setPage(0);
+  }, [search, selectedExchanges, limit]);
 
   /* ================= RENDER ================= */
 
@@ -438,12 +405,7 @@ const formatCompactUSD = (v: number | null) =>
                 <td className="px-4 py-2 text-center">
                   {r.market_id && (
                     <button
-                      onClick={() =>
-                        setChartMarket({
-                          id: r.market_id!,
-                          title: `${formatExchange(r.exchange)} · ${r.market}`,
-                        })
-                      }
+                      onClick={() => openChart(r)}
                       className="text-blue-300 hover:text-blue-200"
                     >
                       <LineChart size={16} />
@@ -531,38 +493,14 @@ const formatCompactUSD = (v: number | null) =>
         )}
       </div>
 
-      {/* ---------- Modal ---------- */}
-      {chartMarket && (
-        <div
-          className="fixed inset-0 z-50 backdrop-blur-md transition-[backdrop-filter] duration-300 ease-out"
-          onClick={() => setChartMarket(null)}
-        >
-          <div
-            className="bg-gray-900 border border-gray-700 rounded-lg p-6
-                       w-[900px] max-w-[95vw] h-[520px]
-                       mx-auto mt-24 flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
-            <h2 className="mb-4">{chartMarket.title}</h2>
-
-            <div className="flex-1 flex items-center justify-center">
-              {chartLoading && (
-                <div className="text-gray-400">Loading…</div>
-              )}
-
-              {!chartLoading && chartError && (
-                <div className="text-red-400 text-center max-w-md">
-                  {chartError}
-                </div>
-              )}
-
-              {!chartLoading && !chartError && chartData.length > 0 && (
-                <FundingChart data={chartData} />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ---------- Chart Modal ---------- */}
+      <FundingChart
+        open={chartOpen}
+        onClose={() => setChartOpen(false)}
+        marketId={selectedRow?.market_id ?? 0}
+        symbol={selectedRow?.market ?? ""}
+        exchange={selectedRow ? formatExchange(selectedRow.exchange) : ""}
+      />
     </main>
   );
 }
