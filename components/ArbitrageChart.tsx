@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Modal } from "@/components/ui/Modal";
+import { COLORS, CHART_CONFIG } from "@/lib/theme";
+import { RPC_FUNCTIONS } from "@/lib/constants";
+import { ArbChartRow } from "@/lib/types";
 import {
   Chart as ChartJS,
   LineController,
@@ -22,20 +26,13 @@ import zoomPlugin from "chartjs-plugin-zoom";
 
 /* ---------- register ---------- */
 ChartJS.register(
-  // controllers
   LineController,
   BarController,
-
-  // elements
   LineElement,
   PointElement,
   BarElement,
-
-  // scales
   LinearScale,
   TimeScale,
-
-  // plugins
   Tooltip,
   Legend,
   Filler,
@@ -44,24 +41,14 @@ ChartJS.register(
 
 /* ================= TYPES ================= */
 
-export type ArbChartRow = {
-  h: string; // timestamptz ISO
-  long_apr: number | null;
-  short_apr: number | null;
-  spread_apr: number | null;
-};
-
 export type ArbitrageChartProps = {
   open: boolean;
   onClose: () => void;
-
   baseAsset: string;
-
   longMarketId: number;
   shortMarketId: number;
-
-  longLabel: string;  // например "Binance (USDT)"
-  shortLabel: string; // например "Bybit (USDC)"
+  longLabel: string;
+  shortLabel: string;
 };
 
 async function fetchArbChartData(params: {
@@ -71,7 +58,7 @@ async function fetchArbChartData(params: {
 }): Promise<ArbChartRow[]> {
   const { longMarketId, shortMarketId, days = 30 } = params;
 
-  const { data, error } = await supabase.rpc("get_arb_chart_data", {
+  const { data, error } = await supabase.rpc(RPC_FUNCTIONS.ARB_CHART, {
     p_long_market_id: longMarketId,
     p_short_market_id: shortMarketId,
     p_days: days,
@@ -79,7 +66,6 @@ async function fetchArbChartData(params: {
 
   if (error) throw error;
 
-  // Supabase типизирует data как unknown — приводим аккуратно
   return (data ?? []) as ArbChartRow[];
 }
 
@@ -143,7 +129,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
             .filter((p) => Number.isFinite(p.spread))
             .map((p) => ({ x: p.x, y: p.spread as number })),
           yAxisID: "y2",
-          backgroundColor: "rgba(148, 163, 184, 0.18)", // slate-ish
+          backgroundColor: "rgba(148, 163, 184, 0.18)",
           borderWidth: 0,
           barPercentage: 1.0,
           categoryPercentage: 1.0,
@@ -156,7 +142,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
           data: points
             .filter((p) => Number.isFinite(p.long))
             .map((p) => ({ x: p.x, y: p.long as number })),
-          borderColor: "#34d399", // emerald-400
+          borderColor: COLORS.chart.success,
           borderWidth: 2,
           pointRadius: 0,
           pointHitRadius: 10,
@@ -170,7 +156,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
           data: points
             .filter((p) => Number.isFinite(p.short))
             .map((p) => ({ x: p.x, y: p.short as number })),
-          borderColor: "#f87171", // red-400
+          borderColor: COLORS.chart.danger,
           borderWidth: 2,
           pointRadius: 0,
           pointHitRadius: 10,
@@ -190,8 +176,8 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
     return { minX: Math.min(...xs), maxX: Math.max(...xs) };
   }, [rows]);
 
-  const FULL_RANGE = Math.max(1, maxX - minX); // 30 дней (или сколько реально пришло)
-  const MIN_RANGE = 7 * 24 * 60 * 60 * 1000;  // 7 дня в мс
+  const FULL_RANGE = Math.max(1, maxX - minX);
+  const MIN_RANGE = CHART_CONFIG.SEVEN_DAYS_MS;
 
   const options = useMemo<ChartOptions<"bar">>(
     () => ({
@@ -240,7 +226,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
   },
 },
 
-        legend: { display: true, labels: { color: "#cbd5e1" } },
+        legend: { display: true, labels: { color: COLORS.text.primary } },
         tooltip: {
           callbacks: {
             label: (ctx) => {
@@ -255,28 +241,28 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
       scales: {
         x: {
           type: "time",
-          time: { tooltipFormat: "yyyy-MM-dd HH:mm" },
-          ticks: { autoSkip: true, maxRotation: 0, color: "#9ca3af" },
-          grid: { color: "rgba(148, 163, 184, 0.06)" },
+          time: { tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT },
+          ticks: { autoSkip: true, maxRotation: 0, color: COLORS.text.secondary },
+          grid: { color: COLORS.chart.grid },
         },
         y: {
           position: "left",
           ticks: {
-            color: "#9ca3af",
+            color: COLORS.text.secondary,
             callback: (value) => (typeof value === "number" ? `${value}%` : ""),
           },
           grid: {
             color: (ctx) =>
               ctx.tick?.value === 0
-                ? "rgba(148, 163, 184, 0.35)"
-                : "rgba(148, 163, 184, 0.08)",
+                ? COLORS.chart.gridZero
+                : COLORS.chart.grid,
             lineWidth: (ctx) => (ctx.tick?.value === 0 ? 1.2 : 1),
           },
         },
         y2: {
           position: "right",
           ticks: {
-            color: "#9ca3af",
+            color: COLORS.text.secondary,
             callback: (value) => (typeof value === "number" ? `${value}%` : ""),
           },
           grid: { drawOnChartArea: false },
@@ -288,61 +274,25 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
 
   if (!open) return null;
 
+  const title = `${baseAsset} — Long: ${longLabel} / Short: ${shortLabel}`;
+
   return (
-    <div className="fixed inset-0 z-50">
-      {/* overlay */}
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={onClose}
-      />
-
-      {/* modal */}
-      <div className="absolute left-1/2 top-1/2 w-[min(1100px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-800 bg-gray-900 shadow-2xl">
-        {/* header */}
-        <div className="flex items-center justify-between gap-3 border-b border-gray-800 px-4 py-3">
-          <div className="min-w-0">
-            <div className="text-lg font-semibold text-gray-100 truncate">
-              {baseAsset} — Long: {longLabel} / Short: {shortLabel}
-            </div>
-          </div>
-        </div>
-
-        {/* body */}
-        <div className="px-4 py-4">
-
-{loading ? (
-  <div className="h-[520px] w-full flex items-center justify-center">
-    <div className="flex items-center gap-3 text-gray-300">
-      <div className="h-5 w-5 rounded-full border-2 border-gray-500 border-t-transparent animate-spin" />
-      <span className="text-sm">Loading…</span>
-    </div>
-  </div>
-) : err ? (
-  <div className="h-[520px] w-full flex items-center justify-center">
-    <div className="text-red-400 text-sm">{err}</div>
-  </div>
-) : (
-
-<div className="h-[520px] w-full">
-  {loading && (
-    <div className="flex h-full items-center justify-center text-gray-400">
-      Loading…
-    </div>
-  )}
-
-  {!loading && rows.length > 0 && (
-    <Chart
-      key={`${longMarketId}-${shortMarketId}`}
-      type="bar"
-      data={chartData as any}
-      options={options}
-    />
-  )}
-</div>
-)}
-
-        </div>
-      </div>
-    </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      loading={loading}
+      error={err}
+      height={CHART_CONFIG.MODAL_HEIGHT}
+    >
+      {rows.length > 0 && (
+        <Chart
+          key={`${longMarketId}-${shortMarketId}`}
+          type="bar"
+          data={chartData as any}
+          options={options}
+        />
+      )}
+    </Modal>
   );
 }

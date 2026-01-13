@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Modal } from "@/components/ui/Modal";
+import { COLORS, CHART_CONFIG, TAILWIND } from "@/lib/theme";
+import { RPC_FUNCTIONS } from "@/lib/constants";
+import { FundingChartPoint } from "@/lib/types";
 import {
   Chart as ChartJS,
   LineElement,
@@ -31,11 +35,6 @@ ChartJS.register(
 
 /* ================= TYPES ================= */
 
-export type FundingChartPoint = {
-  funding_time: string; // ISO string
-  apr: number;
-};
-
 export type FundingChartProps = {
   open: boolean;
   onClose: () => void;
@@ -43,14 +42,6 @@ export type FundingChartProps = {
   symbol: string;
   exchange: string;
 };
-
-/* ================= CONSTS ================= */
-
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const COLOR_BLUE_400 = "#60a5fa";
-const COLOR_GRAY_500 = "#9ca3af";
-const TOOLTIP_FORMAT = "yyyy-MM-dd HH:mm";
 
 /* ================= FETCH ================= */
 
@@ -60,7 +51,7 @@ async function fetchFundingChartData(params: {
 }): Promise<FundingChartPoint[]> {
   const { marketId, days = 30 } = params;
 
-  const { data, error } = await supabase.rpc("get_funding_chart", {
+  const { data, error } = await supabase.rpc(RPC_FUNCTIONS.FUNDING_CHART, {
     p_market_id: marketId,
     p_days: days,
   });
@@ -120,7 +111,7 @@ export default function FundingChart(props: FundingChartProps) {
 
     const xs = chartPoints.map(p => p.x).filter(x => Number.isFinite(x));
     
-    let min = Date.now() - THIRTY_DAYS_MS, max = Date.now();
+    let min = Date.now() - CHART_CONFIG.THIRTY_DAYS_MS, max = Date.now();
     if (xs.length > 0) {
       min = Math.min(...xs);
       max = Math.max(...xs);
@@ -130,7 +121,7 @@ export default function FundingChart(props: FundingChartProps) {
   }, [rows]);
 
   const fullRange = Math.max(1, maxX - minX);
-  const minRange = SEVEN_DAYS_MS;
+  const minRange = CHART_CONFIG.SEVEN_DAYS_MS;
 
   const chartData = useMemo(
     () => ({
@@ -139,7 +130,7 @@ export default function FundingChart(props: FundingChartProps) {
           label: "APR %",
           data: chartPoints,
           parsing: false as const, 
-          borderColor: COLOR_BLUE_400,
+          borderColor: COLORS.chart.primary,
           borderWidth: 2,
           pointRadius: 0,
           pointHitRadius: 8,
@@ -168,8 +159,8 @@ export default function FundingChart(props: FundingChartProps) {
   const gridColorCallback = useMemo(
     () => (ctx: any) =>
       ctx.tick?.value === 0
-        ? "rgba(148, 163, 184, 0.35)"
-        : "rgba(148, 163, 184, 0.08)",
+        ? COLORS.chart.gridZero
+        : COLORS.chart.grid,
     []
   );
 
@@ -241,22 +232,22 @@ export default function FundingChart(props: FundingChartProps) {
         x: {
           type: "time",
           time: {
-            tooltipFormat: TOOLTIP_FORMAT,
+            tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT,
           },
           ticks: {
             autoSkip: true,
             maxRotation: 0,
-            color: COLOR_GRAY_500,
+            color: COLORS.text.secondary,
           },
           grid: {
-            color: "rgba(148, 163, 184, 0.06)",
+            color: COLORS.chart.grid,
           },
         },
 
         y: {
           beginAtZero: false,
           ticks: {
-            color: COLOR_GRAY_500,
+            color: COLORS.text.secondary,
             callback: yTickCallback,
           },
           grid: {
@@ -269,53 +260,24 @@ export default function FundingChart(props: FundingChartProps) {
     [tooltipLabelCallback, yTickCallback, gridColorCallback, gridLineWidthCallback, minX, maxX, fullRange, minRange]
   );
 
-  if (!open) return null;
+  const title = `${symbol} — ${exchange}`;
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* overlay */}
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={onClose}
-      />
-
-      {/* modal */}
-      <div className="absolute left-1/2 top-1/2 w-[min(1100px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-800 bg-gray-900 shadow-2xl">
-        {/* header */}
-        <div className="flex items-center justify-between gap-3 border-b border-gray-800 px-4 py-3">
-          <div className="min-w-0">
-            <div className="text-lg font-semibold text-gray-100 truncate">
-              {symbol} — {exchange}
-            </div>
-          </div>
-        </div>
-
-        {/* body */}
-        <div className="px-4 py-4">
-          {loading ? (
-            <div className="h-[520px] w-full flex items-center justify-center">
-              <div className="flex items-center gap-3 text-gray-300">
-                <div className="h-5 w-5 rounded-full border-2 border-gray-500 border-t-transparent animate-spin" />
-                <span className="text-sm">Loading…</span>
-              </div>
-            </div>
-          ) : err ? (
-            <div className="h-[520px] w-full flex items-center justify-center">
-              <div className="text-red-400 text-sm">{err}</div>
-            </div>
-          ) : (
-            <div className="h-[520px] w-full">
-              {rows.length > 0 && (
-                <Line
-                  key={`${marketId}`}
-                  data={chartData}
-                  options={options}
-                />
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      loading={loading}
+      error={err}
+      height={CHART_CONFIG.MODAL_HEIGHT}
+    >
+      {rows.length > 0 && (
+        <Line
+          key={`${marketId}`}
+          data={chartData}
+          options={options}
+        />
+      )}
+    </Modal>
   );
 }

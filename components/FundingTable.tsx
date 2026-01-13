@@ -3,6 +3,10 @@
 import { useMemo, useState, useEffect } from "react";
 import { LineChart } from "lucide-react";
 import dynamic from "next/dynamic";
+import { EXCHANGE_LABEL, MULTIPLIERS } from "@/lib/constants";
+import { formatCompactUSD, formatAPR, formatExchange, normalizeSymbol } from "@/lib/formatters";
+import { TAILWIND } from "@/lib/theme";
+import { FundingRow } from "@/lib/types";
 
 /* chart — client only */
 const FundingChart = dynamic(() => import("@/components/FundingChart"), {
@@ -10,26 +14,6 @@ const FundingChart = dynamic(() => import("@/components/FundingChart"), {
 });
 
 /* ================= TYPES ================= */
-
-type Row = {
-  market_id: number | null;
-  exchange: string;
-  symbol: string;
-  market: string;
-  ref_url: string | null;
-
-  open_interest: number | null;
-  volume_24h: number | null;
-  funding_rate_now: number | null;
-
-  "1d": number | null;
-  "3d": number | null;
-  "7d": number | null;
-  "15d": number | null;
-  "30d": number | null;
-
-  updated: string;
-};
 
 type SortKey =
   | "exchange"
@@ -44,37 +28,6 @@ type SortKey =
   | "30d"
 
 type SortDir = "asc" | "desc";
-
-/* ================= CONSTS ================= */
-
-const EXCHANGE_LABEL: Record<string, string> = {
-  bybit: "Bybit",
-  mexc: "MEXC",
-  bingx: "BingX",
-  paradex: "Paradex",
-  binance: "Binance",
-  hyperliquid: "Hyperliquid"
-};
-
-const formatExchange = (ex: string) => EXCHANGE_LABEL[ex] ?? ex;
-
-const MULTIPLIERS = ["1000000", "100000", "10000", "1000", "100", "10"] as const;
-
-function normalizeSymbol(s: string): string {
-  let x = (s ?? "").toUpperCase().trim();
-
-  // убираем только "кратные 1000" слева
-  for (const m of MULTIPLIERS) {
-    while (x.startsWith(m)) x = x.slice(m.length);
-  }
-
-  // и справа
-  for (const m of MULTIPLIERS) {
-    while (x.endsWith(m)) x = x.slice(0, -m.length);
-  }
-
-  return x;
-}
 
 /* ================= UI ================= */
 
@@ -120,7 +73,7 @@ function SortableHeader({
 
 /* ================= COMPONENT ================= */
 
-export default function FundingTable({ rows }: { rows: Row[] }) {
+export default function FundingTable({ rows }: { rows: FundingRow[] }) {
   /* ---------- state ---------- */
   const [search, setSearch] = useState("");
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
@@ -162,37 +115,18 @@ export default function FundingTable({ rows }: { rows: Row[] }) {
 
   /* ---------- helpers ---------- */
 
-const compactUSD = new Intl.NumberFormat("en", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
+const formatCompactUSDNode = (v: number | null) => formatCompactUSD(v);
 
-const formatCompactUSD = (v: number | null) =>
+const formatAPRNode = (v: number | null) => formatAPR(v);
+
+const formatUSD = (v: number | null) =>
   v == null || Number.isNaN(v) ? (
-    <span className="text-gray-600">–</span>
-  ) : (
-    <span className="text-gray-300 font-mono tabular-nums">
-      ${compactUSD.format(v)}
-    </span>
-  );
-
-  const formatAPR = (v: number | null) =>
-    v == null || Number.isNaN(v) ? (
-      <span className="text-gray-600">–</span>
-    ) : (
-      <span className="text-gray-300 font-mono tabular-nums">
-        {v.toFixed(2)}%
-      </span>
-    );
-
-  const formatUSD = (v: number | null) =>
-  v == null || Number.isNaN(v) ? (
-    <span className="text-gray-600">–</span>
+    <span className={TAILWIND.text.muted}>–</span>
   ) : (
     <span className="text-gray-300 font-mono tabular-nums">
       ${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
     </span>
-  );  
+  );
 
   const onSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -221,8 +155,8 @@ const formatCompactUSD = (v: number | null) =>
     const dir = sortDir === "asc" ? 1 : -1;
 
     return [...data].sort((a, b) => {
-      const ak = a[sortKey as keyof Row];
-      const bk = b[sortKey as keyof Row];
+      const ak = a[sortKey as keyof FundingRow];
+      const bk = b[sortKey as keyof FundingRow];
 
       if (sortKey === "exchange") {
         return (
@@ -273,7 +207,7 @@ const formatCompactUSD = (v: number | null) =>
       {/* ---------- Controls ---------- */}
       <div className="flex flex-wrap gap-3 mb-4 items-center">
         <input
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm"
+          className={TAILWIND.input.default}
           placeholder="Search market"
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -282,7 +216,7 @@ const formatCompactUSD = (v: number | null) =>
         <div className="relative">
           <button
             onClick={() => setFilterOpen(v => !v)}
-            className="bg-gray-800 border border-gray-700 px-3 py-2 rounded text-sm hover:border-gray-600 transition"
+            className={`${TAILWIND.input.default} hover:border-gray-600 transition`}
           >
             Exchanges
             {selectedExchanges.length > 0 && (
@@ -319,11 +253,11 @@ const formatCompactUSD = (v: number | null) =>
       </div>
 
       {/* ---------- Table ---------- */}
-      <div className="overflow-auto rounded border border-gray-800 bg-gray-800">
+      <div className={`overflow-auto rounded ${TAILWIND.border.default} ${TAILWIND.bg.surface}`}>
         <table className="w-full text-sm">
-          <thead className="bg-gray-900 sticky top-0">
+          <thead className={`${TAILWIND.bg.dark} sticky top-0`}>
             <tr className="border-b border-gray-700">
-              <th className="px-4 py-3 text-left">
+              <th className={TAILWIND.table.header}>
                 <SortableHeader
                   label="Exchange"
                   active={sortKey === "exchange"}
@@ -331,7 +265,7 @@ const formatCompactUSD = (v: number | null) =>
                   onClick={() => onSort("exchange")}
                 />
               </th>
-              <th className="px-4 py-3 text-left">
+              <th className={TAILWIND.table.header}>
                 <SortableHeader
                   label="Market"
                   active={sortKey === "market"}
@@ -385,9 +319,9 @@ const formatCompactUSD = (v: number | null) =>
             {visible.map(r => (
               <tr
                 key={`${r.exchange}:${r.market}`}
-                className="border-b border-gray-800 hover:bg-gray-700/40"
+                className={`${TAILWIND.table.row} ${TAILWIND.bg.hover}`}
               >
-                <td className="px-4 py-2">{formatExchange(r.exchange)}</td>
+                <td className={TAILWIND.table.cell}>{formatExchange(r.exchange)}</td>
                 <td className="px-4 py-2 font-mono font-semibold">
                   {r.ref_url ? (
                     <a
@@ -414,22 +348,22 @@ const formatCompactUSD = (v: number | null) =>
                 </td>
 
 <td className="px-4 py-2 text-right">
-  {formatCompactUSD(r.open_interest)}
+  {formatCompactUSDNode(r.open_interest)}
 </td>
 
 <td className="px-4 py-2 text-right">
-  {formatCompactUSD(r.volume_24h)}
+  {formatCompactUSDNode(r.volume_24h)}
 </td>
 
 <td className="px-4 py-2 text-right">
-  {formatAPR(r.funding_rate_now)}
+  {formatAPRNode(r.funding_rate_now)}
 </td>
 
-                <td className="px-4 py-2 text-right">{formatAPR(r["1d"])}</td>
-                <td className="px-4 py-2 text-right">{formatAPR(r["3d"])}</td>
-                <td className="px-4 py-2 text-right">{formatAPR(r["7d"])}</td>
-                <td className="px-4 py-2 text-right">{formatAPR(r["15d"])}</td>
-                <td className="px-4 py-2 text-right">{formatAPR(r["30d"])}</td>
+                <td className="px-4 py-2 text-right">{formatAPRNode(r["1d"])}</td>
+                <td className="px-4 py-2 text-right">{formatAPRNode(r["3d"])}</td>
+                <td className="px-4 py-2 text-right">{formatAPRNode(r["7d"])}</td>
+                <td className="px-4 py-2 text-right">{formatAPRNode(r["15d"])}</td>
+                <td className="px-4 py-2 text-right">{formatAPRNode(r["30d"])}</td>
               </tr>
             ))}
           </tbody>

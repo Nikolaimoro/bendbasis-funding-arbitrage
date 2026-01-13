@@ -4,94 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ArbitrageChart from "@/components/ArbitrageChart";
 import { ExternalLink } from "lucide-react";
+import { EXCHANGE_LABEL, MULTIPLIERS, SUPABASE_TABLES } from "@/lib/constants";
+import { formatCompactUSD, formatAPR, formatExchange, normalizeToken } from "@/lib/formatters";
+import { TAILWIND } from "@/lib/theme";
+import { ArbRow } from "@/lib/types";
 
 /* ================= TYPES ================= */
 
-export type ArbRow = {
-  base_asset: string;
-
-  opportunity_apr: number;
-
-  stability: number | null;
-
-  long_market_id: number;
-  short_market_id: number;
-
-  short_exchange: string;
-  short_quote: string | null;
-  short_open_interest: number | null;
-  short_volume_24h: number | null;
-  short_url: string | null;
-
-  long_exchange: string;
-  long_quote: string | null;
-  long_open_interest: number | null;
-  long_volume_24h: number | null;
-  long_url: string | null;
-};
-
 type SortKey = "opportunity_apr" | "stability";
 type SortDir = "asc" | "desc";
-
-
-/* ================= CONSTS ================= */
-
-
-const EXCHANGE_LABEL: Record<string, string> = {
-  bybit: "Bybit",
-  mexc: "MEXC",
-  bingx: "BingX",
-  paradex: "Paradex",
-  binance: "Binance",
-  hyperliquid: "Hyperliquid",
-};
-
-const formatExchange = (ex: string) => EXCHANGE_LABEL[ex] ?? ex;
-
-/* ================= SEARCH NORMALIZATION (как в FundingTable) ================= */
-
-const MULTIPLIERS = ["1000000", "100000", "10000", "1000", "100", "10"] as const;
-
-function normalizeToken(s: string): string {
-  let x = (s ?? "").toUpperCase().trim();
-
-  // убираем только "кратные 1000/100/10" слева
-  for (const m of MULTIPLIERS) {
-    while (x.startsWith(m)) x = x.slice(m.length);
-  }
-
-  // и справа
-  for (const m of MULTIPLIERS) {
-    while (x.endsWith(m)) x = x.slice(0, -m.length);
-  }
-
-  return x;
-}
-
-/* ================= FORMATTERS ================= */
-
-const compactUSD = new Intl.NumberFormat("en", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-
-const formatCompactUSD = (v: number | null) =>
-  v == null || Number.isNaN(v) ? (
-    <span className="text-gray-600">–</span>
-  ) : (
-    <span className="text-gray-300 font-mono tabular-nums">
-      ${compactUSD.format(v)}
-    </span>
-  );
-
-const formatAPR = (v: number | null) =>
-  v == null || Number.isNaN(v) ? (
-    <span className="text-gray-600">–</span>
-  ) : (
-    <span className="text-gray-300 font-mono tabular-nums">
-      {v.toFixed(2)}%
-    </span>
-  );
 
 /* ================= BUTTONS ================= */
 
@@ -196,7 +117,7 @@ export default function ArbitrageTable() {
   setLoading(true);
 
     supabase
-      .from("arb_opportunities_enriched")
+      .from(SUPABASE_TABLES.ARB_OPPORTUNITIES)
       .select("*")
       .order("stability", { ascending: false })
       .order("opportunity_apr", { ascending: false })
