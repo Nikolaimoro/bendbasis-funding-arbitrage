@@ -55,6 +55,8 @@ export default function FundingChart({ data, loading = false }: FundingChartProp
               x: new Date(d.funding_time).getTime(),
               y: d.apr,
             })),
+          parsing: false as const,
+          normalized: true,  
           borderColor: "#60a5fa", // blue-400
           borderWidth: 2,
           pointRadius: 0,
@@ -95,7 +97,7 @@ const MIN_RANGE = 7 * 24 * 60 * 60 * 1000; // 7 дней
       maintainAspectRatio: false,
 
       interaction: {
-        mode: "index",
+        mode: "nearest",
         intersect: false,
       },
 
@@ -115,6 +117,7 @@ zoom: {
     pan: {
       enabled: true,
       mode: "x",
+      animation: false
     },
     zoom: {
       wheel: { enabled: true },
