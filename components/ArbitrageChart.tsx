@@ -18,7 +18,6 @@ import {
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import { Chart } from "react-chartjs-2";
-import { X } from "lucide-react";
 import zoomPlugin from "chartjs-plugin-zoom";
 
 /* ---------- register ---------- */
@@ -192,7 +191,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
   }, [rows]);
 
   const FULL_RANGE = Math.max(1, maxX - minX); // 30 дней (или сколько реально пришло)
-  const MIN_RANGE = 3 * 24 * 60 * 60 * 1000;  // 3 дня в мс
+  const MIN_RANGE = 7 * 24 * 60 * 60 * 1000;  // 7 дня в мс
 
   const options = useMemo<ChartOptions<"bar">>(
     () => ({

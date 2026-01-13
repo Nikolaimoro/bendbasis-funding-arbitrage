@@ -37,11 +37,12 @@ export type FundingChartPoint = {
 
 type FundingChartProps = {
   data: FundingChartPoint[];
+  loading?: boolean;
 };
 
 /* ================= COMPONENT ================= */
 
-export default function FundingChart({ data }: FundingChartProps) {
+export default function FundingChart({ data, loading = false }: FundingChartProps) {
   /* ---------- chart data ---------- */
   const chartData = useMemo(
     () => ({
@@ -64,6 +65,28 @@ export default function FundingChart({ data }: FundingChartProps) {
     }),
     [data]
   );
+
+  const { minX, maxX } = useMemo(() => {
+  const xs = data
+    .map(d => new Date(d.funding_time).getTime())
+    .filter(x => Number.isFinite(x));
+
+  if (!xs.length) {
+    const now = Date.now();
+    return {
+      minX: now - 7 * 24 * 3600 * 1000,
+      maxX: now,
+    };
+  }
+
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+  };
+}, [data]);
+
+const FULL_RANGE = Math.max(1, maxX - minX);
+const MIN_RANGE = 7 * 24 * 60 * 60 * 1000; // 7 дней
 
   /* ---------- chart options ---------- */
   const options = useMemo<ChartOptions<"line">>(
@@ -88,24 +111,26 @@ export default function FundingChart({ data }: FundingChartProps) {
           },
         },
 
-        /* =========================
-           PAN / ZOOM — ВРЕМЕННО ВЫКЛЮЧЕНО
-           (оставлено для будущего)
-        ========================== */
-        /*
-        zoom: {
-          pan: {
-            enabled: true,
-            mode: "x",
-          },
-          zoom: {
-            wheel: { enabled: false },
-            pinch: { enabled: false },
-            drag: { enabled: false },
-            mode: "x",
-          },
-        },
-        */
+zoom: {
+    pan: {
+      enabled: true,
+      mode: "x",
+    },
+    zoom: {
+      wheel: { enabled: true },
+      pinch: { enabled: true },
+      mode: "x",
+      animation: false, // ускоряет
+    },
+    limits: {
+      x: {
+        min: minX,
+        max: maxX,
+        minRange: MIN_RANGE,   // 👈 не ближе 7 дней
+        maxRange: FULL_RANGE,  // 👈 не дальше исходного
+      },
+    },
+  },
       },
 
       scales: {
@@ -141,14 +166,21 @@ export default function FundingChart({ data }: FundingChartProps) {
         },
       },
     }),
-    []
+    [minX, maxX, FULL_RANGE]
   );
 
   /* ---------- render ---------- */
   return (
     <div className="w-full">
-      <div className="h-[420px] w-full">
-        <Line data={chartData} options={options} />
+      <div className="h-[420px] w-full flex items-center justify-center">
+      {loading ? (
+    <div className="flex items-center gap-3 text-gray-300">
+      <div className="h-5 w-5 rounded-full border-2 border-gray-500 border-t-transparent animate-spin" />
+      <span className="text-sm">Loading…</span>
+    </div>
+  ) : (
+    <Line data={chartData} options={options} />
+  )}
       </div>
     </div>
   );
