@@ -9,13 +9,10 @@ import { ExternalLink } from "lucide-react";
 
 export type ArbRow = {
   base_asset: string;
-  window_days: number;
 
   opportunity_apr: number;
 
   stability: number | null;
-  samples: number | null;
-  coverage: number | null;
 
   long_market_id: number;
   short_market_id: number;
@@ -31,9 +28,6 @@ export type ArbRow = {
   long_open_interest: number | null;
   long_volume_24h: number | null;
   long_url: string | null;
-
-  open_interest: number | null;
-  volume_24h: number | null;
 };
 
 type SortKey = "opportunity_apr" | "stability";

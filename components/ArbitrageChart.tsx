@@ -295,15 +295,6 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
               {baseAsset} — Long: {longLabel} / Short: {shortLabel}
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center rounded-md border border-gray-700 p-2 text-gray-300 hover:border-gray-500 hover:text-gray-100 transition"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
         </div>
 
         {/* body */}
