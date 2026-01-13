@@ -95,7 +95,7 @@ const MIN_RANGE = 7 * 24 * 60 * 60 * 1000; // 7 дней
       responsive: true,
       maintainAspectRatio: false,
 
-          animation: {
+      animation: {
       duration: 300, // только первый рендер
     },
 
@@ -129,26 +129,6 @@ const MIN_RANGE = 7 * 24 * 60 * 60 * 1000; // 7 дней
           },
         },
 
-zoom: {
-    pan: {
-      enabled: true,
-      mode: "x",
-      animation: false
-    },
-    zoom: {
-      wheel: { enabled: true, speed: 0.05 },
-      pinch: { enabled: true },
-      mode: "x",
-    },
-    limits: {
-      x: {
-        min: minX,
-        max: maxX,
-        minRange: MIN_RANGE,   // 👈 не ближе 7 дней
-        maxRange: FULL_RANGE,  // 👈 не дальше исходного
-      },
-    },
-  },
       },
 
       scales: {
