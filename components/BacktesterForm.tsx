@@ -12,7 +12,7 @@ const BacktesterChart = dynamic(() => import("@/components/BacktesterChart"), { 
 
 interface BacktesterFormProps {
   tokens: string[];
-  exchanges: { exchange: string; quotes: { asset: string; marketId: number; refUrl: string | null }[] }[];
+  exchanges: { exchange: string; baseAssets: { asset: string; quotes: { asset: string; marketId: number; refUrl: string | null }[] }[] }[];
   initialToken?: string;
   initialLongEx?: string;
   initialShortEx?: string;
@@ -58,7 +58,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     if (selectedToken) {
       const normalizedToken = normalizeToken(selectedToken);
       available = exchanges.filter(ex => 
-        ex.quotes.some(q => normalizeToken(q.asset) === normalizedToken)
+        ex.baseAssets.some(ba => normalizeToken(ba.asset) === normalizedToken)
       );
     }
     
@@ -79,7 +79,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     if (selectedToken) {
       const normalizedToken = normalizeToken(selectedToken);
       available = exchanges.filter(ex => 
-        ex.quotes.some(q => normalizeToken(q.asset) === normalizedToken)
+        ex.baseAssets.some(ba => normalizeToken(ba.asset) === normalizedToken)
       );
     }
     
@@ -108,7 +108,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     if (selectedToken && selectedLongEx) {
       const ex = exchanges.find(e => e.exchange === selectedLongEx);
       const normalizedToken = normalizeToken(selectedToken);
-      if (!ex?.quotes.some(q => normalizeToken(q.asset) === normalizedToken)) {
+      if (!ex?.baseAssets.some(ba => normalizeToken(ba.asset) === normalizedToken)) {
         setSelectedLongEx("");
         setSelectedLongQuote("");
         setSelectedLongMarketId(null);
@@ -118,7 +118,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     if (selectedToken && selectedShortEx) {
       const ex = exchanges.find(e => e.exchange === selectedShortEx);
       const normalizedToken = normalizeToken(selectedToken);
-      if (!ex?.quotes.some(q => normalizeToken(q.asset) === normalizedToken)) {
+      if (!ex?.baseAssets.some(ba => normalizeToken(ba.asset) === normalizedToken)) {
         setSelectedShortEx("");
         setSelectedShortQuote("");
         setSelectedShortMarketId(null);
@@ -127,25 +127,29 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     }
   }, [selectedToken, exchanges]);
 
-  // Auto-fill quote when exchange is selected (pick first available)
+  // Auto-fill quote when exchange is selected (pick first available quote for the token)
   useEffect(() => {
-    if (selectedLongEx && !selectedLongQuote) {
+    if (selectedLongEx && !selectedLongQuote && selectedToken) {
       const ex = exchanges.find(e => e.exchange === selectedLongEx);
-      if (ex?.quotes[0]) {
-        setSelectedLongQuote(ex.quotes[0].asset);
-        setSelectedLongMarketId(ex.quotes[0].marketId);
-        setSelectedLongRefUrl(ex.quotes[0].refUrl);
+      const normalizedToken = normalizeToken(selectedToken);
+      const baseAsset = ex?.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
+      if (baseAsset?.quotes[0]) {
+        setSelectedLongQuote(baseAsset.quotes[0].asset);
+        setSelectedLongMarketId(baseAsset.quotes[0].marketId);
+        setSelectedLongRefUrl(baseAsset.quotes[0].refUrl);
       }
     }
-  }, [selectedLongEx]);
+  }, [selectedLongEx, selectedToken]);
 
   useEffect(() => {
-    if (selectedShortEx && !selectedShortQuote) {
+    if (selectedShortEx && !selectedShortQuote && selectedToken) {
       const ex = exchanges.find(e => e.exchange === selectedShortEx);
-      if (ex?.quotes[0]) {
-        setSelectedShortQuote(ex.quotes[0].asset);
-        setSelectedShortMarketId(ex.quotes[0].marketId);
-        setSelectedShortRefUrl(ex.quotes[0].refUrl);
+      const normalizedToken = normalizeToken(selectedToken);
+      const baseAsset = ex?.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
+      if (baseAsset?.quotes[0]) {
+        setSelectedShortQuote(baseAsset.quotes[0].asset);
+        setSelectedShortMarketId(baseAsset.quotes[0].marketId);
+        setSelectedShortRefUrl(baseAsset.quotes[0].refUrl);
       }
     }
   }, [selectedShortEx]);
@@ -272,7 +276,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                     : "border-gray-600 bg-gray-700 hover:border-gray-500"
                 }`}
               >
-                {selectedLongEx ? `${EXCHANGE_LABEL[selectedLongEx] || selectedLongEx}${selectedLongQuote && exchanges.find(ex => ex.exchange === selectedLongEx)?.quotes.length! > 1 ? ` (${selectedLongQuote})` : ""}` : "Select..."}
+                {selectedLongEx ? `${EXCHANGE_LABEL[selectedLongEx] || selectedLongEx}${selectedLongQuote ? ` (${selectedLongQuote})` : ""}` : "Select..."}
               </button>
 
               {openCombo === "long-ex" && (
@@ -288,26 +292,32 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                       autoFocus
                     />
                     <div className="max-h-48 overflow-y-auto">
-                      {filteredLongEx.map(ex => (
-                        <div key={ex.exchange} className="border-b border-gray-700 last:border-b-0">
-                          {ex.quotes.map(quote => (
-                            <button
-                              key={`${ex.exchange}-${quote.asset}`}
-                              onClick={() => {
-                                setSelectedLongEx(ex.exchange);
-                                setSelectedLongQuote(quote.asset);
-                                setSelectedLongMarketId(quote.marketId);
-                                setSelectedLongRefUrl(quote.refUrl);
-                                setLongExSearch("");
-                                setOpenCombo(null);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-700 transition"
-                            >
-                              {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{ex.quotes.length > 1 ? ` (${quote.asset})` : ""}
-                            </button>
-                          ))}
-                        </div>
-                      ))}
+                      {filteredLongEx.map(ex => {
+                        const normalizedToken = normalizeToken(selectedToken);
+                        const baseAsset = ex.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
+                        if (!baseAsset) return null;
+                        
+                        return (
+                          <div key={ex.exchange} className="border-b border-gray-700 last:border-b-0">
+                            {baseAsset.quotes.map((quote: any) => (
+                              <button
+                                key={`${ex.exchange}-${quote.asset}`}
+                                onClick={() => {
+                                  setSelectedLongEx(ex.exchange);
+                                  setSelectedLongQuote(quote.asset);
+                                  setSelectedLongMarketId(quote.marketId);
+                                  setSelectedLongRefUrl(quote.refUrl);
+                                  setLongExSearch("");
+                                  setOpenCombo(null);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-700 transition"
+                              >
+                                {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{baseAsset.quotes.length > 1 ? ` (${quote.asset})` : ""}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })}
                       {filteredLongEx.length === 0 && (
                         <div className="px-3 py-2 text-sm text-gray-500">No exchanges found</div>
                       )}
@@ -338,7 +348,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                     : "border-gray-600 bg-gray-700 hover:border-gray-500"
                 }`}
               >
-                {selectedShortEx ? `${EXCHANGE_LABEL[selectedShortEx] || selectedShortEx}${selectedShortQuote && exchanges.find(ex => ex.exchange === selectedShortEx)?.quotes.length! > 1 ? ` (${selectedShortQuote})` : ""}` : "Select..."}
+                {selectedShortEx ? `${EXCHANGE_LABEL[selectedShortEx] || selectedShortEx}${selectedShortQuote ? ` (${selectedShortQuote})` : ""}` : "Select..."}
               </button>
 
               {openCombo === "short-ex" && (
@@ -354,26 +364,32 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                       autoFocus
                     />
                     <div className="max-h-48 overflow-y-auto">
-                      {filteredShortEx.map(ex => (
-                        <div key={ex.exchange} className="border-b border-gray-700 last:border-b-0">
-                          {ex.quotes.map(quote => (
-                            <button
-                              key={`${ex.exchange}-${quote.asset}`}
-                              onClick={() => {
-                                setSelectedShortEx(ex.exchange);
-                                setSelectedShortQuote(quote.asset);
-                                setSelectedShortMarketId(quote.marketId);
-                                setSelectedShortRefUrl(quote.refUrl);
-                                setShortExSearch("");
-                                setOpenCombo(null);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-700 transition"
-                            >
-                              {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{ex.quotes.length > 1 ? ` (${quote.asset})` : ""}
-                            </button>
-                          ))}
-                        </div>
-                      ))}
+                      {filteredShortEx.map(ex => {
+                        const normalizedToken = normalizeToken(selectedToken);
+                        const baseAsset = ex.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
+                        if (!baseAsset) return null;
+                        
+                        return (
+                          <div key={ex.exchange} className="border-b border-gray-700 last:border-b-0">
+                            {baseAsset.quotes.map((quote: any) => (
+                              <button
+                                key={`${ex.exchange}-${quote.asset}`}
+                                onClick={() => {
+                                  setSelectedShortEx(ex.exchange);
+                                  setSelectedShortQuote(quote.asset);
+                                  setSelectedShortMarketId(quote.marketId);
+                                  setSelectedShortRefUrl(quote.refUrl);
+                                  setShortExSearch("");
+                                  setOpenCombo(null);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-700 transition"
+                              >
+                                {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{baseAsset.quotes.length > 1 ? ` (${quote.asset})` : ""}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })}
                       {filteredShortEx.length === 0 && (
                         <div className="px-3 py-2 text-sm text-gray-500">No exchanges found</div>
                       )}

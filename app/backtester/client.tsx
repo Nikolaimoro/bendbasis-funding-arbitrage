@@ -5,7 +5,7 @@ import BacktesterForm from "@/components/BacktesterForm";
 
 interface BacktesterClientProps {
   tokens: string[];
-  exchanges: { exchange: string; quotes: { asset: string; marketId: number; refUrl: string | null }[] }[];
+  exchanges: { exchange: string; baseAssets: { asset: string; quotes: { asset: string; marketId: number; refUrl: string | null }[] }[] }[];
 }
 
 /**
@@ -22,7 +22,9 @@ function parseExchangeQuote(
   const lowerParam = param.toLowerCase();
   const allQuotes = new Set<string>();
   exchanges.forEach(ex =>
-    ex.quotes.forEach(q => allQuotes.add(q.asset.toLowerCase()))
+    ex.baseAssets.forEach(ba => 
+      ba.quotes.forEach(q => allQuotes.add(q.asset.toLowerCase()))
+    )
   );
 
   // Try to find quote asset at the end of param
