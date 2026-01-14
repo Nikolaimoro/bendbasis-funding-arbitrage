@@ -50,25 +50,45 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     return tokens.filter(t => normalizeToken(t).startsWith(q));
   }, [tokens, tokenSearch]);
 
-  // Filtered long exchanges
+  // Filtered long exchanges - only show exchanges that have the selected token
   const filteredLongEx = useMemo(() => {
-    if (!longExSearch) return exchanges;
+    let available = exchanges;
+    
+    // Filter by selected token if exists
+    if (selectedToken) {
+      available = exchanges.filter(ex => 
+        ex.quotes.some(q => q.asset.toUpperCase() === selectedToken.toUpperCase())
+      );
+    }
+    
+    // Filter by search
+    if (!longExSearch) return available;
     const q = longExSearch.toLowerCase();
-    return exchanges.filter(ex => {
+    return available.filter(ex => {
       const label = EXCHANGE_LABEL[ex.exchange] || ex.exchange;
       return label.toLowerCase().startsWith(q) || ex.exchange.toLowerCase().startsWith(q);
     });
-  }, [exchanges, longExSearch]);
+  }, [exchanges, longExSearch, selectedToken]);
 
-  // Filtered short exchanges
+  // Filtered short exchanges - only show exchanges that have the selected token
   const filteredShortEx = useMemo(() => {
-    if (!shortExSearch) return exchanges;
+    let available = exchanges;
+    
+    // Filter by selected token if exists
+    if (selectedToken) {
+      available = exchanges.filter(ex => 
+        ex.quotes.some(q => q.asset.toUpperCase() === selectedToken.toUpperCase())
+      );
+    }
+    
+    // Filter by search
+    if (!shortExSearch) return available;
     const q = shortExSearch.toLowerCase();
-    return exchanges.filter(ex => {
+    return available.filter(ex => {
       const label = EXCHANGE_LABEL[ex.exchange] || ex.exchange;
       return label.toLowerCase().startsWith(q) || ex.exchange.toLowerCase().startsWith(q);
     });
-  }, [exchanges, shortExSearch]);
+  }, [exchanges, shortExSearch, selectedToken]);
 
   // Close combobox when clicking outside
   useEffect(() => {
@@ -80,6 +100,28 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Reset selected exchanges when token changes (they may not have the new token)
+  useEffect(() => {
+    if (selectedToken && selectedLongEx) {
+      const ex = exchanges.find(e => e.exchange === selectedLongEx);
+      if (!ex?.quotes.some(q => q.asset.toUpperCase() === selectedToken.toUpperCase())) {
+        setSelectedLongEx("");
+        setSelectedLongQuote("");
+        setSelectedLongMarketId(null);
+        setSelectedLongRefUrl(null);
+      }
+    }
+    if (selectedToken && selectedShortEx) {
+      const ex = exchanges.find(e => e.exchange === selectedShortEx);
+      if (!ex?.quotes.some(q => q.asset.toUpperCase() === selectedToken.toUpperCase())) {
+        setSelectedShortEx("");
+        setSelectedShortQuote("");
+        setSelectedShortMarketId(null);
+        setSelectedShortRefUrl(null);
+      }
+    }
+  }, [selectedToken, exchanges]);
 
   // Auto-fill quote when exchange is selected (pick first available)
   useEffect(() => {
