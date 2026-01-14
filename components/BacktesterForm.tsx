@@ -56,8 +56,9 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     
     // Filter by selected token if exists
     if (selectedToken) {
+      const normalizedToken = normalizeToken(selectedToken);
       available = exchanges.filter(ex => 
-        ex.quotes.some(q => q.asset.toUpperCase() === selectedToken.toUpperCase())
+        ex.quotes.some(q => normalizeToken(q.asset) === normalizedToken)
       );
     }
     
@@ -76,8 +77,9 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     
     // Filter by selected token if exists
     if (selectedToken) {
+      const normalizedToken = normalizeToken(selectedToken);
       available = exchanges.filter(ex => 
-        ex.quotes.some(q => q.asset.toUpperCase() === selectedToken.toUpperCase())
+        ex.quotes.some(q => normalizeToken(q.asset) === normalizedToken)
       );
     }
     
@@ -105,7 +107,8 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
   useEffect(() => {
     if (selectedToken && selectedLongEx) {
       const ex = exchanges.find(e => e.exchange === selectedLongEx);
-      if (!ex?.quotes.some(q => q.asset.toUpperCase() === selectedToken.toUpperCase())) {
+      const normalizedToken = normalizeToken(selectedToken);
+      if (!ex?.quotes.some(q => normalizeToken(q.asset) === normalizedToken)) {
         setSelectedLongEx("");
         setSelectedLongQuote("");
         setSelectedLongMarketId(null);
@@ -114,7 +117,8 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     }
     if (selectedToken && selectedShortEx) {
       const ex = exchanges.find(e => e.exchange === selectedShortEx);
-      if (!ex?.quotes.some(q => q.asset.toUpperCase() === selectedToken.toUpperCase())) {
+      const normalizedToken = normalizeToken(selectedToken);
+      if (!ex?.quotes.some(q => normalizeToken(q.asset) === normalizedToken)) {
         setSelectedShortEx("");
         setSelectedShortQuote("");
         setSelectedShortMarketId(null);
