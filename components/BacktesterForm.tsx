@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { ArrowRightLeft } from "lucide-react";
 import { normalizeToken } from "@/lib/formatters";
 import { EXCHANGE_LABEL } from "@/lib/constants";
@@ -11,18 +10,14 @@ import BacktesterChart from "@/components/BacktesterChart";
 interface BacktesterFormProps {
   tokens: string[];
   exchanges: { exchange: string; quotes: string[] }[];
+  initialToken?: string;
+  initialLongEx?: string;
+  initialShortEx?: string;
 }
 
 type ComboboxType = "token" | "long-ex" | "short-ex";
 
-export default function BacktesterForm({ tokens, exchanges }: BacktesterFormProps) {
-  const searchParams = useSearchParams();
-
-  // Initialize from URL params or empty
-  const initialToken = searchParams.get("token") || "";
-  const initialLongEx = searchParams.get("exchange1") || "";
-  const initialShortEx = searchParams.get("exchange2") || "";
-
+export default function BacktesterForm({ tokens, exchanges, initialToken = "", initialLongEx = "", initialShortEx = "" }: BacktesterFormProps) {
   const [selectedToken, setSelectedToken] = useState<string>(initialToken);
   const [selectedLongEx, setSelectedLongEx] = useState<string>(initialLongEx);
   const [selectedLongQuote, setSelectedLongQuote] = useState<string>("");

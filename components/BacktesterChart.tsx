@@ -2,27 +2,7 @@
 
 import { useMemo } from "react";
 import { ExternalLink } from "lucide-react";
-import { COLORS, TAILWIND } from "@/lib/theme";
 import { formatExchange } from "@/lib/formatters";
-import dynamic from "next/dynamic";
-import { Chart as ChartJS, LineController, BarController, LineElement, PointElement, BarElement, LinearScale, TimeScale, Tooltip, Legend, Filler } from "chart.js";
-import "chartjs-adapter-date-fns";
-import { Chart } from "react-chartjs-2";
-import zoomPlugin from "chartjs-plugin-zoom";
-
-ChartJS.register(
-  LineController,
-  BarController,
-  LineElement,
-  PointElement,
-  BarElement,
-  LinearScale,
-  TimeScale,
-  Tooltip,
-  Legend,
-  Filler,
-  zoomPlugin
-);
 
 interface BacktesterChartProps {
   chartData: any;

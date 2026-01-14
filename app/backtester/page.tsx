@@ -1,13 +1,13 @@
 import { supabase } from "@/lib/supabase";
-import BacktesterForm from "@/components/BacktesterForm";
+import BacktesterClient from "@/app/backtester/client";
 
 export const revalidate = 3600; // revalidate every hour
 
 async function getAllTokens(): Promise<string[]> {
   const { data, error } = await supabase
     .from("funding_dashboard_mv")
-    .select("symbol")
-    .order("symbol", { ascending: true });
+    .select("market")
+    .order("market", { ascending: true });
 
   if (error) {
     console.error("Failed to fetch tokens:", error);
@@ -15,7 +15,7 @@ async function getAllTokens(): Promise<string[]> {
   }
 
   // Get unique tokens and remove duplicates
-  const unique = Array.from(new Set((data ?? []).map(d => d.symbol)));
+  const unique = Array.from(new Set((data ?? []).map(d => d.market)));
   return unique;
 }
 
@@ -64,7 +64,7 @@ export default async function BacktesterPage() {
   return (
     <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
       <h1 className="text-2xl font-semibold mb-6">Funding Arbitrage Backtester</h1>
-      <BacktesterForm tokens={tokens} exchanges={exchanges} />
+      <BacktesterClient tokens={tokens} exchanges={exchanges} />
     </main>
   );
 }
