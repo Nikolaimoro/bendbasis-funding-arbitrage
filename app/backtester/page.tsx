@@ -35,14 +35,14 @@ async function getAllTokens(): Promise<string[]> {
   return Array.from(new Set(allTokens)).sort();
 }
 
-async function getAllExchanges(): Promise<{ exchange: string; quotes: { asset: string; marketId: number }[] }[]> {
+async function getAllExchanges(): Promise<{ exchange: string; quotes: { asset: string; marketId: number; refUrl: string | null }[] }[]> {
   let allRows: any[] = [];
   let from = 0;
 
   while (true) {
     const { data, error } = await supabase
       .from("funding_dashboard_mv")
-      .select("exchange, quote_asset, market_id")
+      .select("exchange, quote_asset, market_id, ref_url")
       .range(from, from + PAGE_SIZE - 1);
 
     if (error) {
@@ -59,18 +59,18 @@ async function getAllExchanges(): Promise<{ exchange: string; quotes: { asset: s
     from += PAGE_SIZE;
   }
 
-  // Group by exchange and get unique quote assets with market_id
-  const exchangeMap = new Map<string, Map<string, number>>();
+  // Group by exchange and get unique quote assets with market_id and ref_url
+  const exchangeMap = new Map<string, Map<string, { marketId: number; refUrl: string | null }>>();
 
   allRows.forEach(row => {
     if (!exchangeMap.has(row.exchange)) {
       exchangeMap.set(row.exchange, new Map());
     }
     if (row.quote_asset && row.market_id) {
-      // Store the first market_id for each quote_asset to avoid duplicates
+      // Store the first market_id and ref_url for each quote_asset to avoid duplicates
       const quoteMap = exchangeMap.get(row.exchange)!;
       if (!quoteMap.has(row.quote_asset)) {
-        quoteMap.set(row.quote_asset, row.market_id);
+        quoteMap.set(row.quote_asset, { marketId: row.market_id, refUrl: row.ref_url || null });
       }
     }
   });
@@ -79,7 +79,7 @@ async function getAllExchanges(): Promise<{ exchange: string; quotes: { asset: s
     .map(([exchange, quoteMap]) => ({
       exchange,
       quotes: Array.from(quoteMap.entries())
-        .map(([asset, marketId]) => ({ asset, marketId }))
+        .map(([asset, { marketId, refUrl }]) => ({ asset, marketId, refUrl }))
         .sort((a, b) => a.asset.localeCompare(b.asset)),
     }))
     .sort((a, b) => a.exchange.localeCompare(b.exchange));

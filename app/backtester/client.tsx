@@ -5,7 +5,7 @@ import BacktesterForm from "@/components/BacktesterForm";
 
 interface BacktesterClientProps {
   tokens: string[];
-  exchanges: { exchange: string; quotes: { asset: string; marketId: number }[] }[];
+  exchanges: { exchange: string; quotes: { asset: string; marketId: number; refUrl: string | null }[] }[];
 }
 
 export default function BacktesterClient({ tokens, exchanges }: BacktesterClientProps) {

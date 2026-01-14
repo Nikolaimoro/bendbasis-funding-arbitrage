@@ -11,7 +11,7 @@ const BacktesterChart = dynamic(() => import("@/components/BacktesterChart"), { 
 
 interface BacktesterFormProps {
   tokens: string[];
-  exchanges: { exchange: string; quotes: { asset: string; marketId: number }[] }[];
+  exchanges: { exchange: string; quotes: { asset: string; marketId: number; refUrl: string | null }[] }[];
   initialToken?: string;
   initialLongEx?: string;
   initialShortEx?: string;
@@ -24,9 +24,11 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
   const [selectedLongEx, setSelectedLongEx] = useState<string>(initialLongEx);
   const [selectedLongQuote, setSelectedLongQuote] = useState<string>("");
   const [selectedLongMarketId, setSelectedLongMarketId] = useState<number | null>(null);
+  const [selectedLongRefUrl, setSelectedLongRefUrl] = useState<string | null>(null);
   const [selectedShortEx, setSelectedShortEx] = useState<string>(initialShortEx);
   const [selectedShortQuote, setSelectedShortQuote] = useState<string>("");
   const [selectedShortMarketId, setSelectedShortMarketId] = useState<number | null>(null);
+  const [selectedShortRefUrl, setSelectedShortRefUrl] = useState<string | null>(null);
 
   const [tokenSearch, setTokenSearch] = useState("");
   const [longExSearch, setLongExSearch] = useState("");
@@ -83,6 +85,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       if (ex?.quotes[0]) {
         setSelectedLongQuote(ex.quotes[0].asset);
         setSelectedLongMarketId(ex.quotes[0].marketId);
+        setSelectedLongRefUrl(ex.quotes[0].refUrl);
       }
     }
   }, [selectedLongEx]);
@@ -93,6 +96,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       if (ex?.quotes[0]) {
         setSelectedShortQuote(ex.quotes[0].asset);
         setSelectedShortMarketId(ex.quotes[0].marketId);
+        setSelectedShortRefUrl(ex.quotes[0].refUrl);
       }
     }
   }, [selectedShortEx]);
@@ -101,12 +105,15 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     const tempEx = selectedLongEx;
     const tempQuote = selectedLongQuote;
     const tempMarketId = selectedLongMarketId;
+    const tempRefUrl = selectedLongRefUrl;
     setSelectedLongEx(selectedShortEx);
     setSelectedLongQuote(selectedShortQuote);
     setSelectedLongMarketId(selectedShortMarketId);
+    setSelectedLongRefUrl(selectedShortRefUrl);
     setSelectedShortEx(tempEx);
     setSelectedShortQuote(tempQuote);
     setSelectedShortMarketId(tempMarketId);
+    setSelectedShortRefUrl(tempRefUrl);
   };
 
   const handleRun = async () => {
@@ -125,7 +132,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       });
       window.history.replaceState({}, "", `?${params.toString()}`);
 
-      // Set chart data with market IDs
+      // Set chart data with market IDs and ref URLs
       setChartData({
         token: selectedToken,
         longEx: selectedLongEx,
@@ -134,6 +141,8 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
         shortQuote: selectedShortQuote,
         longMarketId: selectedLongMarketId,
         shortMarketId: selectedShortMarketId,
+        longRefUrl: selectedLongRefUrl,
+        shortRefUrl: selectedShortRefUrl,
       });
     } catch (error) {
       console.error("Backtest failed:", error);
@@ -237,6 +246,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                                 setSelectedLongEx(ex.exchange);
                                 setSelectedLongQuote(quote.asset);
                                 setSelectedLongMarketId(quote.marketId);
+                                setSelectedLongRefUrl(quote.refUrl);
                                 setLongExSearch("");
                                 setOpenCombo(null);
                               }}
@@ -302,6 +312,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                                 setSelectedShortEx(ex.exchange);
                                 setSelectedShortQuote(quote.asset);
                                 setSelectedShortMarketId(quote.marketId);
+                                setSelectedShortRefUrl(quote.refUrl);
                                 setShortExSearch("");
                                 setOpenCombo(null);
                               }}

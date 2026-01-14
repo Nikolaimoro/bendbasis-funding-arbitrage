@@ -323,25 +323,31 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
           {/* Exchange Buttons */}
           {!loading && rows.length > 0 && (
             <div className="flex gap-3 justify-center">
-              <a
-                href={`https://${selectedLongEx?.toLowerCase()}.com`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition"
-              >
-                <span className="font-semibold">{formatExchange(selectedLongEx || "")}</span>
-                <ExternalLink size={16} />
-              </a>
+              {chartData.longRefUrl && (
+                <a
+                  href={chartData.longRefUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="font-semibold">{formatExchange(selectedLongEx || "")}</span>
+                  <ExternalLink size={16} />
+                </a>
+              )}
 
-              <a
-                href={`https://${selectedShortEx?.toLowerCase()}.com`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition"
-              >
-                <span className="font-semibold">{formatExchange(selectedShortEx || "")}</span>
-                <ExternalLink size={16} />
-              </a>
+              {chartData.shortRefUrl && (
+                <a
+                  href={chartData.shortRefUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="font-semibold">{formatExchange(selectedShortEx || "")}</span>
+                  <ExternalLink size={16} />
+                </a>
+              )}
             </div>
           )}
         </div>
