@@ -237,11 +237,29 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
         legend: { display: true, labels: { color: COLORS.text.primary } },
         tooltip: {
           callbacks: {
+            // Get the X coordinate (time) from the first active dataset
+            beforeLabel: (ctx) => "",
             label: (ctx) => {
-              const v = ctx.parsed.y;
-              if (v == null) return "";
-              const name = ctx.dataset.label ?? "";
-              return `${name}: ${Number(v).toFixed(2)}%`;
+              const chartX = ctx.parsed?.x;
+              if (chartX == null) return "";
+
+              // Find all datasets and get values at this X coordinate
+              const chart = ctx.chart;
+              const labels: string[] = [];
+
+              chart.data.datasets.forEach((dataset, datasetIndex) => {
+                // Find the data point with the closest X value in this dataset
+                const data = dataset.data as any[];
+                const matchingPoint = data.find((point) => point?.x === chartX);
+
+                if (matchingPoint && Number.isFinite(matchingPoint.y)) {
+                  const label = dataset.label ?? "";
+                  const value = Number(matchingPoint.y).toFixed(2);
+                  labels.push(`${label}: ${value}%`);
+                }
+              });
+
+              return labels[ctx.datasetIndex] ?? "";
             },
           },
         },
