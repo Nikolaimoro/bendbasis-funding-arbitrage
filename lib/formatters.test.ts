@@ -91,31 +91,15 @@ describe("number formatters", () => {
 
 describe("text formatters", () => {
   describe("normalizeToken", () => {
-    it("should remove numeric multiplier prefixes", () => {
-      expect(normalizeToken("1000PEPE")).toBe("PEPE");
-      expect(normalizeToken("10ETH")).toBe("ETH");
-      expect(normalizeToken("1BTC")).toBe("BTC");
-    });
-
-    it("should remove numeric multiplier suffixes", () => {
-      expect(normalizeToken("pepe1000")).toBe("PEPE");
-      expect(normalizeToken("shib10")).toBe("SHIB");
-      expect(normalizeToken("btc1")).toBe("BTC");
-    });
-
-    it("should remove multipliers from both sides", () => {
-      expect(normalizeToken("1000shib1000")).toBe("SHIB");
-      expect(normalizeToken("10eth10")).toBe("ETH");
-    });
-
-    it("should handle mixed case", () => {
-      expect(normalizeToken("1000Pepe")).toBe("PEPE");
-      expect(normalizeToken("PePe1000")).toBe("PEPE");
+    it("should convert to uppercase", () => {
+      expect(normalizeToken("pepe")).toBe("PEPE");
+      expect(normalizeToken("eth")).toBe("ETH");
+      expect(normalizeToken("BtC")).toBe("BTC");
     });
 
     it("should handle whitespace", () => {
       expect(normalizeToken(" PEPE ")).toBe("PEPE");
-      expect(normalizeToken(" 1000 PEPE ")).toBe("PEPE");
+      expect(normalizeToken(" pepe ")).toBe("PEPE");
     });
 
     it("should handle empty/null", () => {
@@ -123,9 +107,11 @@ describe("text formatters", () => {
       expect(normalizeToken(null as any)).toBe("");
     });
 
-    it("should not affect tokens without multipliers", () => {
-      expect(normalizeToken("BTC")).toBe("BTC");
-      expect(normalizeToken("DOGE")).toBe("DOGE");
+    it("should work with all base_asset values from database", () => {
+      // base_asset in DB already has multipliers removed
+      expect(normalizeToken("PEPE")).toBe("PEPE");
+      expect(normalizeToken("BABYDOGE")).toBe("BABYDOGE");
+      expect(normalizeToken("shib")).toBe("SHIB");
     });
   });
 

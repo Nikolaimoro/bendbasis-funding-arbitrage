@@ -14,7 +14,12 @@ export const EXCHANGE_LABEL: Record<string, string> = {
   okx: "OKX",
 };
 
-export const MULTIPLIERS = ["1000000", "100000", "10000", "1000", "100", "10"] as const;
+/**
+ * Note: Multipliers are no longer needed since base_asset in funding_dashboard_mv
+ * already has multipliers removed (1000000BABYDOGE → BABYDOGE, MBABYDOGE → BABYDOGE)
+ * Keeping for backward compatibility if needed elsewhere
+ */
+export const MULTIPLIERS = [] as const;
 
 export const RPC_FUNCTIONS = {
   FUNDING_CHART: "get_funding_chart",

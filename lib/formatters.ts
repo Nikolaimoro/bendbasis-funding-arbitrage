@@ -90,36 +90,19 @@ export function formatExchange(ex: string): string {
 }
 
 /**
- * Normalizes token symbol by removing multiplier prefixes/suffixes
- * Useful for fuzzy matching and searching (PEPE1000 → PEPE, 1000SHIB → SHIB)
+ * Normalizes token symbol by converting to uppercase
+ * Note: The database (funding_dashboard_mv.base_asset) already has multipliers removed,
+ * so this function only handles case normalization for search matching
  * 
- * Process:
- * 1. Convert to uppercase
- * 2. Remove MULTIPLIERS prefixes (1000, 10, etc.) until none remain
- * 3. Remove MULTIPLIERS suffixes (1000, 10, etc.) until none remain
- * 
- * @param s - Token symbol to normalize (e.g., "1000pepe", "shib1000")
- * @returns Normalized uppercase symbol (e.g., "PEPE", "SHIB")
+ * @param s - Token symbol to normalize (e.g., "pepe", "BABYDOGE", "btc")
+ * @returns Normalized uppercase symbol (e.g., "PEPE", "BABYDOGE", "BTC")
  * @example
- * normalizeToken("1000PEPE")    // "PEPE"
- * normalizeToken("pepe1000")    // "PEPE"
- * normalizeToken("SHIB")        // "SHIB"
- * normalizeToken("1000shib1000") // "SHIB"
+ * normalizeToken("pepe")    // "PEPE"
+ * normalizeToken("BABYDOGE") // "BABYDOGE"
+ * normalizeToken("BtC")      // "BTC"
  */
 export function normalizeToken(s: string): string {
-  let x = (s ?? "").toUpperCase().trim();
-
-  // Remove multiplier prefixes
-  for (const m of MULTIPLIERS) {
-    while (x.startsWith(m)) x = x.slice(m.length);
-  }
-
-  // Remove multiplier suffixes
-  for (const m of MULTIPLIERS) {
-    while (x.endsWith(m)) x = x.slice(0, -m.length);
-  }
-
-  return x;
+  return (s ?? "").toUpperCase().trim();
 }
 
 /**
