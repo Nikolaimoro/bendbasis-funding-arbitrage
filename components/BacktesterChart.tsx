@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Modal } from "@/components/ui/Modal";
+import { ExternalLink } from "lucide-react";
+import { formatExchange } from "@/lib/formatters";
 import { COLORS, CHART_CONFIG } from "@/lib/theme";
 import { RPC_FUNCTIONS } from "@/lib/constants";
 import { ArbChartRow } from "@/lib/types";
+import type { BacktesterChartData } from "@/lib/types/backtester";
 import {
   Chart as ChartJS,
   LineController,
@@ -24,7 +26,6 @@ import "chartjs-adapter-date-fns";
 import { Chart } from "react-chartjs-2";
 import zoomPlugin from "chartjs-plugin-zoom";
 
-/* ---------- register ---------- */
 ChartJS.register(
   LineController,
   BarController,
@@ -39,19 +40,13 @@ ChartJS.register(
   zoomPlugin
 );
 
-/* ================= TYPES ================= */
+interface BacktesterChartProps {
+  chartData: BacktesterChartData | null;
+  selectedLongEx?: string;
+  selectedShortEx?: string;
+}
 
-export type ArbitrageChartProps = {
-  open: boolean;
-  onClose: () => void;
-  baseAsset: string;
-  longMarketId: number;
-  shortMarketId: number;
-  longLabel: string;
-  shortLabel: string;
-};
-
-async function fetchArbChartData(params: {
+async function fetchBacktestData(params: {
   longMarketId: number;
   shortMarketId: number;
   days?: number;
@@ -76,26 +71,26 @@ async function fetchArbChartData(params: {
   return (data ?? []) as ArbChartRow[];
 }
 
-/* ================= COMPONENT ================= */
-
-export default function ArbitrageChart(props: ArbitrageChartProps) {
-  const { open, onClose, baseAsset, longMarketId, shortMarketId, longLabel, shortLabel } = props;
-
+export default function BacktesterChart({ chartData, selectedLongEx, selectedShortEx }: BacktesterChartProps) {
   const [rows, setRows] = useState<ArbChartRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string>("");
+  const [chartKey, setChartKey] = useState(0);
+
+  const isLoaded = !!chartData?.longMarketId && !!chartData?.shortMarketId;
 
   useEffect(() => {
-    if (!open) return;
+    if (!isLoaded) return;
 
     let cancelled = false;
     setLoading(true);
     setErr("");
     setRows([]);
+    setChartKey((prev) => prev + 1);
 
-    fetchArbChartData({
-      longMarketId,
-      shortMarketId,
+    fetchBacktestData({
+      longMarketId: chartData.longMarketId,
+      shortMarketId: chartData.shortMarketId,
       days: 30,
     })
       .then((d) => {
@@ -114,9 +109,9 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
     return () => {
       cancelled = true;
     };
-  }, [open, longMarketId, shortMarketId]);
+  }, [isLoaded, chartData?.longMarketId, chartData?.shortMarketId]);
 
-  const chartData = useMemo(() => {
+  const chartDataObj = useMemo(() => {
     const allPoints = rows
       .filter((r) => r.h)
       .map((r) => ({
@@ -141,7 +136,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
 
     return {
       datasets: [
-        // spread bars (вторичная ось справа)
+        // spread bars (secondary axis right)
         {
           type: "bar" as const,
           label: "Spread (APR %)",
@@ -156,7 +151,6 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
           categoryPercentage: 0.8,
           borderRadius: 4,
           borderSkipped: false,
-
           transitions: {
             hide: {
               animation: {
@@ -174,7 +168,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
         // long line
         {
           type: "line" as const,
-          label: `Long: ${longLabel}`,
+          label: `Long: ${formatExchange(selectedLongEx || "")}`,
           data: unifiedPoints.map((p) => ({ 
             x: p.x, 
             y: Number.isFinite(p.long) ? p.long : null
@@ -189,7 +183,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
         // short line
         {
           type: "line" as const,
-          label: `Short: ${shortLabel}`,
+          label: `Short: ${formatExchange(selectedShortEx || "")}`,
           data: unifiedPoints.map((p) => ({ 
             x: p.x, 
             y: Number.isFinite(p.short) ? p.short : null
@@ -202,9 +196,9 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
         },
       ],
     };
-  }, [rows, longLabel, shortLabel]);
+  }, [rows, selectedLongEx, selectedShortEx]);
 
-    const { minX, maxX } = useMemo(() => {
+  const { minX, maxX } = useMemo(() => {
     const xs = rows
       .map((r) => (r?.h ? new Date(r.h).getTime() : NaN))
       .filter((x) => Number.isFinite(x)) as number[];
@@ -219,51 +213,43 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
 
   const options = useMemo<ChartOptions<"bar">>(
     () => ({
-
-        animation: {
-            duration: 600,        // было ~1000 по умолчанию
-            easing: "linear",
+      animation: false,
+      transitions: {
+        zoom: {
+          animation: {
+            duration: 0,
+          },
         },
-
-            transitions: {
-      zoom: {
-        animation: {
-          duration: 0, // ❗️убираем анимацию при zoom
-        },
-      },
-      pan: {
-        animation: {
-          duration: 0, // ❗️убираем анимацию при pan
+        pan: {
+          animation: {
+            duration: 0,
+          },
         },
       },
-    },
-
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
-
         zoom: {
-  pan: {
-    enabled: true,
-    mode: "x",
-  },
-    zoom: {
-    wheel: { enabled: true },
-    pinch: { enabled: true },
-    mode: "x",
-    animation: false,
-},
-  limits: {
-    x: {
-      min: minX,          // ✅ не уедем левее исходного
-      max: maxX,          // ✅ не уедем правее исходного
-      maxRange: FULL_RANGE, // ✅ нельзя отдалить сильнее, чем исходный full-range
-      minRange: MIN_RANGE,  // ✅ нельзя приблизить сильнее, чем окно < 3 дней
-    },
-  },
-},
-
+          pan: {
+            enabled: true,
+            mode: "x",
+          },
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: "x",
+            animation: false,
+          },
+          limits: {
+            x: {
+              min: minX,
+              max: maxX,
+              maxRange: FULL_RANGE,
+              minRange: MIN_RANGE,
+            },
+          },
+        },
         legend: { display: true, labels: { color: COLORS.text.primary } },
         tooltip: {
           callbacks: {
@@ -311,27 +297,78 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
     [minX, maxX, FULL_RANGE]
   );
 
-  if (!open) return null;
-
-  const title = `${baseAsset} — Long: ${longLabel} / Short: ${shortLabel}`;
-
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={title}
-      loading={loading}
-      error={err}
-      height={CHART_CONFIG.MODAL_HEIGHT}
-    >
-      {rows.length > 0 && (
-        <Chart
-          key={`${longMarketId}-${shortMarketId}`}
-          type="bar"
-          data={chartData as any}
-          options={options}
-        />
+    <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+      <h2 className="text-lg font-semibold mb-4 text-gray-200">Funding Rates</h2>
+
+      {!isLoaded ? (
+        <div className="h-96 flex items-center justify-center text-gray-500 rounded border border-gray-700">
+          <p>Run a backtest to see funding rates as line charts and spread as bars.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Chart Container */}
+          {loading && (
+            <div className="h-96 flex items-center justify-center text-gray-500 rounded border border-gray-700">
+              <p>Loading chart data...</p>
+            </div>
+          )}
+
+          {err && (
+            <div className="h-96 flex items-center justify-center text-red-400 rounded border border-red-800 bg-red-950/20">
+              <p>{err}</p>
+            </div>
+          )}
+
+          {!loading && !err && rows.length === 0 && (
+            <div className="h-96 flex items-center justify-center text-gray-500 rounded border border-gray-700">
+              <p>No data available for this period.</p>
+            </div>
+          )}
+
+          {!loading && !err && rows.length > 0 && (
+            <div className="border border-gray-700 rounded p-4 bg-gray-900 h-96">
+              <Chart
+                key={`chart-${chartData.longMarketId}-${chartData.shortMarketId}-${chartKey}`}
+                type="bar"
+                data={chartDataObj as any}
+                options={options}
+              />
+            </div>
+          )}
+
+          {/* Exchange Buttons */}
+          {!loading && rows.length > 0 && (
+            <div className="flex gap-3 justify-center">
+              {chartData.longRefUrl && (
+                <a
+                  href={chartData.longRefUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="font-semibold">{formatExchange(selectedLongEx || "")}</span>
+                  <ExternalLink size={16} />
+                </a>
+              )}
+
+              {chartData.shortRefUrl && (
+                <a
+                  href={chartData.shortRefUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="font-semibold">{formatExchange(selectedShortEx || "")}</span>
+                  <ExternalLink size={16} />
+                </a>
+              )}
+            </div>
+          )}
+        </div>
       )}
-    </Modal>
+    </div>
   );
 }
