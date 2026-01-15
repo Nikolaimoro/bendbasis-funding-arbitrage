@@ -95,6 +95,28 @@ export default function ArbitrageTable() {
     }
     return Array.from(set).sort();
   }, [rows]);
+  const maxOI = useMemo(
+    () =>
+      rows.reduce(
+        (max, row) =>
+          Math.max(
+            max,
+            row.long_open_interest ?? 0,
+            row.short_open_interest ?? 0
+          ),
+        0
+      ),
+    [rows]
+  );
+  const maxVolume = useMemo(
+    () =>
+      rows.reduce(
+        (max, row) =>
+          Math.max(max, row.long_volume_24h ?? 0, row.short_volume_24h ?? 0),
+        0
+      ),
+    [rows]
+  );
 
   const toggleExchange = (ex: string) => {
     setSelectedExchanges((prev) =>
@@ -198,6 +220,8 @@ export default function ArbitrageTable() {
           onMinOIChange={setMinOI}
           minVolume={minVolume}
           onMinVolumeChange={setMinVolume}
+          maxOI={maxOI}
+          maxVolume={maxVolume}
           filtersOpen={filtersOpen}
           onFiltersOpenChange={setFiltersOpen}
           searchPlaceholder="Search token"

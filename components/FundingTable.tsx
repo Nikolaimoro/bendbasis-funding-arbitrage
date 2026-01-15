@@ -80,6 +80,14 @@ export default function FundingTable({
     () => Array.from(new Set(rows.map(r => r.exchange))).sort(),
     [rows]
   );
+  const maxOI = useMemo(
+    () => rows.reduce((max, row) => Math.max(max, row.open_interest ?? 0), 0),
+    [rows]
+  );
+  const maxVolume = useMemo(
+    () => rows.reduce((max, row) => Math.max(max, row.volume_24h ?? 0), 0),
+    [rows]
+  );
 
   const toggleExchange = (ex: string) => {
     setSelectedExchanges(prev =>
@@ -207,6 +215,8 @@ export default function FundingTable({
           onMinOIChange={setMinOI}
           minVolume={minVolume}
           onMinVolumeChange={setMinVolume}
+          maxOI={maxOI}
+          maxVolume={maxVolume}
           filtersOpen={filtersOpen}
           onFiltersOpenChange={setFiltersOpen}
           searchPlaceholder="Search market"

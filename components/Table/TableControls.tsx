@@ -15,6 +15,8 @@ interface TableControlsProps {
   onMinOIChange: (value: number | "") => void;
   minVolume: number | "";
   onMinVolumeChange: (value: number | "") => void;
+  maxOI: number;
+  maxVolume: number;
   filtersOpen: boolean;
   onFiltersOpenChange: (open: boolean) => void;
   searchPlaceholder: string;
@@ -33,6 +35,8 @@ export default function TableControls({
   onMinOIChange,
   minVolume,
   onMinVolumeChange,
+  maxOI,
+  maxVolume,
   filtersOpen,
   onFiltersOpenChange,
   searchPlaceholder,
@@ -60,6 +64,8 @@ export default function TableControls({
         minVolume={minVolume}
         onMinOIChange={onMinOIChange}
         onMinVolumeChange={onMinVolumeChange}
+        maxOI={maxOI}
+        maxVolume={maxVolume}
         open={filtersOpen}
         onOpenChange={onFiltersOpenChange}
       />
