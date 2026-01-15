@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+<<<<<<< HEAD
 import { Inter, Outfit } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+=======
+import { Analytics } from "@vercel/analytics/next"
+import { Inter, Roboto_Mono } from "next/font/google";
+>>>>>>> 683a2ba (vercel analytics)
 import "./globals.css";
 import AppHeader from "@/components/AppHeader";
 
