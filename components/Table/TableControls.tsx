@@ -3,14 +3,14 @@
 import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import MinimumFilter from "@/components/Table/MinimumFilter";
 
-interface TableControlsProps {
+type TableControlsProps = {
   search: string;
   onSearchChange: (value: string) => void;
   exchanges: string[];
   selectedExchanges: string[];
   onToggleExchange: (exchange: string) => void;
   onResetExchanges: () => void;
-  onResetExchanges,
+};
         onResetExchanges={onResetExchanges}
   onResetExchanges: () => void;
   filterOpen: boolean;
