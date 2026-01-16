@@ -33,7 +33,7 @@ export default function AppHeader() {
   };
 
   return (
-    <div className="flex gap-6 mb-6 border-b border-gray-800 pb-3 items-center">
+    <div className="flex gap-6 mb-6 border-b border-gray-800 pb-3 items-baseline">
       <Link
         href="/funding"
         className="flex items-center"
@@ -45,11 +45,9 @@ export default function AppHeader() {
           className={logoClassName}
         />
       </Link>
-      <div className="flex gap-6">
-        {link("/funding", "Funding")}
-        {link("/arbitrage", "Arbitrage")}
-        {link("/backtester", "Backtester")}
-      </div>
+      {link("/funding", "Funding")}
+      {link("/arbitrage", "Arbitrage")}
+      {link("/backtester", "Backtester")}
     </div>
   );
 }
