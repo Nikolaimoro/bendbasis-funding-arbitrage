@@ -70,14 +70,12 @@ async function fetchFundingChartData(params: {
   }, timeoutMs);
 
   try {
-    const { data, error } = await supabase.rpc(
-      RPC_FUNCTIONS.FUNDING_CHART,
-      {
-        p_market_id: marketId,
-        p_days: days,
-      },
-      { signal: controller.signal }
-    );
+    const request = supabase.rpc(RPC_FUNCTIONS.FUNDING_CHART, {
+      p_market_id: marketId,
+      p_days: days,
+    });
+    request.abortSignal(controller.signal);
+    const { data, error } = await request;
 
     if (error) throw error;
 

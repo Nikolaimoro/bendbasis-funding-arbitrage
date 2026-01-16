@@ -77,15 +77,13 @@ async function fetchArbChartData(params: {
   }, timeoutMs);
 
   try {
-    const { data, error } = await supabase.rpc(
-      RPC_FUNCTIONS.ARB_CHART,
-      {
-        p_long_market_id: longMarketId,
-        p_short_market_id: shortMarketId,
-        p_days: days,
-      },
-      { signal: controller.signal }
-    );
+    const request = supabase.rpc(RPC_FUNCTIONS.ARB_CHART, {
+      p_long_market_id: longMarketId,
+      p_short_market_id: shortMarketId,
+      p_days: days,
+    });
+    request.abortSignal(controller.signal);
+    const { data, error } = await request;
 
     if (error) throw error;
 
