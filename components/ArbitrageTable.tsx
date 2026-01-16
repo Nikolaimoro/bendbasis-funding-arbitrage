@@ -128,6 +128,10 @@ export default function ArbitrageTable() {
     setSelectedExchanges([]);
   };
 
+  const resetExchanges = () => {
+    setSelectedExchanges([]);
+  };
+
   /**
    * Clean up selected exchanges if they're no longer available after data refresh
    * Prevents invalid filter selections when dataset changes
@@ -189,6 +193,7 @@ export default function ArbitrageTable() {
   }, [rows, search, selectedExchanges, sortKey, sortDir, minOI, minVolume]);
 
   /**
+          onResetExchanges={resetExchanges}
    * Pagination: Calculate total pages and slice visible rows
    * - If limit === -1: Show all rows (single page)
    * - Otherwise: Calculate pages based on limit per page

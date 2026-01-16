@@ -10,6 +10,9 @@ interface TableControlsProps {
   selectedExchanges: string[];
   onToggleExchange: (exchange: string) => void;
   onResetExchanges: () => void;
+  onResetExchanges,
+        onResetExchanges={onResetExchanges}
+  onResetExchanges: () => void;
   filterOpen: boolean;
   onFilterOpenChange: (open: boolean) => void;
   minOI: number | "";

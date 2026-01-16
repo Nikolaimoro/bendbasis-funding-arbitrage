@@ -99,6 +99,10 @@ export default function FundingTable({
     setSelectedExchanges([]);
   };
 
+  const resetExchanges = () => {
+    setSelectedExchanges([]);
+  };
+
   const onSort = (key: SortKey) => {
     if (sortKey === key) {
       setSortDir(d => (d === "asc" ? "desc" : "asc"));
@@ -184,6 +188,7 @@ export default function FundingTable({
     limit === -1 ? 1 : Math.max(1, Math.ceil(sortedAll.length / limit));
 
   /**
+          onResetExchanges={resetExchanges}
    * Memoized slice of sorted rows for current page
    * Returns rows for current page offset based on limit
    * Dependencies: [sortedAll, limit, page]

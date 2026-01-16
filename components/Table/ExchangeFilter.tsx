@@ -10,7 +10,27 @@ interface ExchangeFilterProps {
   selectedExchanges: string[];
   onToggleExchange: (exchange: string) => void;
   onResetExchanges: () => void;
-  open: boolean;
+  onResetExchanges,
+  const hasSelections = selectedExchanges.length > 0;
+
+            <div className="flex items-center justify-between gap-2 px-2 py-1">
+              <span className="text-xs font-normal text-gray-300 font-sans">
+                Select Exchanges
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!hasSelections) return;
+                  onResetExchanges();
+                }}
+                className={`text-xs transition ${
+                  hasSelections
+                    ? "text-gray-200 hover:text-white underline"
+                    : "text-gray-500 cursor-default opacity-50"
+                }`}
+              >
+                Reset
+              </button>
   onOpenChange: (open: boolean) => void;
 }
 
