@@ -23,7 +23,7 @@ export default function AppHeader() {
     return (
       <Link
         href={href}
-        className={`text-base text-white font-outfit font-normal ${
+        className={`text-base text-white font-roboto font-normal ${
           active ? "opacity-100" : "opacity-80 hover:opacity-100"
         }`}
       >
@@ -33,7 +33,7 @@ export default function AppHeader() {
   };
 
   return (
-    <div className="flex gap-6 mb-6 border-b border-gray-800 pb-3 items-end">
+    <div className="flex gap-6 mb-6 border-b border-gray-800 pb-3 items-center">
       <Link
         href="/funding"
         className="flex items-center"
@@ -45,9 +45,11 @@ export default function AppHeader() {
           className={logoClassName}
         />
       </Link>
-      {link("/funding", "Funding")}
-      {link("/arbitrage", "Arbitrage")}
-      {link("/backtester", "Backtester")}
+      <div className="flex gap-6">
+        {link("/funding", "Funding")}
+        {link("/arbitrage", "Arbitrage")}
+        {link("/backtester", "Backtester")}
+      </div>
     </div>
   );
 }
