@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Roboto_Mono } from "next/font/google";
+import { Inter, Outfit, Roboto_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import AppHeader from "@/components/AppHeader";
@@ -16,6 +16,12 @@ const robotoMono = Roboto_Mono({
   display: "swap",
 });
 
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap",
+  weight: ["500"],
+});
 
 export const metadata: Metadata = {
   title: "Funding Dashboard",
@@ -33,6 +39,7 @@ export default function RootLayout({
         className={`
           ${inter.variable} 
           ${robotoMono.variable}
+          ${outfit.variable}
           antialiased
           bg-gray-900
           text-gray-200
