@@ -33,16 +33,6 @@ body {
   font-family: var(--font-roboto), system-ui, -apple-system, sans-serif;
 }
 
-.font-roboto-medium {
-  font-family: var(--font-roboto), system-ui, -apple-system, sans-serif;
-  font-weight: 500;
-}
-
-.font-roboto-regular {
-  font-family: var(--font-roboto), system-ui, -apple-system, sans-serif;
-  font-weight: 400;
-}
-
 /* Inter font - for body text (default) */
 .font-inter {
   font-family: var(--font-inter), Helvetica, sans-serif;
