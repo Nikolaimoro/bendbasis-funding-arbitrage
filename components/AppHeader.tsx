@@ -15,18 +15,16 @@ export default function AppHeader() {
       ?.[1] ?? "light";
   const logoClassName =
     logoTone === "light"
-      ? "h-5 w-auto invert"
-      : "h-5 w-auto invert-0";
+      ? "h-[18px] w-auto invert"
+      : "h-[18px] w-auto invert-0";
 
   const link = (href: string, label: string) => {
     const active = path.startsWith(href);
     return (
       <Link
         href={href}
-        className={`text-lg ${
-          active
-            ? "text-blue-400"
-            : "text-gray-400 hover:text-gray-200"
+        className={`text-lg text-white ${
+          active ? "opacity-100" : "opacity-80 hover:opacity-100"
         }`}
       >
         {label}
