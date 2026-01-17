@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
-      <PageHeader title="Funding Rates Dashboard" />
+      <PageHeader title="Crypto Funding Rates Arbitrage Dashboard | bendbasis" />
       <FundingTableClient />
     </main>
   );
