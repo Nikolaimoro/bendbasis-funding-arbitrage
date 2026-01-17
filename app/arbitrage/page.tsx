@@ -2,14 +2,15 @@ import { Metadata } from "next";
 import ArbitrageTable from "@/components/ArbitrageTable";
 import PageHeader from "@/components/ui/PageHeader";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Arbitrage Opportunities | Funding Dashboard",
+  title: "Crypto Funding Arbitrage Opportunities | bendbasis",
   description: "Top cryptocurrency arbitrage opportunities identified over the last 15 days",
   keywords: ["arbitrage", "crypto", "opportunities", "funding rates", "trading"],
   openGraph: {
-    title: "Arbitrage Opportunities | Funding Dashboard",
+    title: "Crypto Funding Arbitrage Opportunities | bendbasis",
     description: "Top cryptocurrency arbitrage opportunities identified over the last 15 days",
     type: "website",
   },

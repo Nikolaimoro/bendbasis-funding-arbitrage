@@ -6,11 +6,11 @@ import { Suspense } from "react";
 export const revalidate = 3600; // revalidate every hour
 
 export const metadata: Metadata = {
-  title: "Funding Arbitrage Backtester | Funding Dashboard",
+  title: "Crypto Funding Arbitrage Backtester | bendbasis",
   description: "Backtest cryptocurrency arbitrage strategies with historical funding rate data",
   keywords: ["backtester", "arbitrage", "crypto", "funding rates", "strategy testing"],
   openGraph: {
-    title: "Funding Arbitrage Backtester | Funding Dashboard",
+    title: "Crypto Funding Arbitrage Backtester | bendbasis",
     description: "Backtest cryptocurrency arbitrage strategies with historical funding rate data",
     type: "website",
   },
