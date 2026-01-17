@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import FundingTableClient from "@/components/FundingTableClient";
 import PageHeader from "@/components/ui/PageHeader";
 
+export const revalidate = 100;
+
 export const metadata: Metadata = {
   title: "Crypto Funding Rates Arbitrage Dashboard | bendbasis",
   description: "Real-time cryptocurrency funding rates and opportunities across major exchanges",
