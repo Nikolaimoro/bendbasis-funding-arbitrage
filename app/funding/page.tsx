@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
+    <main className="min-h-screen bg-[#1B2030] p-6 text-gray-200">
       <PageHeader title="Funding Rates" />
       <FundingTableClient />
     </main>

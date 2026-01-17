@@ -38,7 +38,7 @@ export default function RootLayout({
           ${inter.variable} 
           ${roboto.variable}
           antialiased
-          bg-gray-900
+          bg-[#1B2030]
           text-gray-200
         `}
       >

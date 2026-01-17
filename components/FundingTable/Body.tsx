@@ -79,7 +79,7 @@ export default function FundingTableBody({
               />
             </th>
 
-            <th className="px-4 py-3 text-right font-normal">
+            <th className="px-4 py-3 text-center font-normal">
               <SortableHeader
                 label="Open Interest"
                 active={sortKey === "open_interest"}
@@ -88,7 +88,7 @@ export default function FundingTableBody({
               />
             </th>
 
-            <th className="px-4 py-3 text-right font-normal">
+            <th className="px-4 py-3 text-center font-normal">
               <SortableHeader
                 label="Volume 24h"
                 active={sortKey === "volume_24h"}
@@ -97,7 +97,7 @@ export default function FundingTableBody({
               />
             </th>
 
-            <th className="px-4 py-3 text-right font-normal">
+            <th className="px-4 py-3 text-center font-normal">
               <SortableHeader
                 label="Now"
                 active={sortKey === "funding_rate_now"}
@@ -107,7 +107,7 @@ export default function FundingTableBody({
             </th>
 
             {(["1d", "3d", "7d", "15d", "30d"] as SortKey[]).map(h => (
-              <th key={h} className="px-4 py-3 text-right font-normal">
+              <th key={h} className="px-4 py-3 text-center font-normal">
                 <SortableHeader
                   label={h}
                   active={sortKey === h}
@@ -116,7 +116,7 @@ export default function FundingTableBody({
                 />
               </th>
             ))}
-            <th className="px-4 py-3 w-8 font-normal"></th>
+            <th className="px-4 py-3 w-8 text-center font-normal"></th>
           </tr>
         </thead>
 
@@ -144,23 +144,23 @@ export default function FundingTableBody({
                 )}
               </td>
 
-              <td className="px-4 py-2 text-right text-white font-mono">
+              <td className="px-4 py-2 text-center text-white font-mono">
                 {formatCompactUSDNode(r.open_interest)}
               </td>
 
-              <td className="px-4 py-2 text-right text-white font-mono">
+              <td className="px-4 py-2 text-center text-white font-mono">
                 {formatCompactUSDNode(r.volume_24h)}
               </td>
 
-              <td className="px-4 py-2 text-right text-white font-mono">
+              <td className="px-4 py-2 text-center text-white font-mono">
                 {formatAPRNode(r.funding_rate_now)}
               </td>
 
-              <td className="px-4 py-2 text-right text-white font-mono">{formatAPRNode(r["1d"])}</td>
-              <td className="px-4 py-2 text-right text-white font-mono">{formatAPRNode(r["3d"])}</td>
-              <td className="px-4 py-2 text-right text-white font-mono">{formatAPRNode(r["7d"])}</td>
-              <td className="px-4 py-2 text-right text-white font-mono">{formatAPRNode(r["15d"])}</td>
-              <td className="px-4 py-2 text-right text-white font-mono">{formatAPRNode(r["30d"])}</td>
+              <td className="px-4 py-2 text-center text-white font-mono">{formatAPRNode(r["1d"])}</td>
+              <td className="px-4 py-2 text-center text-white font-mono">{formatAPRNode(r["3d"])}</td>
+              <td className="px-4 py-2 text-center text-white font-mono">{formatAPRNode(r["7d"])}</td>
+              <td className="px-4 py-2 text-center text-white font-mono">{formatAPRNode(r["15d"])}</td>
+              <td className="px-4 py-2 text-center text-white font-mono">{formatAPRNode(r["30d"])}</td>
               <td className="px-4 py-2 text-center">
                 {r.market_id && (
                   <ExternalLink size={16} className="text-gray-500" />

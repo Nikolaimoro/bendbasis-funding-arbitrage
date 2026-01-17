@@ -2,7 +2,7 @@ import SkeletonLoader from "@/components/ui/SkeletonLoader";
 
 export default function Loading() {
   return (
-    <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
+    <main className="min-h-screen bg-[#1B2030] p-6 text-gray-200">
       <div className="mb-6">
         <div className="h-8 w-72 rounded bg-gray-800" />
         <div className="mt-2 h-4 w-96 rounded bg-gray-800" />

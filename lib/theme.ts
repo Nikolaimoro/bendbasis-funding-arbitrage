@@ -11,8 +11,8 @@ export const COLORS = {
     disabled: "#4b5563",     // gray-700
   },
   bg: {
-    page: "#111827",         // gray-900
-    surface: "#1f2937",      // gray-800
+    page: "#1B2030",
+    surface: "#292E40",
     hover: "#374151",        // gray-700
     overlay: "rgba(0,0,0,0.6)",
   },
@@ -46,9 +46,9 @@ export const TAILWIND = {
     active: "text-blue-400",
   },
   bg: {
-    page: "bg-gray-900",
-    surface: "bg-gray-800",
-    dark: "bg-gray-900",
+    page: "bg-[#1B2030]",
+    surface: "bg-[#292E40]",
+    dark: "bg-[#292E40]",
     hover: "hover:bg-gray-700/40",
   },
   border: {

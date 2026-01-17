@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function ArbitragePage() {
   return (
-    <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
+    <main className="min-h-screen bg-[#1B2030] p-6 text-gray-200">
       <PageHeader title="Arbitrage Top Opportunities" description="Last 15 days" />
 
       <ArbitrageTable />

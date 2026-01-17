@@ -150,7 +150,7 @@ export default async function BacktesterPage() {
   const exchanges = await getAllExchanges();
 
   return (
-    <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
+    <main className="min-h-screen bg-[#1B2030] p-6 text-gray-200">
       <h1 className="text-2xl font-roboto font-medium mb-6">
         Funding Arbitrage Backtester
       </h1>
