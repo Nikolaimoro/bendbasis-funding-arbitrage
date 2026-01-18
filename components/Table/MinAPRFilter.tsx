@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { TAILWIND } from "@/lib/theme";
 
@@ -67,8 +68,15 @@ export default function MinAPRFilter({
   const sliderValue = Math.round(
     sliderFromValue(clampedMinAPR, maxAPR) * SLIDER_STEPS
   );
-  const displayValue =
-    typeof minAPR === "number" && minAPR > 0 ? minAPR.toFixed(1) : "";
+  const [inputValue, setInputValue] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof minAPR === "number" && minAPR > 0) {
+      setInputValue(String(minAPR));
+    } else {
+      setInputValue("");
+    }
+  }, [minAPR]);
 
   return (
     <div className="relative">
@@ -107,15 +115,32 @@ export default function MinAPRFilter({
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={displayValue}
+                    value={inputValue}
                     onChange={(e) => {
-                      const val =
-                        e.target.value === "" ? "" : parseFloat(e.target.value);
-                      if (val === "" || !isNaN(val)) {
-                        onMinAPRChange(
-                          val === "" ? "" : clampValue(val, maxAPR)
-                        );
+                      const next = e.target.value;
+                      setInputValue(next);
+                      if (next === "") {
+                        onMinAPRChange("");
+                        return;
                       }
+                      const normalized = next.replace(",", ".");
+                      const val = parseFloat(normalized);
+                      if (!Number.isNaN(val)) {
+                        onMinAPRChange(clampValue(val, maxAPR));
+                      }
+                    }}
+                    onBlur={() => {
+                      if (inputValue === "") return;
+                      const normalized = inputValue.replace(",", ".");
+                      const val = parseFloat(normalized);
+                      if (Number.isNaN(val)) {
+                        setInputValue("");
+                        onMinAPRChange("");
+                        return;
+                      }
+                      const clamped = clampValue(val, maxAPR);
+                      setInputValue(String(clamped));
+                      onMinAPRChange(clamped);
                     }}
                     placeholder="0"
                     className="w-36 bg-[#383d50] border border-transparent rounded px-2 py-1 text-sm text-gray-200 focus:outline-none"

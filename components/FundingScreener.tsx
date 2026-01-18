@@ -435,12 +435,12 @@ export default function FundingScreener() {
 
               <thead>
                 <tr className="border-b border-[#343a4e] bg-[#292e40]">
-                  <th className="px-4 py-2 text-center font-medium text-gray-400 sticky left-0 bg-[#292e40] z-10">
+                  <th className={`${TAILWIND.table.header} text-center sticky left-0 bg-[#292e40] z-10`}>
                     <span className="inline-flex w-full justify-center">
                       <GradientStar filled size={14} />
                     </span>
                   </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-400 sticky left-[48px] bg-[#292e40] z-10">
+                  <th className={`${TAILWIND.table.header} sticky left-[48px] bg-[#292e40] z-10`}>
                     <SortableHeader
                       label="Asset"
                       active={sortKey === "token"}
@@ -448,7 +448,7 @@ export default function FundingScreener() {
                       onClick={() => toggleSort("token")}
                     />
                   </th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-400 sticky left-[138px] bg-[#292e40] z-10">
+                  <th className={`${TAILWIND.table.header} text-right sticky left-[138px] bg-[#292e40] z-10`}>
                     <SortableHeader
                       label="Max Arb"
                       active={sortKey === "max_arb"}
@@ -457,7 +457,7 @@ export default function FundingScreener() {
                     />
                   </th>
                   {filteredColumns.map((col) => (
-                    <th key={col.column_key} className="px-2 py-2 text-right font-medium text-gray-400 whitespace-nowrap">
+                    <th key={col.column_key} className={`${TAILWIND.table.header} text-right whitespace-nowrap`}>
                       <SortableHeader
                         label={formatColumnHeader(col, exchangesWithMultipleQuotes)}
                         active={sortKey === col.column_key}
