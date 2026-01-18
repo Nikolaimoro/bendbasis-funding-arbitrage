@@ -119,6 +119,7 @@ export default function ArbitrageTableBody({
                 active={sortKey === "opportunity_apr"}
                 dir={sortDir}
                 onClick={() => onSort("opportunity_apr")}
+                centered
               />
             </th>
 
@@ -128,12 +129,12 @@ export default function ArbitrageTableBody({
               </span>
             </th>
             <th className={`${TAILWIND.table.header} text-center`}>
-              <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
+              <span className="inline-flex items-center gap-1 justify-center w-full select-none text-gray-400">
                 Open Interest
               </span>
             </th>
             <th className={`${TAILWIND.table.header} text-center`}>
-              <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
+              <span className="inline-flex items-center gap-1 justify-center w-full select-none text-gray-400">
                 Volume 24h
               </span>
             </th>
@@ -144,6 +145,7 @@ export default function ArbitrageTableBody({
                 active={sortKey === "stability"}
                 dir={sortDir}
                 onClick={() => onSort("stability")}
+                centered
               />
             </th>
 

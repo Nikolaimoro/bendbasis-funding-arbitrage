@@ -29,10 +29,10 @@ export default function AppHeader() {
           "hover:bg-[#383d50]",
           "after:absolute after:left-[-4px] after:right-[-4px] after:h-[2px]",
           "after:bg-gradient-to-r after:from-[#9E5DEE] after:to-[#FA814D]",
-          "after:-bottom-[10px] after:transition-transform after:duration-400",
+          "after:-bottom-[10px]",
           active
-            ? "after:scale-x-100 after:transition-none"
-            : "after:scale-x-0 after:origin-right group-hover:after:origin-left group-hover:after:scale-x-100",
+            ? "after:scale-x-100"
+            : "after:scale-x-0 after:origin-left after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100",
         ].join(" ")}
       >
         {label}
