@@ -58,14 +58,14 @@ body {
 @keyframes tooltip-in {
   from {
     opacity: 0;
-    transform: translateY(-4px) translateX(-4px);
+    transform: translate(-100%, -50%) translateY(-8px);
   }
   to {
     opacity: 1;
-    transform: translateY(-50%) translateX(-100%);
+    transform: translate(-100%, -50%) translateY(0);
   }
 }
 
 .animate-tooltip {
-  animation: tooltip-in 0.16s ease-out forwards;
+  animation: tooltip-in 0.2s ease-out forwards;
 }

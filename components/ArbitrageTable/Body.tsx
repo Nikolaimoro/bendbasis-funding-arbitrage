@@ -99,7 +99,7 @@ function StabilityInfo() {
             style={{ top: tooltipPos.top, left: tooltipPos.left }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className="fixed z-[9999] -translate-y-1/2 -translate-x-full w-80 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed text-left animate-tooltip pointer-events-auto"
+            className="fixed z-[9999] w-80 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed text-left animate-tooltip pointer-events-auto"
           >
             <p className="text-left">Indicates how consistent and reliable the funding spread has been over time.</p>
             <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#343a4e]" />
@@ -241,10 +241,17 @@ export default function ArbitrageTableBody({
             </th>
 
             <th className={`${TAILWIND.table.header} text-center`}>
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => onSort("stability")}
-                className="inline-flex items-center justify-center gap-1 w-full select-none"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSort("stability");
+                  }
+                }}
+                className="inline-flex items-center justify-center gap-1 w-full select-none cursor-pointer"
               >
                 <span className="text-gray-400">Stability</span>
                 <StabilityInfo />
@@ -260,7 +267,7 @@ export default function ArbitrageTableBody({
                     ▼
                   </span>
                 </span>
-              </button>
+              </div>
             </th>
 
             <th className={`${TAILWIND.table.header} text-center`}></th>
