@@ -56,7 +56,7 @@ export const TAILWIND = {
     hover: "hover:border-white",
   },
   table: {
-    header: "px-4 pt-6 pb-2 text-left font-normal align-bottom",
+    header: "px-4 pt-6 pb-2 text-left font-medium align-bottom",
     cell: "px-4 py-4",
     row: "border-b border-[#343a4e]",
   },
