@@ -260,7 +260,7 @@ export default function ArbitrageTableBody({
                     onSort("stability");
                   }
                 }}
-                className="inline-flex items-center justify-center gap-1 w-full select-none cursor-pointer px-1 py-0.5"
+                className="inline-flex items-center justify-center gap-1 w-full select-none cursor-pointer py-0.5"
               >
                 <span className="text-gray-400">Stability</span>
                 <StabilityInfo />
@@ -279,7 +279,7 @@ export default function ArbitrageTableBody({
               </div>
             </th>
 
-            <th className={`${TAILWIND.table.header} text-right pr-4`}></th>
+            <th className={`${TAILWIND.table.header} text-center`}></th>
           </tr>
         </thead>
 
@@ -334,8 +334,8 @@ export default function ArbitrageTableBody({
                   </span>
                 </td>
 
-                <td className="px-4 py-4 text-right pr-4 text-gray-500">
-                  <span className="inline-flex w-full justify-end">
+                <td className="px-4 py-4 text-center text-gray-500">
+                  <span className="inline-flex w-full justify-center">
                     <ExternalLink size={16} />
                   </span>
                 </td>
