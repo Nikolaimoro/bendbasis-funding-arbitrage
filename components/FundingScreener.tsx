@@ -89,7 +89,7 @@ export default function FundingScreener() {
       const { data, error } = await supabase
         .from("exchange_columns")
         .select("*")
-        .order("sort_order", { ascending: true });
+        .order("column_key", { ascending: true });
 
       if (error) throw new Error(error.message);
       return data as ExchangeColumn[];
@@ -308,7 +308,7 @@ export default function FundingScreener() {
               <col className="w-[120px]" /> {/* Asset */}
               <col className="w-[100px]" /> {/* Max Arb */}
               {exchangeColumns.map((col) => (
-                <col key={col.id} className="w-[120px]" />
+                <col key={col.column_key} className="w-[120px]" />
               ))}
             </colgroup>
 
@@ -327,8 +327,8 @@ export default function FundingScreener() {
                   Max Arb{arrow("max_arb")}
                 </th>
                 {exchangeColumns.map((col) => (
-                  <th key={col.id} className={TAILWIND.table.header}>
-                    {col.display_name}
+                  <th key={col.column_key} className={TAILWIND.table.header}>
+                    {col.column_key}
                   </th>
                 ))}
               </tr>
@@ -390,7 +390,7 @@ export default function FundingScreener() {
 
                         return (
                           <td
-                            key={col.id}
+                            key={col.column_key}
                             className={`${TAILWIND.table.cell} font-mono tabular-nums`}
                           >
                             {markets.length === 0 ? (

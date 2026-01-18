@@ -85,10 +85,9 @@ export type ModalProps = {
 /* ================= FUNDING SCREENER TYPES ================= */
 
 export type ExchangeColumn = {
-  id: number;
   column_key: string;
-  display_name: string;
-  sort_order: number;
+  exchange: string;
+  quote_asset: string;
 };
 
 export type FundingMatrixMarket = {
