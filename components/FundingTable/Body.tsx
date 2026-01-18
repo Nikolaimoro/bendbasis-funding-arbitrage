@@ -71,7 +71,7 @@ export default function FundingTableBody({
       <table className="w-full text-base">
         <thead className="sticky top-0 text-[13px] bg-[#292e40]">
           <tr className="border-b border-[#343a4e]">
-            <th className={TAILWIND.table.header}>
+            <th className={TAILWIND.table.headerFirst}>
               <SortableHeader
                 label="Exchange"
                 active={sortKey === "exchange"}
@@ -140,7 +140,7 @@ export default function FundingTableBody({
               onClick={() => onRowClick(r)}
               className={`${TAILWIND.table.row} ${TAILWIND.bg.hover} cursor-pointer transition-colors`}
             >
-              <td className="px-4 py-4 text-white font-mono">{formatExchange(r.exchange)}</td>
+              <td className={`${TAILWIND.table.cellFirst} text-white font-mono`}>{formatExchange(r.exchange)}</td>
               <td className="px-4 py-4 font-mono font-semibold text-white">
                 {r.ref_url ? (
                   <a

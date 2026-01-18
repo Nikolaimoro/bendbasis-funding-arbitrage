@@ -107,7 +107,7 @@ export default function ArbitrageTableBody({
       <table className="w-full text-base">
         <thead className="sticky top-0 text-[13px] bg-[#292e40]">
           <tr className="border-b border-[#343a4e]">
-            <th className={TAILWIND.table.header}>
+            <th className={TAILWIND.table.headerFirst}>
               <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
                 Token
               </span>
@@ -161,7 +161,7 @@ export default function ArbitrageTableBody({
                 onClick={() => onRowClick?.(r)}
                 className={`${TAILWIND.table.row} ${TAILWIND.bg.hover} cursor-pointer transition-colors`}
               >
-                <td className="px-4 py-4 font-mono font-semibold text-white">
+                <td className={`${TAILWIND.table.cellFirst} font-mono font-semibold text-white`}>
                   {r.base_asset}
                 </td>
 
