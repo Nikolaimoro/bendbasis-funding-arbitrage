@@ -205,7 +205,16 @@ export default function ArbitrageTableBody({
 
   return (
     <div className="overflow-auto">
-      <table className="w-full text-base">
+      <table className="w-full text-base table-fixed min-w-[840px]">
+        <colgroup>
+          <col className="w-[12%] min-w-[110px]" />
+          <col className="w-[10%] min-w-[80px]" />
+          <col className="w-[28%] min-w-[220px]" />
+          <col className="w-[14%] min-w-[120px]" />
+          <col className="w-[14%] min-w-[120px]" />
+          <col className="w-[12%] min-w-[100px]" />
+          <col className="w-[10%] min-w-[60px]" />
+        </colgroup>
         <thead className="sticky top-0 z-10 text-[13px] bg-[#292e40]">
           <tr className="border-b border-[#343a4e]">
             <th className={TAILWIND.table.header}>

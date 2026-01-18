@@ -66,7 +66,20 @@ export default function FundingTableBody({
 
   return (
     <div className="overflow-auto">
-      <table className="w-full text-base">
+      <table className="w-full text-base table-fixed min-w-[980px]">
+        <colgroup>
+          <col className="w-[12%] min-w-[110px]" />
+          <col className="w-[18%] min-w-[170px]" />
+          <col className="w-[10%] min-w-[120px]" />
+          <col className="w-[10%] min-w-[120px]" />
+          <col className="w-[6%] min-w-[70px]" />
+          <col className="w-[6%] min-w-[70px]" />
+          <col className="w-[6%] min-w-[70px]" />
+          <col className="w-[6%] min-w-[70px]" />
+          <col className="w-[6%] min-w-[70px]" />
+          <col className="w-[6%] min-w-[70px]" />
+          <col className="w-[4%] min-w-[48px]" />
+        </colgroup>
         <thead className="sticky top-0 text-[13px] bg-[#292e40]">
           <tr className="border-b border-[#343a4e]">
             <th className={TAILWIND.table.header}>
