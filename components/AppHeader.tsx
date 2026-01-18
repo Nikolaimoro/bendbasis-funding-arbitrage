@@ -7,19 +7,16 @@ import { useEffect, useState } from "react";
 export default function AppHeader() {
   const path = usePathname();
   const [isVisible, setIsVisible] = useState(true);
-  const [isSticky, setIsSticky] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      // After 50px, header becomes sticky
+      // After 50px scroll, start hide/show behavior
       if (currentScrollY > 50) {
-        setIsSticky(true);
-        
-        // Scrolling down - hide header
-        if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide header immediately
+        if (currentScrollY > lastScrollY) {
           setIsVisible(false);
         }
         // Scrolling up - show header
@@ -27,7 +24,7 @@ export default function AppHeader() {
           setIsVisible(true);
         }
       } else {
-        setIsSticky(false);
+        // Within first 50px - always visible
         setIsVisible(true);
       }
       
@@ -61,6 +58,8 @@ export default function AppHeader() {
           "px-2 py-2 rounded-md transition-colors duration-200",
           "hover:bg-[#383d50]",
           isFirst ? "ml-4" : "",
+          // For non-active links, change origin on hover for left-to-right disappear
+          !active ? "[&:not(:hover)>span]:origin-right [&:hover>span]:origin-left" : "",
         ].join(" ")}
       >
         {label}
@@ -68,8 +67,8 @@ export default function AppHeader() {
           className={[
             "absolute left-0 right-0 h-[2px] bottom-[-9px]",
             "bg-gradient-to-r from-[#9E5DEE] to-[#FA814D]",
-            "transition-transform duration-300 ease-out origin-left",
-            active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
+            "transition-transform duration-300 ease-out",
+            active ? "scale-x-100 origin-left" : "scale-x-0 group-hover:scale-x-100",
           ].join(" ")}
         />
       </Link>
@@ -78,15 +77,16 @@ export default function AppHeader() {
 
   return (
     <>
-      {/* Spacer for when header is fixed */}
-      {isSticky && <div className="h-[52px]" />}
+      {/* Spacer for fixed header */}
+      <div className="h-[52px]" />
       
       <div
         className={[
-          "flex gap-2 border-b border-[#343a4e] py-2 items-center pl-4 bg-[#1c202f] z-50",
-          isSticky ? "fixed top-0 left-0 right-0 max-w-[1600px] mx-auto px-6" : "",
+          "fixed top-0 left-0 right-0 z-50",
+          "flex gap-2 border-b border-[#343a4e] py-2 items-center pl-4 bg-[#1c202f]",
+          "max-w-[1600px] mx-auto px-6",
           "transition-transform duration-300",
-          isSticky && !isVisible ? "-translate-y-full" : "translate-y-0",
+          !isVisible ? "-translate-y-full" : "translate-y-0",
         ].join(" ")}
       >
         <Link
