@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, ChevronDown, Search, X, Star } from "lucide-react";
+import { RefreshCw, ChevronDown, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { normalizeToken, formatAPR, formatExchange } from "@/lib/formatters";
 import { getRate, calculateMaxArb } from "@/lib/funding";
@@ -38,6 +38,24 @@ function formatColumnHeader(col: ExchangeColumn, exchangesWithMultipleQuotes: Se
     return `${name} (${col.quote_asset})`;
   }
   return name;
+}
+
+function GradientStar({ filled = false, size = 14 }: { filled?: boolean; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={filled ? "url(#navUnderlineGradient)" : "none"}
+      stroke="url(#navUnderlineGradient)"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+    </svg>
+  );
 }
 
 /* ================= COMPONENT ================= */
@@ -316,6 +334,14 @@ export default function FundingScreener() {
   return (
     <ErrorBoundary>
       <section className="py-4">
+        <svg width="0" height="0" className="absolute">
+          <defs>
+            <linearGradient id="navUnderlineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#9E5DEE" />
+              <stop offset="100%" stopColor="#FA814D" />
+            </linearGradient>
+          </defs>
+        </svg>
         {/* ---------- table wrapper ---------- */}
         <div className="rounded-2xl border border-[#343a4e] bg-[#292e40] overflow-hidden">
           {/* ---------- header row with controls ---------- */}
@@ -411,7 +437,7 @@ export default function FundingScreener() {
                 <tr className="border-b border-[#343a4e] bg-[#292e40]">
                   <th className="px-4 py-2 text-center font-medium text-gray-400 sticky left-0 bg-[#292e40] z-10">
                     <span className="inline-flex w-full justify-center">
-                      <Star size={14} className="text-yellow-300 fill-yellow-300" />
+                      <GradientStar filled size={14} />
                     </span>
                   </th>
                   <th className="px-4 py-2 text-left font-medium text-gray-400 sticky left-[48px] bg-[#292e40] z-10">
@@ -483,13 +509,10 @@ export default function FundingScreener() {
                               toggleFavorite(row.token);
                             }}
                             disabled={!row.token}
-                            className="inline-flex items-center justify-center text-yellow-300 disabled:text-gray-600"
+                            className="inline-flex items-center justify-center disabled:opacity-40"
                             aria-label={favoriteSet.has(row.token ?? "") ? "Remove from favorites" : "Add to favorites"}
                           >
-                            <Star
-                              size={14}
-                              className={favoriteSet.has(row.token ?? "") ? "fill-yellow-300" : "fill-transparent"}
-                            />
+                            <GradientStar filled={favoriteSet.has(row.token ?? "")} size={14} />
                           </button>
                         </td>
                         {/* Asset - sticky */}
