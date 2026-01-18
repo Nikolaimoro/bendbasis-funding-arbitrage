@@ -24,7 +24,7 @@ export default function AppHeader() {
       <Link
         href={href}
         className={[
-          "group relative text-base text-white font-roboto font-normal",
+          "group relative text-base text-white font-roboto font-normal text-white",
           "px-2 py-1 rounded-md transition-colors duration-200",
           "hover:bg-[#383d50] hover:opacity-100",
           active ? "opacity-100" : "opacity-80",
