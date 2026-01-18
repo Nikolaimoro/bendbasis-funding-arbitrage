@@ -28,23 +28,30 @@ const MAX_ATTEMPTS = 2;
 /* ================= HELPERS ================= */
 
 /**
+ * Get the rate for a specific time window from a market
+ */
+function getRate(market: FundingMatrixMarket | null | undefined, timeWindow: TimeWindow): number | null {
+  if (!market) return null;
+  return market[timeWindow] ?? null;
+}
+
+/**
  * Calculate max arbitrage spread for a token row
  * Max rate - Min rate = spread
  */
 function calculateMaxArb(
-  markets: Record<string, FundingMatrixMarket[]> | null | undefined,
+  markets: Record<string, FundingMatrixMarket> | null | undefined,
   timeWindow: TimeWindow
 ): number | null {
   if (!markets) return null;
 
   const rates: number[] = [];
 
-  for (const exchangeMarkets of Object.values(markets)) {
-    if (!Array.isArray(exchangeMarkets)) continue;
-    for (const market of exchangeMarkets) {
-      if (market?.rate !== null && market?.rate !== undefined) {
-        rates.push(market.rate);
-      }
+  for (const market of Object.values(markets)) {
+    if (!market) continue;
+    const rate = getRate(market, timeWindow);
+    if (rate !== null) {
+      rates.push(rate);
     }
   }
 
@@ -90,10 +97,8 @@ export default function FundingScreener() {
     };
 
     const fetchMatrixData = async (): Promise<FundingMatrixRow[]> => {
-      const tableName =
-        timeWindow === "now"
-          ? "token_funding_matrix_mv"
-          : `token_funding_matrix_${timeWindow}_mv`;
+      // Single table for all time windows
+      const tableName = "token_funding_matrix_mv";
 
       let allRows: FundingMatrixRow[] = [];
       let from = 0;
@@ -155,7 +160,7 @@ export default function FundingScreener() {
     return () => {
       cancelled = true;
     };
-  }, [retryToken, timeWindow]);
+  }, [retryToken]); // timeWindow no longer needed - all windows in one table
 
   /* ---------- handlers ---------- */
   const resetPage = () => setPage(0);
@@ -394,28 +399,24 @@ export default function FundingScreener() {
 
                       {/* Exchange columns */}
                       {exchangeColumns.map((col) => {
-                        const rawMarkets = row.markets?.[col.column_key];
-                        const markets = Array.isArray(rawMarkets) ? rawMarkets : [];
+                        const market = row.markets?.[col.column_key];
                         // Show quote if this exchange has multiple entries in exchange_columns
                         const showQuote = exchangesWithMultipleQuotes.has(col.exchange);
+                        const rate = getRate(market, timeWindow);
 
                         return (
                           <td
                             key={col.column_key}
                             className={`${TAILWIND.table.cell} font-mono tabular-nums`}
                           >
-                            {markets.length === 0 ? (
+                            {!market ? (
                               <span className="text-gray-600">–</span>
                             ) : (
-                              <div className="flex flex-col gap-0.5">
-                                {markets.map((market) => (
-                                  <RateCell
-                                    key={market.market_id}
-                                    market={market}
-                                    showQuote={showQuote}
-                                  />
-                                ))}
-                              </div>
+                              <RateCell
+                                market={market}
+                                rate={rate}
+                                showQuote={showQuote}
+                              />
                             )}
                           </td>
                         );
@@ -453,20 +454,21 @@ export default function FundingScreener() {
 
 function RateCell({
   market,
+  rate,
   showQuote,
 }: {
   market: FundingMatrixMarket;
+  rate: number | null;
   showQuote: boolean;
 }) {
-  const rateText =
-    market.rate !== null ? formatAPR(market.rate) : "–";
+  const rateText = rate !== null ? formatAPR(rate) : "–";
 
   const rateColor =
-    market.rate === null
+    rate === null
       ? "text-gray-600"
-      : market.rate > 0
+      : rate > 0
       ? "text-emerald-400"
-      : market.rate < 0
+      : rate < 0
       ? "text-red-400"
       : "text-gray-400";
 

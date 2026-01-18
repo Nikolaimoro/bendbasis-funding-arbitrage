@@ -92,14 +92,22 @@ export type ExchangeColumn = {
 
 export type FundingMatrixMarket = {
   market_id: number;
-  quote: string | null;
-  rate: number | null;
+  exchange: string;
+  quote: string;
   ref_url: string | null;
+  volume_24h: number | null;
+  open_interest: number | null;
+  now: number | null;
+  "1d": number | null;
+  "3d": number | null;
+  "7d": number | null;
+  "15d": number | null;
+  "30d": number | null;
 };
 
 export type FundingMatrixRow = {
   token: string;
-  markets: Record<string, FundingMatrixMarket[]> | null; // exchange_key -> markets
+  markets: Record<string, FundingMatrixMarket> | null; // exchange_key -> market data
 };
 
 export type TimeWindow = "now" | "1d" | "3d" | "7d" | "15d" | "30d";
