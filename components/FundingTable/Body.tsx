@@ -90,6 +90,7 @@ export default function FundingTableBody({
                 active={sortKey === "open_interest"}
                 dir={sortDir}
                 onClick={() => onSort("open_interest")}
+                centered
               />
             </th>
 
@@ -99,6 +100,7 @@ export default function FundingTableBody({
                 active={sortKey === "volume_24h"}
                 dir={sortDir}
                 onClick={() => onSort("volume_24h")}
+                centered
               />
             </th>
 
@@ -108,6 +110,7 @@ export default function FundingTableBody({
                 active={sortKey === "funding_rate_now"}
                 dir={sortDir}
                 onClick={() => onSort("funding_rate_now")}
+                centered
               />
             </th>
 
@@ -118,6 +121,7 @@ export default function FundingTableBody({
                   active={sortKey === h}
                   dir={sortDir}
                   onClick={() => onSort(h)}
+                  centered
                 />
               </th>
             ))}

@@ -8,6 +8,7 @@ interface SortableHeaderProps {
   active: boolean;
   dir: "asc" | "desc";
   onClick: () => void;
+  centered?: boolean;
 }
 
 export default function SortableHeader({
@@ -15,6 +16,7 @@ export default function SortableHeader({
   active,
   dir,
   onClick,
+  centered = false,
 }: SortableHeaderProps) {
   const upActive = active && dir === "asc";
   const downActive = active && dir === "desc";
@@ -22,7 +24,7 @@ export default function SortableHeader({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1 text-left select-none"
+      className={`inline-flex items-center gap-1 select-none ${centered ? "justify-center w-full" : "text-left"}`}
     >
       <span className="text-gray-400">{label}</span>
       <span className="flex flex-col items-center leading-[0.7]">
