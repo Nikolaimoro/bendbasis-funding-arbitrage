@@ -103,7 +103,11 @@ export default function ArbitrageTableBody({
       <table className="w-full text-base">
         <thead className="sticky top-0 text-[13px] bg-[#292e40]">
           <tr className="border-b border-[#343a4e]">
-            <th className={TAILWIND.table.header}>Token</th>
+            <th className={TAILWIND.table.header}>
+              <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
+                Token
+              </span>
+            </th>
 
             <th className={`${TAILWIND.table.header} text-center`}>
               <SortableHeader
@@ -114,9 +118,21 @@ export default function ArbitrageTableBody({
               />
             </th>
 
-            <th className={TAILWIND.table.header}>Long / Short</th>
-            <th className={`${TAILWIND.table.header} text-center`}>Open Interest</th>
-            <th className={`${TAILWIND.table.header} text-center`}>Volume 24h</th>
+            <th className={TAILWIND.table.header}>
+              <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
+                Long / Short
+              </span>
+            </th>
+            <th className={`${TAILWIND.table.header} text-center`}>
+              <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
+                Open Interest
+              </span>
+            </th>
+            <th className={`${TAILWIND.table.header} text-center`}>
+              <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
+                Volume 24h
+              </span>
+            </th>
 
             <th className={`${TAILWIND.table.header} text-center`}>
               <SortableHeader
