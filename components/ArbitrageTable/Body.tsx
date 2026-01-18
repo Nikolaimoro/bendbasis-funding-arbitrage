@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ExternalLink, Info } from "lucide-react";
 import { formatCompactUSD, formatAPR, formatExchange } from "@/lib/formatters";
 import { TAILWIND } from "@/lib/theme";
@@ -43,28 +43,50 @@ function StabilityBar({ value }: { value: number | null }) {
  */
 function StabilityInfo() {
   const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!showTooltip) return;
+    
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        tooltipRef.current && 
+        !tooltipRef.current.contains(target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(target)
+      ) {
+        setShowTooltip(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showTooltip]);
   
   return (
     <div className="relative inline-flex items-center">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setShowTooltip(!showTooltip)}
-        onBlur={() => setTimeout(() => setShowTooltip(false), 150)}
         className="text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
         aria-label="Stability info"
       >
         <Info size={14} />
       </button>
       <div 
-        className={`absolute z-50 right-full top-1/2 -translate-y-1/2 mr-2 w-64 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-sm text-gray-300 leading-relaxed transition-all duration-200 ${
+        ref={tooltipRef}
+        className={`absolute z-50 right-full top-1/2 -translate-y-1/2 mr-2 w-72 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed transition-all duration-200 ${
           showTooltip 
             ? "opacity-100 translate-x-0 pointer-events-auto" 
             : "opacity-0 translate-x-2 pointer-events-none"
         }`}
       >
-        <div className="text-gray-200 font-medium mb-1">Stability</div>
-        Indicates how consistent and reliable the funding spread has been over time.
-        Higher stability means more predictable funding income.
+        <div className="text-gray-200 font-medium mb-1 text-xs">Stability</div>
+        <p className="mb-1">Indicates how consistent and reliable the funding spread has been over time.</p>
+        <p>Higher stability means more predictable funding income.</p>
         <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#343a4e]" />
       </div>
     </div>

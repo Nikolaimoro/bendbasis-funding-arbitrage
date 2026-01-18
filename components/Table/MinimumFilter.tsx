@@ -120,7 +120,7 @@ export default function MinimumFilter({
             className="fixed inset-0 z-10"
             onClick={() => onOpenChange(false)}
           />
-          <div className="absolute z-20 mt-2 bg-[#292e40] border border-[#343a4e] rounded w-56 p-3 shadow-lg space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute z-20 mt-2 bg-[#292e40] border border-[#343a4e] rounded w-56 p-3 shadow-lg space-y-3 animate-dropdown">
             <div>
               <label className="block text-sm text-gray-300 mb-1">
                 Min Open Interest
