@@ -2,6 +2,7 @@
 
 import { ExternalLink } from "lucide-react";
 import { formatCompactUSD, formatAPR, formatExchange } from "@/lib/formatters";
+import { TAILWIND } from "@/lib/theme";
 import { ArbRow } from "@/lib/types";
 import SortableHeader from "@/components/ui/SortableHeader";
 
@@ -102,9 +103,9 @@ export default function ArbitrageTableBody({
       <table className="w-full text-base">
         <thead className="bg-gray-900 sticky top-0 text-[13px]">
           <tr className="border-b border-gray-700">
-            <th className="px-4 py-3 text-left text-gray-400 font-normal">Token</th>
+            <th className={`${TAILWIND.table.header} text-left text-gray-400`}>Token</th>
 
-            <th className="px-4 py-3 text-center font-normal">
+            <th className={`${TAILWIND.table.header} text-center`}>
               <SortableHeader
                 label="APR"
                 active={sortKey === "opportunity_apr"}
@@ -113,11 +114,11 @@ export default function ArbitrageTableBody({
               />
             </th>
 
-            <th className="px-4 py-3 text-left text-gray-400 font-normal">Long / Short</th>
-            <th className="px-4 py-3 text-left text-gray-400 font-normal">Open Interest</th>
-            <th className="px-4 py-3 text-left text-gray-400 font-normal">Volume 24h</th>
+            <th className={`${TAILWIND.table.header} text-left text-gray-400`}>Long / Short</th>
+            <th className={`${TAILWIND.table.header} text-center text-gray-400`}>Open Interest</th>
+            <th className={`${TAILWIND.table.header} text-center text-gray-400`}>Volume 24h</th>
 
-            <th className="px-4 py-3 text-center font-normal">
+            <th className={`${TAILWIND.table.header} text-center`}>
               <SortableHeader
                 label="Stability"
                 active={sortKey === "stability"}
@@ -126,7 +127,7 @@ export default function ArbitrageTableBody({
               />
             </th>
 
-            <th className="px-4 py-3 text-center font-normal"></th>
+            <th className={`${TAILWIND.table.header} text-center`}></th>
           </tr>
         </thead>
 
@@ -138,15 +139,15 @@ export default function ArbitrageTableBody({
                 onClick={() => onRowClick?.(r)}
                 className="border-b border-gray-800 hover:bg-gray-700/40 cursor-pointer"
               >
-                <td className="px-4 py-2 font-mono font-semibold text-white">
+                <td className="px-4 py-4 font-mono font-semibold text-white">
                   {r.base_asset}
                 </td>
 
-                <td className="px-4 py-2 text-center">
+                <td className="px-4 py-4 text-center">
                   {formatAPRNode(r.opportunity_apr)}
                 </td>
 
-                <td className="px-4 py-2 flex gap-2">
+                <td className="px-4 py-4 flex gap-2">
                   <LongButton
                     href={r.long_url}
                     label={`${formatExchange(r.long_exchange)}${r.long_quote ? ` (${r.long_quote})` : ""}`}
@@ -157,7 +158,7 @@ export default function ArbitrageTableBody({
                   />
                 </td>
 
-                <td className="px-4 py-2 text-center">
+                <td className="px-4 py-4 text-center">
                   <span className="text-white font-mono tabular-nums">
                     {formatCompactUSD(r.long_open_interest)}
                   </span>
@@ -167,7 +168,7 @@ export default function ArbitrageTableBody({
                   </span>
                 </td>
 
-                <td className="px-4 py-2 text-center">
+                <td className="px-4 py-4 text-center">
                   <span className="text-white font-mono tabular-nums">
                     {formatCompactUSD(r.long_volume_24h)}
                   </span>
@@ -177,7 +178,7 @@ export default function ArbitrageTableBody({
                   </span>
                 </td>
 
-                <td className={`px-4 py-2 text-center font-mono ${
+                <td className={`px-4 py-4 text-center font-mono ${
                   r.stability == null ? "text-gray-500" :
                   r.stability >= 0.8 ? "text-emerald-400" :
                   r.stability >= 0.5 ? "text-orange-400" :
@@ -186,7 +187,7 @@ export default function ArbitrageTableBody({
                   {r.stability?.toFixed(2)}
                 </td>
 
-                <td className="px-4 py-2 text-center text-gray-500">
+                <td className="px-4 py-4 text-center text-gray-500">
                   <ExternalLink size={16} />
                 </td>
               </tr>
