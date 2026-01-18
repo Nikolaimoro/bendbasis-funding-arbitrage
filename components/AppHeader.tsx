@@ -23,9 +23,17 @@ export default function AppHeader() {
     return (
       <Link
         href={href}
-        className={`text-base text-white font-roboto font-normal ${
-          active ? "opacity-100" : "opacity-80 hover:opacity-100"
-        }`}
+        className={[
+          "group relative text-base text-white font-roboto font-normal",
+          "px-2 py-1 rounded-md transition-colors duration-200",
+          "hover:bg-[#383d50]",
+          "after:absolute after:left-[-4px] after:right-[-4px] after:h-[2px]",
+          "after:bg-gradient-to-r after:from-[#9E5DEE] after:to-[#FA814D]",
+          "after:-bottom-[10px] after:transition-transform after:duration-400",
+          active
+            ? "after:scale-x-100 after:transition-none"
+            : "after:scale-x-0 after:origin-right group-hover:after:origin-left group-hover:after:scale-x-100",
+        ].join(" ")}
       >
         {label}
       </Link>
@@ -33,7 +41,7 @@ export default function AppHeader() {
   };
 
   return (
-    <div className="flex gap-6 mb-6 border-b border-gray-800 pb-3 items-baseline pl-6">
+    <div className="flex gap-4 mb-6 border-b border-[#343a4e] pb-2 items-baseline pl-4">
       <Link
         href="/funding"
         className="flex items-center"

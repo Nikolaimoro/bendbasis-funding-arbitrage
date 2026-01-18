@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import MinimumFilter from "@/components/Table/MinimumFilter";
 
@@ -23,6 +23,7 @@ interface TableControlsProps {
   onFiltersOpenChange: (open: boolean) => void;
   searchPlaceholder: string;
   inputClassName: string;
+  className?: string;
 }
 
 export default function TableControls({
@@ -44,28 +45,10 @@ export default function TableControls({
   onFiltersOpenChange,
   searchPlaceholder,
   inputClassName,
+  className,
 }: TableControlsProps) {
   return (
-    <div className="flex flex-wrap gap-3 mb-4 items-center">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white w-4 h-4" />
-        <input
-          className={`${inputClassName} pl-10`}
-          placeholder={searchPlaceholder}
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-      </div>
-
-      <ExchangeFilter
-        exchanges={exchanges}
-        selectedExchanges={selectedExchanges}
-        onToggleExchange={onToggleExchange}
-        onResetExchanges={onResetExchanges}
-        open={filterOpen}
-        onOpenChange={onFilterOpenChange}
-      />
-
+    <div className={`flex flex-wrap gap-3 items-center ${className ?? ""}`}>
       <MinimumFilter
         minOI={minOI}
         minVolume={minVolume}
@@ -76,6 +59,35 @@ export default function TableControls({
         open={filtersOpen}
         onOpenChange={onFiltersOpenChange}
       />
+
+      <ExchangeFilter
+        exchanges={exchanges}
+        selectedExchanges={selectedExchanges}
+        onToggleExchange={onToggleExchange}
+        onResetExchanges={onResetExchanges}
+        open={filterOpen}
+        onOpenChange={onFilterOpenChange}
+      />
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white w-4 h-4" />
+        <input
+          className={`${inputClassName} pl-10 pr-9 bg-[#292e40] border border-[#383d50]`}
+          placeholder={searchPlaceholder}
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => onSearchChange("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-[#383d50] border border-[#343a4e] text-gray-300 text-xs leading-none flex items-center justify-center transition-colors duration-200 hover:border-white hover:text-white"
+            aria-label="Clear search"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
