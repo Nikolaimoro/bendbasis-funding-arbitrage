@@ -171,6 +171,7 @@ interface ArbitrageTableBodyProps {
   onSort: (key: SortKey) => void;
   onRowClick?: (row: ArbRow) => void;
   loading?: boolean;
+  quoteVariantMap: Record<string, boolean>;
 }
 
 /**
@@ -184,6 +185,7 @@ export default function ArbitrageTableBody({
   onSort,
   onRowClick,
   loading = false,
+  quoteVariantMap,
 }: ArbitrageTableBodyProps) {
   const formatAPRNode = (v: number | null) => {
     const text = formatAPR(v);
@@ -304,11 +306,11 @@ export default function ArbitrageTableBody({
                 <td className="px-4 py-4 flex gap-2">
                   <LongButton
                     href={r.long_url}
-                    label={`${formatExchange(r.long_exchange)}${r.long_quote ? ` (${r.long_quote})` : ""}`}
+                    label={`${formatExchange(r.long_exchange)}${quoteVariantMap[`${r.base_asset}|${r.long_exchange}`] && r.long_quote ? ` (${r.long_quote})` : ""}`}
                   />
                   <ShortButton
                     href={r.short_url}
-                    label={`${formatExchange(r.short_exchange)}${r.short_quote ? ` (${r.short_quote})` : ""}`}
+                    label={`${formatExchange(r.short_exchange)}${quoteVariantMap[`${r.base_asset}|${r.short_exchange}`] && r.short_quote ? ` (${r.short_quote})` : ""}`}
                   />
                 </td>
 
