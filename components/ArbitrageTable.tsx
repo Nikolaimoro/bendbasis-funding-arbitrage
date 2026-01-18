@@ -188,30 +188,6 @@ export default function ArbitrageTable() {
     [rows]
   );
 
-  const quoteVariantMap = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    for (const row of rows) {
-      const longKey = `${row.base_asset}|${row.long_exchange}`;
-      const shortKey = `${row.base_asset}|${row.short_exchange}`;
-
-      if (row.long_quote) {
-        if (!map.has(longKey)) map.set(longKey, new Set());
-        map.get(longKey)!.add(row.long_quote);
-      }
-
-      if (row.short_quote) {
-        if (!map.has(shortKey)) map.set(shortKey, new Set());
-        map.get(shortKey)!.add(row.short_quote);
-      }
-    }
-
-    const result: Record<string, boolean> = {};
-    for (const [key, quotes] of map.entries()) {
-      result[key] = quotes.size > 1;
-    }
-    return result;
-  }, [rows]);
-
   const toggleExchange = (ex: string) => {
     setSelectedExchanges((prev) =>
       prev.includes(ex) ? prev.filter((e) => e !== ex) : [...prev, ex]
@@ -368,7 +344,6 @@ export default function ArbitrageTable() {
               onSort={toggleSort}
               onRowClick={openChart}
               loading={loading}
-              quoteVariantMap={quoteVariantMap}
             />
           </ErrorBoundary>
         )}

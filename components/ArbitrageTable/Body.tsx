@@ -125,10 +125,10 @@ function LongButton({ href, label }: LongButtonProps) {
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
       className="
-        inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] sm:px-3 sm:py-1 sm:text-sm
-        bg-green-500/20 text-green-400
+        inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] sm:px-3 sm:py-1 sm:text-sm font-medium
+        text-green-400
         border border-green-500/30
-        hover:bg-green-500/30 transition
+        hover:border-green-500/60 transition
         whitespace-nowrap
       "
     >
@@ -152,10 +152,10 @@ function ShortButton({ href, label }: ShortButtonProps) {
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
       className="
-        inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] sm:px-3 sm:py-1 sm:text-sm
-        bg-red-500/20 text-red-400
+        inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] sm:px-3 sm:py-1 sm:text-sm font-medium
+        text-red-400
         border border-red-500/30
-        hover:bg-red-500/30 transition
+        hover:border-red-500/60 transition
         whitespace-nowrap
       "
     >
@@ -171,7 +171,6 @@ interface ArbitrageTableBodyProps {
   onSort: (key: SortKey) => void;
   onRowClick?: (row: ArbRow) => void;
   loading?: boolean;
-  quoteVariantMap: Record<string, boolean>;
 }
 
 /**
@@ -185,7 +184,6 @@ export default function ArbitrageTableBody({
   onSort,
   onRowClick,
   loading = false,
-  quoteVariantMap,
 }: ArbitrageTableBodyProps) {
   const formatAPRNode = (v: number | null) => {
     const text = formatAPR(v);
@@ -211,10 +209,11 @@ export default function ArbitrageTableBody({
         <colgroup>
           <col className="w-[10%] min-w-[90px]" />
           <col className="w-[8%] min-w-[70px]" />
-          <col className="w-[26%] min-w-[200px]" />
-          <col className="w-[14%] min-w-[115px]" />
-          <col className="w-[14%] min-w-[115px]" />
-          <col className="w-[14%] min-w-[115px]" />
+          <col className="w-[16%] min-w-[130px]" />
+          <col className="w-[16%] min-w-[130px]" />
+          <col className="w-[12%] min-w-[110px]" />
+          <col className="w-[12%] min-w-[110px]" />
+          <col className="w-[12%] min-w-[110px]" />
           <col className="w-[6%] min-w-[50px]" />
         </colgroup>
         <thead className="sticky top-0 z-10 text-[13px] bg-[#292e40]">
@@ -237,7 +236,12 @@ export default function ArbitrageTableBody({
 
             <th className={TAILWIND.table.header}>
               <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
-                Long / Short
+                Long
+              </span>
+            </th>
+            <th className={TAILWIND.table.header}>
+              <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
+                Short
               </span>
             </th>
             <th className={`${TAILWIND.table.header} text-center`}>
@@ -303,14 +307,17 @@ export default function ArbitrageTableBody({
                   </span>
                 </td>
 
-                <td className="px-4 py-4 flex gap-2">
+                <td className="px-4 py-4">
                   <LongButton
                     href={r.long_url}
-                    label={`${formatExchange(r.long_exchange)}${quoteVariantMap[`${r.base_asset}|${r.long_exchange}`] && r.long_quote ? ` (${r.long_quote})` : ""}`}
+                    label={formatExchange(r.long_exchange)}
                   />
+                </td>
+
+                <td className="px-4 py-4">
                   <ShortButton
                     href={r.short_url}
-                    label={`${formatExchange(r.short_exchange)}${quoteVariantMap[`${r.base_asset}|${r.short_exchange}`] && r.short_quote ? ` (${r.short_quote})` : ""}`}
+                    label={formatExchange(r.short_exchange)}
                   />
                 </td>
 
