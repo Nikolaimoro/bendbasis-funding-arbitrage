@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ChevronDown, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { normalizeToken, formatAPR } from "@/lib/formatters";
 import { isValidUrl } from "@/lib/validation";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/types";
 import { SCREENER_TIME_WINDOWS, SCREENER_TIME_LABELS } from "@/lib/constants";
 import Pagination from "@/components/Table/Pagination";
+import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import SkeletonLoader from "@/components/ui/SkeletonLoader";
 import { TAILWIND } from "@/lib/theme";
@@ -74,6 +75,10 @@ export default function FundingScreener() {
 
   const [search, setSearch] = useState("");
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("now");
+  const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [minAPR, setMinAPR] = useState<number | "">(0);
 
   const [sortKey, setSortKey] = useState<SortKey>("max_arb");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -162,11 +167,22 @@ export default function FundingScreener() {
     };
   }, [retryToken]); // timeWindow no longer needed - all windows in one table
 
+  /* ---------- exchanges list ---------- */
+  const exchanges = useMemo(
+    () => Array.from(new Set(exchangeColumns.map((c) => c.exchange))).sort(),
+    [exchangeColumns]
+  );
+
   /* ---------- handlers ---------- */
   const resetPage = () => setPage(0);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    resetPage();
+  };
+
+  const handleMinAPRChange = (value: number | "") => {
+    setMinAPR(value);
     resetPage();
   };
 
@@ -180,6 +196,14 @@ export default function FundingScreener() {
     resetPage();
   };
 
+  /* ---------- filtered columns ---------- */
+  const filteredColumns = useMemo(() => {
+    if (selectedExchanges.length === 0) return exchangeColumns;
+    return exchangeColumns.filter((col) =>
+      selectedExchanges.includes(col.exchange)
+    );
+  }, [exchangeColumns, selectedExchanges]);
+
   /* ---------- filtered & sorted ---------- */
   const filtered = useMemo(() => {
     let result = [...rows];
@@ -190,6 +214,14 @@ export default function FundingScreener() {
       result = result.filter((row) =>
         normalizeToken(row.token ?? "").includes(term)
       );
+    }
+
+    // Filter by min APR
+    if (typeof minAPR === "number" && minAPR > 0) {
+      result = result.filter((row) => {
+        const maxArb = calculateMaxArb(row.markets, timeWindow);
+        return maxArb !== null && maxArb >= minAPR;
+      });
     }
 
     // Sort
@@ -212,7 +244,7 @@ export default function FundingScreener() {
     });
 
     return result;
-  }, [rows, search, sortKey, sortDir, timeWindow]);
+  }, [rows, search, sortKey, sortDir, timeWindow, minAPR]);
 
   /* ---------- exchanges with multiple quotes ---------- */
   const exchangesWithMultipleQuotes = useMemo(() => {
@@ -268,34 +300,100 @@ export default function FundingScreener() {
     <ErrorBoundary>
       <section className="px-6 py-4">
         {/* ---------- controls ---------- */}
-        <div className="flex flex-wrap gap-4 items-center mb-4">
-          {/* Search */}
-          <input
-            type="text"
-            value={search}
-            onChange={handleSearchChange}
-            placeholder="Search token..."
-            className={`px-3 py-2 rounded-md ${TAILWIND.bg.surface} ${TAILWIND.border.default} ${TAILWIND.text.primary} placeholder-gray-500 focus:outline-none focus:border-white w-48`}
+        <div className="flex flex-wrap gap-3 items-center mb-4">
+          {/* Filters dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((o) => !o)}
+              className="flex items-center gap-2 px-3 py-2 rounded-md bg-transparent border border-[#383d50] text-gray-200 hover:border-white transition-colors"
+            >
+              Filters
+              {typeof minAPR === "number" && minAPR > 0 && (
+                <span className="ml-1 h-5 w-5 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center">
+                  1
+                </span>
+              )}
+              <ChevronDown className="h-4 w-4 text-gray-400" />
+            </button>
+            {filtersOpen && (
+              <div className="absolute left-0 top-full mt-2 z-50 w-64 rounded-lg border border-[#343a4e] bg-[#292e40] p-4 shadow-xl animate-dropdown-in">
+                <div className="flex flex-col gap-3">
+                  <label className="text-sm text-gray-400">Min APR (%)</label>
+                  <input
+                    type="number"
+                    value={minAPR}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? "" : Number(e.target.value);
+                      handleMinAPRChange(val);
+                    }}
+                    placeholder="0"
+                    className="px-3 py-2 rounded-md bg-transparent border border-[#383d50] text-gray-200 placeholder-gray-500 focus:outline-none focus:border-white"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Exchange filter */}
+          <ExchangeFilter
+            exchanges={exchanges}
+            selectedExchanges={selectedExchanges}
+            onToggleExchange={(exchange) => {
+              setSelectedExchanges((prev) =>
+                prev.includes(exchange)
+                  ? prev.filter((e) => e !== exchange)
+                  : [...prev, exchange]
+              );
+              resetPage();
+            }}
+            onResetExchanges={() => {
+              setSelectedExchanges([]);
+              resetPage();
+            }}
+            open={filterOpen}
+            onOpenChange={setFilterOpen}
           />
 
-          {/* Time window selector */}
-          <div className="flex gap-1 rounded-md overflow-hidden border border-[#343a4e]">
-            {SCREENER_TIME_WINDOWS.map((tw) => (
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white w-4 h-4" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search token..."
+              className="h-10 rounded-md bg-transparent border border-[#383d50] text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#383d50] pl-10 pr-9 w-48"
+            />
+            {search && (
               <button
-                key={tw}
-                onClick={() => {
-                  setTimeWindow(tw);
-                  resetPage();
-                }}
-                className={`px-3 py-2 text-sm transition-colors ${
-                  timeWindow === tw
-                    ? "bg-[#353b52] text-white"
-                    : "bg-[#292e40] text-gray-400 hover:bg-[#353b52] hover:text-white"
-                }`}
+                type="button"
+                onClick={() => handleSearchChange("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-[#383d50] border border-[#343a4e] text-gray-300 text-xs leading-none flex items-center justify-center transition-colors duration-200 hover:border-white hover:text-white"
+                aria-label="Clear search"
               >
-                {SCREENER_TIME_LABELS[tw]}
+                <X className="h-3 w-3" />
               </button>
-            ))}
+            )}
+          </div>
+
+          {/* Time window dropdown */}
+          <div className="relative">
+            <select
+              className="appearance-none bg-transparent border border-[#343a4e] rounded-lg pl-3 pr-8 py-2 text-gray-200 focus:outline-none cursor-pointer"
+              value={timeWindow}
+              onChange={(e) => {
+                setTimeWindow(e.target.value as TimeWindow);
+                resetPage();
+              }}
+            >
+              {SCREENER_TIME_WINDOWS.map((tw) => (
+                <option key={tw} value={tw}>
+                  {SCREENER_TIME_LABELS[tw]}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           </div>
 
           {/* Spacer */}
@@ -317,30 +415,30 @@ export default function FundingScreener() {
 
         {/* ---------- table ---------- */}
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
+          <table className="w-full border-collapse">
             <colgroup>
-              <col className="w-[120px]" /> {/* Asset */}
-              <col className="w-[100px]" /> {/* Max Arb */}
-              {exchangeColumns.map((col) => (
-                <col key={col.column_key} className="w-[120px]" />
+              <col className="w-[100px]" /> {/* Asset - sticky */}
+              <col className="w-[90px]" /> {/* Max Arb - sticky */}
+              {filteredColumns.map((col) => (
+                <col key={col.column_key} className="w-[110px]" />
               ))}
             </colgroup>
 
             <thead>
               <tr className="border-b border-[#343a4e]">
                 <th
-                  className={`${TAILWIND.table.headerFirst} cursor-pointer select-none`}
+                  className={`${TAILWIND.table.headerFirst} cursor-pointer select-none sticky left-0 bg-[#1c202f] z-10`}
                   onClick={() => toggleSort("token")}
                 >
                   Asset{arrow("token")}
                 </th>
                 <th
-                  className={`${TAILWIND.table.header} cursor-pointer select-none`}
+                  className={`${TAILWIND.table.header} cursor-pointer select-none sticky left-[100px] bg-[#1c202f] z-10`}
                   onClick={() => toggleSort("max_arb")}
                 >
                   Max Arb{arrow("max_arb")}
                 </th>
-                {exchangeColumns.map((col) => (
+                {filteredColumns.map((col) => (
                   <th key={col.column_key} className={TAILWIND.table.header}>
                     {col.column_key}
                   </th>
@@ -352,7 +450,7 @@ export default function FundingScreener() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={2 + exchangeColumns.length}
+                    colSpan={2 + filteredColumns.length}
                     className="px-4 py-8 text-center"
                   >
                     <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
@@ -364,7 +462,7 @@ export default function FundingScreener() {
               ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={2 + exchangeColumns.length}
+                    colSpan={2 + filteredColumns.length}
                     className="px-4 py-8 text-center text-gray-500 text-sm"
                   >
                     No tokens found
@@ -377,18 +475,18 @@ export default function FundingScreener() {
                   return (
                     <tr
                       key={row.token ?? `row-${idx}`}
-                      className={`${TAILWIND.table.row} ${TAILWIND.bg.hover} transition-colors`}
+                      className={`${TAILWIND.table.row} ${TAILWIND.bg.hover} transition-colors group`}
                     >
-                      {/* Asset */}
+                      {/* Asset - sticky */}
                       <td
-                        className={`${TAILWIND.table.cellFirst} font-medium text-white`}
+                        className={`${TAILWIND.table.cellFirst} font-medium text-white sticky left-0 bg-[#1c202f] group-hover:bg-[#353b52] z-10 transition-colors`}
                       >
                         {row.token ?? "–"}
                       </td>
 
-                      {/* Max Arb */}
+                      {/* Max Arb - sticky */}
                       <td
-                        className={`${TAILWIND.table.cell} font-mono tabular-nums ${
+                        className={`${TAILWIND.table.cell} font-mono tabular-nums sticky left-[100px] bg-[#1c202f] group-hover:bg-[#353b52] z-10 transition-colors ${
                           maxArb !== null && maxArb > 0
                             ? "text-emerald-400"
                             : TAILWIND.text.secondary
@@ -398,7 +496,7 @@ export default function FundingScreener() {
                       </td>
 
                       {/* Exchange columns */}
-                      {exchangeColumns.map((col) => {
+                      {filteredColumns.map((col) => {
                         const market = row.markets?.[col.column_key];
                         // Show quote if this exchange has multiple entries in exchange_columns
                         const showQuote = exchangesWithMultipleQuotes.has(col.exchange);
@@ -431,19 +529,17 @@ export default function FundingScreener() {
 
         {/* ---------- bottom pagination ---------- */}
         {paginatedRows.length > 0 && (
-          <div className="flex justify-end mt-4">
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              limit={limit}
-              onPageChange={setPage}
-              onLimitChange={(newLimit) => {
-                setLimit(newLimit);
-                resetPage();
-              }}
-              showPagination={limit !== -1}
-            />
-          </div>
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              resetPage();
+            }}
+            showPagination={limit !== -1}
+          />
         )}
       </section>
     </ErrorBoundary>
