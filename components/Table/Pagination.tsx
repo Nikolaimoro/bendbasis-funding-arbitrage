@@ -44,7 +44,7 @@ export default function Pagination({
 
       {showPagination && totalPages > 1 && (
         <div className="flex gap-3 items-center">
-          <span className="px-2 min-w-[64px] text-center tabular-nums text-white/50 font-light">
+          <span className="px-2 min-w-[64px] text-center tabular-nums text-white/50 font-inter font-light">
             {currentPage + 1} of {totalPages}
           </span>
 

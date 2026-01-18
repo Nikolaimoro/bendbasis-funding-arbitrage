@@ -25,11 +25,11 @@ export default function AppHeader() {
         href={href}
         className={[
           "group relative text-base text-white font-roboto font-normal",
-          "px-2 py-1 rounded-md transition-colors duration-200",
+          "px-2 py-2.5 rounded-md transition-colors duration-200",
           "hover:bg-[#383d50]",
-          "after:absolute after:left-[-4px] after:right-[-4px] after:h-[2px]",
+          "after:content-[''] after:absolute after:left-0 after:right-0 after:h-[2px]",
           "after:bg-gradient-to-r after:from-[#9E5DEE] after:to-[#FA814D]",
-          "after:-bottom-[10px]",
+          "after:-bottom-[8px]",
           active
             ? "after:scale-x-100"
             : "after:scale-x-0 after:origin-left after:transition-transform after:duration-300 after:ease-out group-hover:after:scale-x-100",
@@ -41,7 +41,7 @@ export default function AppHeader() {
   };
 
   return (
-    <div className="flex gap-4 mb-6 border-b border-[#343a4e] pb-2 items-baseline pl-4">
+    <div className="flex gap-4 mb-4 border-b border-[#343a4e] pb-1 items-center pl-4">
       <Link
         href="/funding"
         className="flex items-center"

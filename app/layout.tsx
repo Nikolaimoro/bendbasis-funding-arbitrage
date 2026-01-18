@@ -8,6 +8,7 @@ import AppFooter from "@/components/AppFooter";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  weight: ["300", "400", "500"],
   display: "swap",
 });
 
