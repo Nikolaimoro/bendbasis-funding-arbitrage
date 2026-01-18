@@ -78,7 +78,7 @@ function StabilityInfo() {
       </button>
       <div 
         ref={tooltipRef}
-        className={`absolute z-50 right-full top-1/2 -translate-y-1/2 mr-2 w-72 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed transition-all duration-200 ${
+        className={`absolute z-[9999] right-full top-1/2 -translate-y-1/2 mr-2 w-80 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed transition-all duration-200 ${
           showTooltip 
             ? "opacity-100 translate-x-0 pointer-events-auto" 
             : "opacity-0 translate-x-2 pointer-events-none"
@@ -224,16 +224,26 @@ export default function ArbitrageTableBody({
             </th>
 
             <th className={`${TAILWIND.table.header} text-center`}>
-              <div className="inline-flex items-center justify-center gap-1 w-full">
-                <SortableHeader
-                  label="Stability"
-                  active={sortKey === "stability"}
-                  dir={sortDir}
-                  onClick={() => onSort("stability")}
-                  centered
-                />
+              <button
+                type="button"
+                onClick={() => onSort("stability")}
+                className="inline-flex items-center justify-center gap-1 w-full select-none"
+              >
+                <span className="text-gray-400">Stability</span>
                 <StabilityInfo />
-              </div>
+                <span className="flex flex-col items-center leading-[0.7]">
+                  <span
+                    className={`text-[11px] inline-block origin-center scale-y-[0.6] ${sortKey === "stability" && sortDir === "asc" ? "text-gray-200" : "text-gray-500/70"}`}
+                  >
+                    ▲
+                  </span>
+                  <span
+                    className={`text-[11px] inline-block origin-center scale-y-[0.6] ${sortKey === "stability" && sortDir === "desc" ? "text-gray-200" : "text-gray-500/70"}`}
+                  >
+                    ▼
+                  </span>
+                </span>
+              </button>
             </th>
 
             <th className={`${TAILWIND.table.header} text-center`}></th>
