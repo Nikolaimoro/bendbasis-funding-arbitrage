@@ -58,9 +58,9 @@ function calculateMaxArb(
 /**
  * Check if an exchange has multiple quotes for this token
  */
-function hasMultipleQuotes(markets: FundingMatrixMarket[]): boolean {
-  if (!markets || markets.length <= 1) return false;
-  const quotes = new Set(markets.map((m) => m.quote));
+function hasMultipleQuotes(markets: FundingMatrixMarket[] | null | undefined): boolean {
+  if (!markets || !Array.isArray(markets) || markets.length <= 1) return false;
+  const quotes = new Set(markets.map((m) => m?.quote));
   return quotes.size > 1;
 }
 
