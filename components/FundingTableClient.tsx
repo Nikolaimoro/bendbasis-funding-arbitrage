@@ -4,28 +4,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import FundingTable from "@/components/FundingTable";
 import { FundingRow } from "@/lib/types";
+import { withTimeout } from "@/lib/async";
 
 const PAGE_SIZE = 1000;
 const TIMEOUT_MS = 3000;
 const MAX_ATTEMPTS = 2;
-
-const withTimeout = async <T,>(
-  promise: Promise<T>,
-  timeoutMs: number
-): Promise<T> => {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error("timeout")), timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeout]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
-};
 
 const fetchFundingRows = async (): Promise<FundingRow[]> => {
   let allRows: FundingRow[] = [];

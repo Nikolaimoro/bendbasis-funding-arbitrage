@@ -13,6 +13,7 @@ import ArbitrageTableBody from "@/components/ArbitrageTable/Body";
 import SkeletonLoader from "@/components/ui/SkeletonLoader";
 import { TableEmptyState, TableLoadingState } from "@/components/ui/TableStates";
 import { TAILWIND } from "@/lib/theme";
+import { withTimeout } from "@/lib/async";
 
 /* ================= TYPES ================= */
 
@@ -20,24 +21,6 @@ type SortKey = "opportunity_apr" | "stability";
 type SortDir = "asc" | "desc";
 const TIMEOUT_MS = 3000;
 const MAX_ATTEMPTS = 2;
-
-const withTimeout = async <T,>(
-  promise: Promise<T>,
-  timeoutMs: number
-): Promise<T> => {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error("timeout")), timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeout]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
-};
 
 /* ================= COMPONENT ================= */
 
