@@ -55,15 +55,6 @@ function calculateMaxArb(
   return max - min;
 }
 
-/**
- * Check if an exchange has multiple quotes for this token
- */
-function hasMultipleQuotes(markets: FundingMatrixMarket[] | null | undefined): boolean {
-  if (!markets || !Array.isArray(markets) || markets.length <= 1) return false;
-  const quotes = new Set(markets.map((m) => m?.quote));
-  return quotes.size > 1;
-}
-
 /* ================= COMPONENT ================= */
 
 export default function FundingScreener() {
@@ -217,6 +208,19 @@ export default function FundingScreener() {
 
     return result;
   }, [rows, search, sortKey, sortDir, timeWindow]);
+
+  /* ---------- exchanges with multiple quotes ---------- */
+  const exchangesWithMultipleQuotes = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const col of exchangeColumns) {
+      counts[col.exchange] = (counts[col.exchange] || 0) + 1;
+    }
+    return new Set(
+      Object.entries(counts)
+        .filter(([, count]) => count > 1)
+        .map(([exchange]) => exchange)
+    );
+  }, [exchangeColumns]);
 
   /* ---------- pagination ---------- */
   const totalPages = limit === -1 ? 1 : Math.ceil(filtered.length / limit);
@@ -390,8 +394,10 @@ export default function FundingScreener() {
 
                       {/* Exchange columns */}
                       {exchangeColumns.map((col) => {
-                        const markets = row.markets?.[col.column_key] || [];
-                        const showQuote = hasMultipleQuotes(markets);
+                        const rawMarkets = row.markets?.[col.column_key];
+                        const markets = Array.isArray(rawMarkets) ? rawMarkets : [];
+                        // Show quote if this exchange has multiple entries in exchange_columns
+                        const showQuote = exchangesWithMultipleQuotes.has(col.exchange);
 
                         return (
                           <td
