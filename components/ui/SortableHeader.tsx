@@ -1,6 +1,6 @@
 /**
  * Sortable table header with visual indicators
- * Shows ↑↓ on hover for inactive columns, ↑ or ↓ in blue for active
+ * Shows ↑↓ for inactive columns and highlights the active direction.
  */
 
 interface SortableHeaderProps {
@@ -16,31 +16,27 @@ export default function SortableHeader({
   dir,
   onClick,
 }: SortableHeaderProps) {
+  const upActive = active && dir === "asc";
+  const downActive = active && dir === "desc";
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group inline-flex items-center gap-1 text-left select-none"
+      className="inline-flex items-center gap-1 text-left select-none"
     >
-      <span
-        className={`transition-colors ${
-          active ? "text-gray-200" : "text-gray-400 group-hover:text-gray-200"
-        }`}
-      >
-        {label}
+      <span className="text-gray-400">{label}</span>
+      <span className="flex flex-col items-center leading-[0.7]">
+        <span
+          className={`text-[11px] inline-block origin-center scale-y-[0.6] ${upActive ? "text-gray-200" : "text-gray-500/70"}`}
+        >
+          ▲
+        </span>
+        <span
+          className={`text-[11px] inline-block origin-center scale-y-[0.6] ${downActive ? "text-gray-200" : "text-gray-500/70"}`}
+        >
+          ▼
+        </span>
       </span>
-
-      {!active && (
-        <span className="text-xs opacity-0 group-hover:opacity-60 transition-opacity text-gray-500">
-          ↑↓
-        </span>
-      )}
-
-      {active && (
-        <span className="text-[13px] text-blue-400">
-          {dir === "asc" ? "↑" : "↓"}
-        </span>
-      )}
     </button>
   );
 }

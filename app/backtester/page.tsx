@@ -1,7 +1,8 @@
 import { Metadata } from "next";
-import { supabase } from "@/lib/supabase";
-import BacktesterClient from "@/app/backtester/client";
 import { Suspense } from "react";
+import BacktesterClient from "@/app/backtester/client";
+import PageHeader from "@/components/ui/PageHeader";
+import { supabase } from "@/lib/supabase";
 
 export const revalidate = 3600; // revalidate every hour
 
@@ -150,10 +151,10 @@ export default async function BacktesterPage() {
   const exchanges = await getAllExchanges();
 
   return (
-    <main className="min-h-screen bg-gray-900 p-6 text-gray-200">
-      <h1 className="text-2xl font-roboto font-medium mb-6">
-        Funding Arbitrage Backtester
-      </h1>
+    <main className="min-h-screen text-gray-200">
+      <div className="pl-4">
+        <PageHeader title="Funding Arbitrage Backtester" />
+      </div>
       <Suspense fallback={<div className="text-gray-400">Loading...</div>}>
         <BacktesterClient tokens={tokens} exchanges={exchanges} />
       </Suspense>
