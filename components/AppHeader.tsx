@@ -32,7 +32,7 @@ export default function AppHeader() {
           "after:-bottom-[10px] after:transition-transform after:duration-400",
           active
             ? "after:scale-x-100 after:transition-none"
-            : "after:scale-x-0 after:origin-right group-hover:after:origin-left group-hover:after:scale-x-100",
+            : "after:scale-x-0 after:origin-left group-hover:after:scale-x-100",
         ].join(" ")}
       >
         {label}

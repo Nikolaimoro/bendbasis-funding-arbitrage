@@ -87,11 +87,11 @@ export default function ArbitrageTableBody({
   const formatAPRNode = (v: number | null) => {
     const text = formatAPR(v);
     if (text === "–") {
-      return <span className="text-white font-mono tabular-nums">–</span>;
+      return <span className="text-white font-mono tabular-nums block text-center">–</span>;
     }
     const numeric = text.slice(0, -1);
     return (
-      <span className="text-white font-mono tabular-nums">
+      <span className="text-white font-mono tabular-nums block text-center">
         <span>{numeric}</span>
         <span className="opacity-70">%</span>
       </span>
