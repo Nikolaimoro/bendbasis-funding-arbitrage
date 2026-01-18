@@ -275,7 +275,7 @@ export default function ArbitrageTable() {
   return (
     <ErrorBoundary>
       <div className="rounded-2xl border border-[#343a4e] bg-[#292e40]">
-        <div className="flex flex-wrap items-center gap-4 pr-4 py-4">
+        <div className="flex flex-wrap items-center gap-4 px-4 py-4">
           <h2 className="text-base font-roboto text-white">Opportunities</h2>
           <TableControls
             search={search}

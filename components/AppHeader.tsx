@@ -91,7 +91,7 @@ export default function AppHeader() {
       >
         <Link
           href="/funding"
-          className="flex items-center"
+          className="flex items-center pl-4"
           aria-label="Funding Dashboard Home"
         >
           <img
