@@ -45,24 +45,28 @@ function StabilityInfo() {
   const [showTooltip, setShowTooltip] = useState(false);
   
   return (
-    <div className="relative inline-flex">
+    <div className="relative inline-flex items-center">
       <button
         type="button"
         onClick={() => setShowTooltip(!showTooltip)}
         onBlur={() => setTimeout(() => setShowTooltip(false), 150)}
-        className="ml-1 text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
+        className="text-gray-500 hover:text-gray-300 transition-colors cursor-pointer"
         aria-label="Stability info"
       >
         <Info size={14} />
       </button>
-      {showTooltip && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-lg bg-[#1c202f] border border-[#343a4e] shadow-xl text-sm text-gray-300 leading-relaxed">
-          <div className="text-gray-200 font-medium mb-1">Stability</div>
-          Indicates how consistent and reliable the funding spread has been over time.
-          Higher stability means more predictable funding income.
-          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#343a4e]" />
-        </div>
-      )}
+      <div 
+        className={`absolute z-50 right-full top-1/2 -translate-y-1/2 mr-2 w-64 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-sm text-gray-300 leading-relaxed transition-all duration-200 ${
+          showTooltip 
+            ? "opacity-100 translate-x-0 pointer-events-auto" 
+            : "opacity-0 translate-x-2 pointer-events-none"
+        }`}
+      >
+        <div className="text-gray-200 font-medium mb-1">Stability</div>
+        Indicates how consistent and reliable the funding spread has been over time.
+        Higher stability means more predictable funding income.
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#343a4e]" />
+      </div>
     </div>
   );
 }
@@ -198,7 +202,7 @@ export default function ArbitrageTableBody({
             </th>
 
             <th className={`${TAILWIND.table.header} text-center`}>
-              <div className="inline-flex items-center justify-center w-full">
+              <div className="inline-flex items-center justify-center gap-1 w-full">
                 <SortableHeader
                   label="Stability"
                   active={sortKey === "stability"}
