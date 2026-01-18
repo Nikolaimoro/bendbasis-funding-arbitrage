@@ -66,18 +66,18 @@ export default function FundingTableBody({
 
   return (
     <div className="overflow-auto">
-      <table className="w-full text-base table-fixed min-w-[980px]">
+      <table className="w-full text-base table-fixed min-w-[1100px] whitespace-nowrap">
         <colgroup>
           <col className="w-[12%] min-w-[110px]" />
-          <col className="w-[16%] min-w-[150px]" />
-          <col className="w-[8%] min-w-[105px]" />
-          <col className="w-[8%] min-w-[105px]" />
-          <col className="w-[8%] min-w-[75px]" />
-          <col className="w-[8%] min-w-[75px]" />
-          <col className="w-[8%] min-w-[75px]" />
-          <col className="w-[8%] min-w-[75px]" />
-          <col className="w-[8%] min-w-[75px]" />
-          <col className="w-[8%] min-w-[75px]" />
+          <col className="w-[14%] min-w-[150px]" />
+          <col className="w-[10%] min-w-[120px]" />
+          <col className="w-[10%] min-w-[120px]" />
+          <col className="w-[8%] min-w-[80px]" />
+          <col className="w-[8%] min-w-[80px]" />
+          <col className="w-[8%] min-w-[80px]" />
+          <col className="w-[8%] min-w-[80px]" />
+          <col className="w-[8%] min-w-[80px]" />
+          <col className="w-[8%] min-w-[80px]" />
           <col className="w-[4%] min-w-[48px]" />
         </colgroup>
         <thead className="sticky top-0 text-[13px] bg-[#292e40]">
@@ -101,7 +101,7 @@ export default function FundingTableBody({
 
             <th className={`${TAILWIND.table.header} text-center`}>
               <SortableHeader
-                label="Open Interest"
+                label="Open Interest"
                 active={sortKey === "open_interest"}
                 dir={sortDir}
                 onClick={() => onSort("open_interest")}
@@ -111,7 +111,7 @@ export default function FundingTableBody({
 
             <th className={`${TAILWIND.table.header} text-center`}>
               <SortableHeader
-                label="Volume 24h"
+                label="Volume 24h"
                 active={sortKey === "volume_24h"}
                 dir={sortDir}
                 onClick={() => onSort("volume_24h")}

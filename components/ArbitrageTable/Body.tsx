@@ -205,7 +205,7 @@ export default function ArbitrageTableBody({
 
   return (
     <div className="overflow-auto">
-      <table className="w-full text-base table-fixed min-w-[840px]">
+      <table className="w-full text-base table-fixed min-w-[900px] whitespace-nowrap">
         <colgroup>
           <col className="w-[12%] min-w-[110px]" />
           <col className="w-[10%] min-w-[80px]" />
@@ -279,7 +279,7 @@ export default function ArbitrageTableBody({
               </div>
             </th>
 
-            <th className={`${TAILWIND.table.header} text-center`}></th>
+            <th className={`${TAILWIND.table.header} text-right pr-4`}></th>
           </tr>
         </thead>
 
@@ -295,7 +295,7 @@ export default function ArbitrageTableBody({
                   {r.base_asset}
                 </td>
 
-                <td className="px-4 py-4 text-center">
+                <td className="px-4 py-4 text-center align-middle">
                   {formatAPRNode(r.opportunity_apr)}
                 </td>
 
@@ -326,12 +326,14 @@ export default function ArbitrageTableBody({
                   </span>
                 </td>
 
-                <td className="px-4 py-4 text-center">
+                <td className="px-4 py-4 text-center align-middle">
                   <StabilityBar value={r.stability} />
                 </td>
 
-                <td className="px-4 py-4 text-center text-gray-500">
-                  <ExternalLink size={16} />
+                <td className="px-4 py-4 text-right pr-4 text-gray-500">
+                  <span className="inline-flex w-full justify-end">
+                    <ExternalLink size={16} />
+                  </span>
                 </td>
               </tr>
             ))}
