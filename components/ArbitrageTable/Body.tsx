@@ -44,7 +44,7 @@ function StabilityBar({ value }: { value: number | null }) {
  */
 function StabilityInfo() {
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -67,19 +67,18 @@ function StabilityInfo() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showTooltip]);
 
-  useEffect(() => {
-    if (showTooltip && buttonRef.current) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showTooltip && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setTooltipPos({
         top: rect.top + rect.height / 2,
         left: rect.left - 8,
       });
+      setShowTooltip(true);
+      return;
     }
-  }, [showTooltip]);
-  
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowTooltip(!showTooltip);
+    setShowTooltip(false);
   };
 
   return (
@@ -93,22 +92,20 @@ function StabilityInfo() {
       >
         <Info size={14} />
       </button>
-      {typeof window !== "undefined" && createPortal(
-        <div 
-          ref={tooltipRef}
-          style={{ top: tooltipPos.top, left: tooltipPos.left }}
-          className={`fixed z-[9999] -translate-y-1/2 -translate-x-full w-80 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed text-left transition-all duration-200 ${
-            showTooltip 
-              ? "opacity-100 pointer-events-auto" 
-              : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <div className="text-gray-200 font-medium mb-1 text-xs text-left">Stability</div>
-          <p className="text-left">Indicates how consistent and reliable the funding spread has been over time.</p>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#343a4e]" />
-        </div>,
-        document.body
-      )}
+      {showTooltip && tooltipPos && typeof window !== "undefined" &&
+        createPortal(
+          <div 
+            ref={tooltipRef}
+            style={{ top: tooltipPos.top, left: tooltipPos.left }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            className="fixed z-[9999] -translate-y-1/2 -translate-x-full w-80 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed text-left animate-tooltip pointer-events-auto"
+          >
+            <p className="text-left">Indicates how consistent and reliable the funding spread has been over time.</p>
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#343a4e]" />
+          </div>,
+          document.body
+        )}
     </>
   );
 }
