@@ -25,14 +25,14 @@ export default function SortableHeader({
       className="inline-flex items-center gap-1 text-left select-none"
     >
       <span className="text-gray-400">{label}</span>
-      <span className="flex flex-col items-center leading-none">
+      <span className="flex flex-col items-center leading-[0.6]">
         <span
-          className={`text-[13px] inline-block origin-center scale-y-[0.8] ${upActive ? "text-gray-200" : "text-gray-500/70"}`}
+          className={`text-[11px] inline-block origin-center scale-y-[0.6] ${upActive ? "text-gray-200" : "text-gray-500/70"}`}
         >
           ▲
         </span>
         <span
-          className={`text-[13px] inline-block origin-center scale-y-[0.8] ${downActive ? "text-gray-200" : "text-gray-500/70"}`}
+          className={`text-[11px] inline-block origin-center scale-y-[0.6] ${downActive ? "text-gray-200" : "text-gray-500/70"}`}
         >
           ▼
         </span>

@@ -3,7 +3,7 @@
  * Used in FundingTable, ArbitrageTable
  */
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { TAILWIND } from "@/lib/theme";
 
 interface PaginationProps {
@@ -26,22 +26,25 @@ export default function Pagination({
   return (
     <div className="flex justify-between items-center mt-4 text-sm text-gray-400">
       <div className="flex items-center gap-3">
-        <span>Items per page</span>
-        <select
-          className="bg-[#383d50] border border-transparent rounded-md px-2 py-1 text-gray-200 focus:outline-none"
-          value={limit}
-          onChange={(e) => onLimitChange(Number(e.target.value))}
-        >
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-          <option value={-1}>All</option>
-        </select>
+        <span className="text-white/70">Items per page</span>
+        <div className="relative">
+          <select
+            className="appearance-none bg-transparent border border-[#343a4e] rounded-lg pl-3 pr-7 py-1 text-gray-200 focus:outline-none"
+            value={limit}
+            onChange={(e) => onLimitChange(Number(e.target.value))}
+          >
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={-1}>All</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        </div>
       </div>
 
       {showPagination && totalPages > 1 && (
         <div className="flex gap-3 items-center">
-          <span className="px-2 min-w-[64px] text-center tabular-nums text-gray-300">
+          <span className="px-2 min-w-[64px] text-center tabular-nums text-white/70">
             {currentPage + 1} of {totalPages}
           </span>
 
