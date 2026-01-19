@@ -57,11 +57,11 @@ export default function ExchangeIcon({
   }
 
   const bg = bgColor || config.bg || "#1a1a2e";
-  const iconSize = Math.round(size * 0.75); // Icon is 75% of container
+  const iconSize = Math.round(size * 0.9); // Slightly larger to reduce visible padding
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded shrink-0 ${className}`}
+      className={`inline-flex items-center justify-center rounded-md shrink-0 ${className}`}
       style={{
         width: size,
         height: size,

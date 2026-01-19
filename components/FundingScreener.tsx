@@ -511,7 +511,7 @@ export default function FundingScreener() {
                   {filteredColumns.map((col) => (
                     <th key={col.column_key} className={`${TAILWIND.table.header} text-center whitespace-nowrap`}>
                       <div className="flex flex-col items-center gap-1">
-                        <ExchangeIcon exchange={col.exchange} size={18} />
+                        <ExchangeIcon exchange={col.exchange} size={22} />
                         <SortableHeader
                           label={formatColumnHeader(col, exchangesWithMultipleQuotes)}
                           active={sortKey === col.column_key}
