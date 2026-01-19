@@ -6,7 +6,6 @@ import { ExternalLink, Info } from "lucide-react";
 import { formatCompactUSD, formatAPR, formatExchange } from "@/lib/formatters";
 import { TAILWIND } from "@/lib/theme";
 import { ArbRow, SortDir } from "@/lib/types";
-import SortableHeader from "@/components/ui/SortableHeader";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 
 type SortKey = "opportunity_apr" | "stability";
@@ -145,6 +144,7 @@ function StabilityInfo() {
 function AprInfo() {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const [tooltipWidth, setTooltipWidth] = useState<number>(320);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -171,10 +171,17 @@ function AprInfo() {
     e.stopPropagation();
     if (!showTooltip && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const maxWidth = Math.min(320, viewportWidth - 32);
+      const minLeft = 16;
+      const maxLeft = Math.max(16, viewportWidth - 16 - maxWidth);
+      const desiredLeft = rect.left - 8;
+      const clampedLeft = Math.min(Math.max(desiredLeft, minLeft), maxLeft);
       setTooltipPos({
         top: rect.top + rect.height / 2,
-        left: rect.left - 8,
+        left: clampedLeft,
       });
+      setTooltipWidth(maxWidth);
       setShowTooltip(true);
       return;
     }
@@ -196,10 +203,10 @@ function AprInfo() {
         createPortal(
           <div
             ref={tooltipRef}
-            style={{ top: tooltipPos.top, left: tooltipPos.left }}
+            style={{ top: tooltipPos.top, left: tooltipPos.left, maxWidth: tooltipWidth }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className="fixed z-[9999] w-64 sm:w-80 p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed text-left animate-tooltip pointer-events-auto"
+            className="fixed z-[9999] w-64 sm:w-80 max-w-[calc(100vw-32px)] p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed text-left animate-tooltip pointer-events-auto"
           >
             <p className="text-left">Estimated APR based on historical funding data over the last 15 days.</p>
             <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#343a4e]" />
@@ -331,15 +338,32 @@ export default function ArbitrageTableBody({
             </th>
 
             <th className={`${TAILWIND.table.header} text-center pl-12 sm:pl-4`}>
-              <div className="inline-flex items-center justify-center gap-1 w-full">
-                <SortableHeader
-                  label="APR"
-                  active={sortKey === "opportunity_apr"}
-                  dir={sortDir}
-                  onClick={() => onSort("opportunity_apr")}
-                  centered
-                />
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => onSort("opportunity_apr")}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSort("opportunity_apr");
+                  }
+                }}
+                className="inline-flex items-center justify-center gap-1 w-full select-none cursor-pointer"
+              >
+                <span className="text-gray-400">APR</span>
                 <AprInfo />
+                <span className="flex flex-col items-center leading-[0.7]">
+                  <span
+                    className={`text-[11px] inline-block origin-center scale-y-[0.6] ${sortKey === "opportunity_apr" && sortDir === "asc" ? "text-gray-200" : "text-gray-500/70"}`}
+                  >
+                    ▲
+                  </span>
+                  <span
+                    className={`text-[11px] inline-block origin-center scale-y-[0.6] ${sortKey === "opportunity_apr" && sortDir === "desc" ? "text-gray-200" : "text-gray-500/70"}`}
+                  >
+                    ▼
+                  </span>
+                </span>
               </div>
             </th>
 
