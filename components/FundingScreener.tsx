@@ -18,7 +18,6 @@ import APRRangeFilter from "@/components/Table/APRRangeFilter";
 import RateCell from "@/components/FundingScreener/RateCell";
 import APRCell from "@/components/FundingScreener/APRCell";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
-import SkeletonLoader from "@/components/ui/SkeletonLoader";
 import SortableHeader from "@/components/ui/SortableHeader";
 import { TAILWIND } from "@/lib/theme";
 import { withTimeout } from "@/lib/async";
@@ -360,14 +359,6 @@ export default function FundingScreener() {
     limit === -1 ? filtered : filtered.slice(page * limit, page * limit + limit);
 
   /* ---------- render ---------- */
-  if (loading && rows.length === 0) {
-    return (
-      <section className="py-4">
-        <SkeletonLoader rows={10} />
-      </section>
-    );
-  }
-
   if (error) {
     return (
       <section className="py-4">

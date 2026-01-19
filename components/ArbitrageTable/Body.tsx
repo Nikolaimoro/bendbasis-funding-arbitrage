@@ -16,6 +16,10 @@ type SortKey = "opportunity_apr" | "stability";
  * Color coded: green (0.8-1), orange (0.5-0.8), red (<0.5)
  */
 function StabilityBar({ value }: { value: number | null }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+
   if (value == null) {
     return <span className="text-gray-500">–</span>;
   }
@@ -26,15 +30,39 @@ function StabilityBar({ value }: { value: number | null }) {
     : value >= 0.5 
       ? "bg-orange-400 border-orange-400" 
       : "bg-red-400 border-red-400";
+  const label = value >= 0.8 ? "High" : value >= 0.5 ? "Medium" : "low";
   
   return (
     <div className="flex items-center justify-center w-full">
-      <div className={`relative w-16 h-2 rounded-full border ${colorClass.split(' ')[1]} bg-transparent`}>
+      <div
+        ref={barRef}
+        onMouseEnter={() => {
+          if (!barRef.current) return;
+          const rect = barRef.current.getBoundingClientRect();
+          setTooltipPos({
+            top: rect.top,
+            left: rect.left + rect.width / 2,
+          });
+          setShowTooltip(true);
+        }}
+        onMouseLeave={() => setShowTooltip(false)}
+        className={`relative w-16 h-2 rounded-full border ${colorClass.split(' ')[1]} bg-transparent`}
+      >
         <div 
           className={`absolute left-0 top-0 h-full rounded-full ${colorClass.split(' ')[0]}`}
           style={{ width: `${percentage}%` }}
         />
       </div>
+      {showTooltip && tooltipPos && typeof window !== "undefined" &&
+        createPortal(
+          <div
+            style={{ top: tooltipPos.top - 8, left: tooltipPos.left }}
+            className="fixed z-[9999] px-2 py-1 rounded-md bg-[#292e40] border border-[#343a4e] text-xs text-gray-200 shadow-lg pointer-events-none -translate-x-1/2 -translate-y-full"
+          >
+            {label}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

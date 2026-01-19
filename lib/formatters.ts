@@ -103,7 +103,13 @@ export function formatExchange(ex: string): string {
  * normalizeToken("MAKER")      // "MAKER" (letter M is preserved)
  */
 export function normalizeToken(s: string): string {
-  let token = (s ?? "").toUpperCase().trim();
+  const raw = (s ?? "").trim();
+  let token = raw.toUpperCase();
+
+  // Remove lowercase k prefix (e.g., kPEPE -> PEPE)
+  if (raw.startsWith("k") && token.length > 1) {
+    token = token.slice(1);
+  }
 
   // Remove numeric multiplier prefixes (1000000, 100000, ..., 10)
   for (const mult of MULTIPLIERS) {
