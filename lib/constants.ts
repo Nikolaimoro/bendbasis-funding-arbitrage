@@ -13,6 +13,7 @@ export const EXCHANGE_LABEL: Record<string, string> = {
   gate: "Gate.io",
   okx: "OKX",
   aster: "Aster",
+  variational: "Variational",
 };
 
 /**
