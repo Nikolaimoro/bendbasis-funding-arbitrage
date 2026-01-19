@@ -10,20 +10,53 @@ interface RateCellProps {
   market: FundingMatrixMarket;
   rate: number | null;
   token?: string;
+  /** Role in APR calculation: "long" (min rate), "short" (max rate), or undefined */
+  role?: "long" | "short";
 }
 
-export default function RateCell({ market, rate, token }: RateCellProps) {
+/** Small triangle indicator for long/short roles */
+function RoleIndicator({ role }: { role: "long" | "short" }) {
+  if (role === "long") {
+    // Green up triangle
+    return (
+      <span
+        className="inline-block ml-1 w-0 h-0 align-middle"
+        style={{
+          borderLeft: "3px solid transparent",
+          borderRight: "3px solid transparent",
+          borderBottom: "5px solid #34d399",
+        }}
+        title="Long position (min rate)"
+      />
+    );
+  }
+  // Red down triangle
+  return (
+    <span
+      className="inline-block ml-1 w-0 h-0 align-middle"
+      style={{
+        borderLeft: "3px solid transparent",
+        borderRight: "3px solid transparent",
+        borderTop: "5px solid #f87171",
+      }}
+      title="Short position (max rate)"
+    />
+  );
+}
+
+export default function RateCell({ market, rate, token, role }: RateCellProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
   const rateText = rate !== null ? formatAPR(rate) : "–";
 
+  // Inverted colors for exchange columns: negative = green (good for long), positive = red (bad for long)
   const rateColor =
     rate === null
       ? "text-gray-600"
-      : rate > 0
-      ? "text-emerald-400"
       : rate < 0
+      ? "text-emerald-400"
+      : rate > 0
       ? "text-red-400"
       : "text-gray-400";
 
@@ -39,7 +72,7 @@ export default function RateCell({ market, rate, token }: RateCellProps) {
   const content = (
     <span
       ref={triggerRef}
-      className={`${rateColor} relative cursor-pointer`}
+      className={`${rateColor} relative cursor-pointer inline-flex items-center`}
       onMouseEnter={() => {
         updateTooltipPosition();
         setShowTooltip(true);
@@ -47,6 +80,7 @@ export default function RateCell({ market, rate, token }: RateCellProps) {
       onMouseLeave={() => setShowTooltip(false)}
     >
       {rateText}
+      {role && <RoleIndicator role={role} />}
     </span>
   );
 

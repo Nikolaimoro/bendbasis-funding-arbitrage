@@ -584,6 +584,14 @@ export default function FundingScreener() {
                         {filteredColumns.map((col) => {
                           const market = row.markets?.[col.column_key];
                           const rate = getRate(market, timeWindow);
+                          // Determine if this column is used for APR calculation
+                          const role = arbPair
+                            ? col.column_key === arbPair.longKey
+                              ? "long"
+                              : col.column_key === arbPair.shortKey
+                              ? "short"
+                              : undefined
+                            : undefined;
 
                           return (
                             <td
@@ -593,7 +601,7 @@ export default function FundingScreener() {
                               {!market ? (
                                 <span className="text-gray-600 block text-center">–</span>
                               ) : (
-                                <RateCell market={market} rate={rate} token={row.token} />
+                                <RateCell market={market} rate={rate} token={row.token} role={role} />
                               )}
                             </td>
                           );
