@@ -151,10 +151,11 @@ function GradientSlider({
           
           {/* Thumb */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 cursor-grab active:cursor-grabbing"
+            className="absolute w-4 h-4 rounded-full border-2 cursor-grab active:cursor-grabbing"
             style={{
               left: `${leftPercent}%`,
-              transform: `translate(-50%, -50%)`,
+              top: "50%",
+              transform: "translate(-50%, -50%)",
               background: "#292e40",
               borderColor: leftPercent < 50 ? "#9E5DEE" : "#FA814D",
             }}

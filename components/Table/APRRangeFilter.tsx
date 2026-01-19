@@ -194,10 +194,11 @@ export default function APRRangeFilter({
                   
                   {/* Min thumb */}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 cursor-grab active:cursor-grabbing"
+                    className="absolute w-4 h-4 rounded-full border-2 cursor-grab active:cursor-grabbing"
                     style={{
                       left: `${leftPercent}%`,
-                      transform: `translate(-50%, -50%)`,
+                      top: "50%",
+                      transform: "translate(-50%, -50%)",
                       background: "#292e40",
                       borderColor: "#9E5DEE",
                     }}
@@ -209,10 +210,11 @@ export default function APRRangeFilter({
                   
                   {/* Max thumb */}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 cursor-grab active:cursor-grabbing"
+                    className="absolute w-4 h-4 rounded-full border-2 cursor-grab active:cursor-grabbing"
                     style={{
                       left: `${rightPercent}%`,
-                      transform: `translate(-50%, -50%)`,
+                      top: "50%",
+                      transform: "translate(-50%, -50%)",
                       background: "#292e40",
                       borderColor: "#FA814D",
                     }}

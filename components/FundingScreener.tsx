@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, ChevronDown, Search, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { normalizeToken, formatAPR, formatExchange } from "@/lib/formatters";
-import { getRate, calculateMaxArb } from "@/lib/funding";
+import { getRate, calculateMaxArb, findArbPair } from "@/lib/funding";
 import {
   ExchangeColumn,
   FundingMatrixRow,
@@ -16,6 +16,7 @@ import Pagination from "@/components/Table/Pagination";
 import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import APRRangeFilter from "@/components/Table/APRRangeFilter";
 import RateCell from "@/components/FundingScreener/RateCell";
+import APRCell from "@/components/FundingScreener/APRCell";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import SkeletonLoader from "@/components/ui/SkeletonLoader";
 import SortableHeader from "@/components/ui/SortableHeader";
@@ -392,7 +393,7 @@ export default function FundingScreener() {
           </defs>
         </svg>
         {/* ---------- table wrapper ---------- */}
-        <div className="rounded-2xl border border-[#343a4e] bg-[#292e40] overflow-hidden">
+        <div className="rounded-2xl border border-[#343a4e] bg-[#292e40]">
           {/* ---------- header row with controls ---------- */}
           <div className="flex flex-wrap items-center gap-4 px-4 py-4">
             <h2 className="text-base font-roboto text-white">Screener</h2>
@@ -501,7 +502,7 @@ export default function FundingScreener() {
                   </th>
                   <th className={`${TAILWIND.table.header} text-right sticky left-[138px] bg-[#292e40] z-10`}>
                     <SortableHeader
-                      label="Max Arb"
+                      label="APR"
                       active={sortKey === "max_arb"}
                       dir={sortDir}
                       onClick={() => toggleSort("max_arb")}
@@ -545,6 +546,7 @@ export default function FundingScreener() {
                 ) : (
                   paginatedRows.map((row, idx) => {
                     const maxArb = calculateMaxArb(row.markets, timeWindow, filteredColumnKeys);
+                    const arbPair = findArbPair(row.markets, timeWindow, filteredColumnKeys);
 
                     return (
                       <tr
@@ -571,15 +573,11 @@ export default function FundingScreener() {
                           {row.token ?? "–"}
                         </td>
 
-                        {/* Max Arb - sticky */}
+                        {/* APR - sticky */}
                         <td
-                          className={`px-4 py-2 text-right font-mono tabular-nums sticky left-[138px] bg-[#292e40] group-hover:bg-[#353b52] z-10 transition-colors ${
-                            maxArb !== null && maxArb > 0
-                              ? "text-emerald-400"
-                              : "text-gray-500"
-                          }`}
+                          className={`px-4 py-2 text-right font-mono tabular-nums sticky left-[138px] bg-[#292e40] group-hover:bg-[#353b52] z-10 transition-colors`}
                         >
-                          {maxArb !== null ? formatAPR(maxArb) : "–"}
+                          <APRCell maxArb={maxArb} arbPair={arbPair} />
                         </td>
 
                         {/* Exchange columns */}
@@ -595,7 +593,7 @@ export default function FundingScreener() {
                               {!market ? (
                                 <span className="text-gray-600 block text-center">–</span>
                               ) : (
-                                <RateCell market={market} rate={rate} />
+                                <RateCell market={market} rate={rate} token={row.token} />
                               )}
                             </td>
                           );
