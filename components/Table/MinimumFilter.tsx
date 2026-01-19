@@ -92,6 +92,7 @@ function GradientSlider({
   onDisplayChange,
 }: SingleSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const previousUserSelect = useRef("");
   const [dragging, setDragging] = useState(false);
   
   const clampedValue = typeof value === "number" ? clampValue(value, maxValue) : 0;
@@ -108,6 +109,8 @@ function GradientSlider({
 
   useEffect(() => {
     if (!dragging) return;
+    previousUserSelect.current = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!trackRef.current) return;
@@ -126,6 +129,7 @@ function GradientSlider({
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = previousUserSelect.current;
     };
   }, [dragging, maxValue, onChange]);
 
@@ -138,6 +142,7 @@ function GradientSlider({
           className="relative h-2 rounded-full cursor-pointer"
           style={{ backgroundColor: "#383d50" }}
           onClick={handleTrackClick}
+          onMouseDown={(e) => e.preventDefault()}
         >
           {/* Gradient fill from left to thumb */}
           <div
@@ -160,6 +165,7 @@ function GradientSlider({
               borderColor: leftPercent < 50 ? "#9E5DEE" : "#FA814D",
             }}
             onMouseDown={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               setDragging(true);
             }}

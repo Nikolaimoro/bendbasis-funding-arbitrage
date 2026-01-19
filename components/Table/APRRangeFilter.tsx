@@ -153,33 +153,14 @@ export default function APRRangeFilter({
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onOpenChange(!open)}
-          className={`${TAILWIND.button.secondary} inline-flex items-center gap-2 text-sm`}
-          type="button"
-        >
-          <span>Filters</span>
-          <ChevronDown className="h-4 w-4 text-gray-300" />
-        </button>
-        {hasActiveFilter && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMinAPRChange("");
-              onMaxAPRFilterChange("");
-              setMinInputValue("");
-              setMaxInputValue("");
-            }}
-            className="h-6 w-6 rounded-full bg-[#383d50] border border-[#343a4e] text-gray-300 text-xs leading-none flex items-center justify-center transition-colors duration-200 hover:border-white hover:text-white"
-            aria-label="Clear APR filters"
-            title="Clear"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
+      <button
+        onClick={() => onOpenChange(!open)}
+        className={`${TAILWIND.button.secondary} inline-flex items-center gap-2 text-sm`}
+        type="button"
+      >
+        <span>Filters</span>
+        <ChevronDown className="h-4 w-4 text-gray-300" />
+      </button>
 
       {open && (
         <>
@@ -323,6 +304,23 @@ export default function APRRangeFilter({
                     placeholder="Max"
                     className="w-20 bg-[#383d50] border border-transparent rounded px-2 py-1 text-xs text-gray-200 focus:outline-none text-center"
                   />
+                  {hasActiveFilter && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMinAPRChange("");
+                        onMaxAPRFilterChange("");
+                        setMinInputValue("");
+                        setMaxInputValue("");
+                      }}
+                      className="h-5 w-5 rounded-full bg-[#383d50] border border-[#343a4e] text-gray-300 text-xs leading-none flex items-center justify-center transition-colors duration-200 hover:border-white hover:text-white"
+                      aria-label="Clear APR filters"
+                      title="Clear"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

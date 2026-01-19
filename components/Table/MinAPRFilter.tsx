@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { TAILWIND } from "@/lib/theme";
 
@@ -63,12 +63,14 @@ export default function MinAPRFilter({
   onOpenChange,
 }: MinAPRFilterProps) {
   const hasActiveFilter = typeof minAPR === "number" && minAPR > 0;
+  const previousUserSelect = useRef("");
   const clampedMinAPR =
     typeof minAPR === "number" ? clampValue(minAPR, maxAPR) : 0;
   const sliderValue = Math.round(
     sliderFromValue(clampedMinAPR, maxAPR) * SLIDER_STEPS
   );
   const [inputValue, setInputValue] = useState<string>("");
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     if (typeof minAPR === "number" && minAPR > 0) {
@@ -77,6 +79,15 @@ export default function MinAPRFilter({
       setInputValue("");
     }
   }, [minAPR]);
+
+  useEffect(() => {
+    if (!dragging) return;
+    previousUserSelect.current = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
+    return () => {
+      document.body.style.userSelect = previousUserSelect.current;
+    };
+  }, [dragging]);
 
   return (
     <div className="relative">
@@ -108,6 +119,12 @@ export default function MinAPRFilter({
                     const rawValue = valueFromSlider(sliderRatio, maxAPR);
                     onMinAPRChange(Math.round(rawValue * 10) / 10);
                   }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setDragging(true);
+                  }}
+                  onMouseUp={() => setDragging(false)}
+                  onMouseLeave={() => setDragging(false)}
                   disabled={maxAPR <= 0}
                   className="w-full accent-emerald-400"
                 />
