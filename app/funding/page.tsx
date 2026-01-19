@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: "Funding Rate Arbitrage Screener | bendbasis",
   description: "Screen funding rate arbitrage opportunities across major crypto exchanges",
   keywords: ["funding rates", "crypto", "arbitrage", "screener", "trading"],
+  alternates: {
+    canonical: "/funding",
+  },
   openGraph: {
     title: "Funding Rate Arbitrage Screener | bendbasis",
     description: "Screen funding rate arbitrage opportunities across major crypto exchanges",

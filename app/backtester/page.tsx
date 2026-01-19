@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "Crypto Funding Arbitrage Backtester | bendbasis",
   description: "Backtest cryptocurrency arbitrage strategies with historical funding rate data",
   keywords: ["backtester", "arbitrage", "crypto", "funding rates", "strategy testing"],
+  alternates: {
+    canonical: "/backtester",
+  },
   openGraph: {
     title: "Crypto Funding Arbitrage Backtester | bendbasis",
     description: "Backtest cryptocurrency arbitrage strategies with historical funding rate data",

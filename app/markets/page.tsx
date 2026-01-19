@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: "Markets - Funding Rates Dashboard | bendbasis",
   description: "Real-time cryptocurrency funding rates across major exchanges",
   keywords: ["funding rates", "crypto", "markets", "trading"],
+  alternates: {
+    canonical: "/markets",
+  },
   openGraph: {
     title: "Markets - Funding Rates Dashboard | bendbasis",
     description: "Real-time cryptocurrency funding rates across major exchanges",

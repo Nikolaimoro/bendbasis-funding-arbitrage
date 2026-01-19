@@ -21,10 +21,35 @@ const roboto = Roboto({
 
 
 export const metadata: Metadata = {
-  title: "Funding Dashboard",
-  description: "Find funding arbitrage opportunities",
+  metadataBase: new URL("https://bendbasis.com"),
+  title: {
+    default: "Funding Dashboard | bendbasis",
+    template: "%s | bendbasis",
+  },
+  description: "Find funding arbitrage opportunities across crypto exchanges. Compare funding rates, analyze arbitrage spreads, and backtest strategies.",
+  keywords: ["funding rates", "crypto", "arbitrage", "trading", "perpetual futures", "funding arbitrage"],
+  authors: [{ name: "bendbasis" }],
   icons: {
     icon: "/favicon.ico?v=2",
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Funding Dashboard | bendbasis",
+    description: "Find funding arbitrage opportunities across crypto exchanges",
+    type: "website",
+    siteName: "bendbasis",
+    url: "https://bendbasis.com",
+  },
+  twitter: {
+    card: "summary",
+    title: "Funding Dashboard | bendbasis",
+    description: "Find funding arbitrage opportunities across crypto exchanges",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -35,6 +60,32 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              "name": "bendbasis Funding Dashboard",
+              "url": "https://bendbasis.com",
+              "description": "Find funding arbitrage opportunities across crypto exchanges. Compare funding rates, analyze arbitrage spreads, and backtest strategies.",
+              "applicationCategory": "FinanceApplication",
+              "operatingSystem": "Web",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              },
+              "creator": {
+                "@type": "Organization",
+                "name": "bendbasis",
+                "url": "https://bendbasis.com"
+              }
+            }),
+          }}
+        />
+      </head>
       <body
         className={`
           ${inter.variable} 

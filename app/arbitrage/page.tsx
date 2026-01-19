@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: "Crypto Funding Arbitrage Opportunities | bendbasis",
   description: "Top cryptocurrency arbitrage opportunities identified over the last 15 days",
   keywords: ["arbitrage", "crypto", "opportunities", "funding rates", "trading"],
+  alternates: {
+    canonical: "/arbitrage",
+  },
   openGraph: {
     title: "Crypto Funding Arbitrage Opportunities | bendbasis",
     description: "Top cryptocurrency arbitrage opportunities identified over the last 15 days",
