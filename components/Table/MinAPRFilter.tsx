@@ -125,6 +125,8 @@ export default function MinAPRFilter({
                   }}
                   onMouseUp={() => setDragging(false)}
                   onMouseLeave={() => setDragging(false)}
+                  onTouchStart={() => setDragging(true)}
+                  onTouchEnd={() => setDragging(false)}
                   disabled={maxAPR <= 0}
                   className="w-full accent-emerald-400"
                 />

@@ -99,12 +99,16 @@ function GradientSlider({
   const sliderRatio = sliderFromValue(clampedValue, maxValue);
   const leftPercent = sliderRatio * 100;
 
-  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const updateFromClientX = (clientX: number) => {
     if (!trackRef.current) return;
     const rect = trackRef.current.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const rawValue = valueFromSlider(ratio, maxValue);
     onChange(Math.round(rawValue));
+  };
+
+  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    updateFromClientX(e.clientX);
   };
 
   useEffect(() => {
@@ -113,11 +117,14 @@ function GradientSlider({
     document.body.style.userSelect = "none";
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!trackRef.current) return;
-      const rect = trackRef.current.getBoundingClientRect();
-      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const rawValue = valueFromSlider(ratio, maxValue);
-      onChange(Math.round(rawValue));
+      updateFromClientX(e.clientX);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      e.preventDefault();
+      updateFromClientX(touch.clientX);
     };
 
     const handleMouseUp = () => {
@@ -125,10 +132,14 @@ function GradientSlider({
     };
 
     window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchend", handleMouseUp);
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchend", handleMouseUp);
       document.body.style.userSelect = previousUserSelect.current;
     };
   }, [dragging, maxValue, onChange]);
@@ -143,6 +154,13 @@ function GradientSlider({
           style={{ backgroundColor: "#383d50" }}
           onClick={handleTrackClick}
           onMouseDown={(e) => e.preventDefault()}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            if (!touch) return;
+            updateFromClientX(touch.clientX);
+            setDragging(true);
+          }}
         >
           {/* Gradient fill from left to thumb */}
           <div
@@ -165,6 +183,11 @@ function GradientSlider({
               borderColor: leftPercent < 50 ? "#9E5DEE" : "#FA814D",
             }}
             onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragging(true);
+            }}
+            onTouchStart={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setDragging(true);

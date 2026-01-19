@@ -82,6 +82,28 @@ export default function APRRangeFilter({
     (typeof minAPR === "number" && minAPR > 0) ||
     (typeof maxAPRFilter === "number" && maxAPRFilter < maxAPR);
 
+  const updateFromClientX = (clientX: number) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const value = valueFromSlider(ratio, maxAPR);
+    const rounded = Math.round(value * 10) / 10;
+
+    if (dragging === "min") {
+      onMinAPRChange(Math.min(rounded, clampedMax));
+    } else if (dragging === "max") {
+      onMaxAPRFilterChange(Math.max(rounded, clampedMin));
+    } else {
+      const distToMin = Math.abs(ratio - minSliderRatio);
+      const distToMax = Math.abs(ratio - maxSliderRatio);
+      if (distToMin < distToMax) {
+        onMinAPRChange(Math.min(rounded, clampedMax));
+      } else {
+        onMaxAPRFilterChange(Math.max(rounded, clampedMin));
+      }
+    }
+  };
+
   useEffect(() => {
     if (typeof minAPR === "number" && minAPR > 0) {
       setMinInputValue(String(minAPR));
@@ -99,35 +121,20 @@ export default function APRRangeFilter({
   }, [maxAPRFilter, maxAPR]);
 
   const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!trackRef.current) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const value = valueFromSlider(ratio, maxAPR);
-    const rounded = Math.round(value * 10) / 10;
-    
-    // Determine which thumb is closer
-    const distToMin = Math.abs(ratio - minSliderRatio);
-    const distToMax = Math.abs(ratio - maxSliderRatio);
-    
-    if (distToMin < distToMax) {
-      onMinAPRChange(Math.min(rounded, clampedMax));
-    } else {
-      onMaxAPRFilterChange(Math.max(rounded, clampedMin));
-    }
+    updateFromClientX(e.clientX);
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!dragging || !trackRef.current) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const value = valueFromSlider(ratio, maxAPR);
-    const rounded = Math.round(value * 10) / 10;
-    
-    if (dragging === "min") {
-      onMinAPRChange(Math.min(rounded, clampedMax));
-    } else {
-      onMaxAPRFilterChange(Math.max(rounded, clampedMin));
-    }
+    if (!dragging) return;
+    updateFromClientX(e.clientX);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!dragging) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    e.preventDefault();
+    updateFromClientX(touch.clientX);
   };
 
   const handleMouseUp = () => {
@@ -139,10 +146,14 @@ export default function APRRangeFilter({
       previousUserSelect.current = document.body.style.userSelect;
       document.body.style.userSelect = "none";
       window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("touchmove", handleTouchMove, { passive: false });
       window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("touchend", handleMouseUp);
       return () => {
         window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("touchmove", handleTouchMove);
         window.removeEventListener("mouseup", handleMouseUp);
+        window.removeEventListener("touchend", handleMouseUp);
         document.body.style.userSelect = previousUserSelect.current;
       };
     }
@@ -189,6 +200,18 @@ export default function APRRangeFilter({
                   style={{ backgroundColor: "#383d50" }}
                   onClick={handleTrackClick}
                   onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    if (!touch) return;
+                    updateFromClientX(touch.clientX);
+                    const rect = trackRef.current?.getBoundingClientRect();
+                    if (!rect) return;
+                    const ratio = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+                    const distToMin = Math.abs(ratio - minSliderRatio);
+                    const distToMax = Math.abs(ratio - maxSliderRatio);
+                    setDragging(distToMin < distToMax ? "min" : "max");
+                  }}
                 >
                   {/* Gradient fill between thumbs */}
                   <div
@@ -215,6 +238,11 @@ export default function APRRangeFilter({
                       e.stopPropagation();
                       setDragging("min");
                     }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragging("min");
+                    }}
                   />
                   
                   {/* Max thumb */}
@@ -228,6 +256,11 @@ export default function APRRangeFilter({
                       borderColor: "#FA814D",
                     }}
                     onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragging("max");
+                    }}
+                    onTouchStart={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setDragging("max");

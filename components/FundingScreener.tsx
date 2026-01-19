@@ -457,7 +457,7 @@ export default function FundingScreener() {
                   value={search}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search asset"
-                  className={`${TAILWIND.input.default} w-full pl-10 pr-9 bg-transparent border border-[#383d50] focus:bg-transparent focus:border-[#383d50]`}
+                  className={`${TAILWIND.input.default} pl-10 pr-9 bg-transparent border border-[#383d50] focus:bg-transparent focus:border-[#383d50]`}
                 />
                 {search && (
                   <button
