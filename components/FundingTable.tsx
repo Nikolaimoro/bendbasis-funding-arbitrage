@@ -117,6 +117,11 @@ export default function FundingTable({
     resetPage();
   };
 
+  const clearExchanges = () => {
+    setSelectedExchanges([]);
+    resetPage();
+  };
+
   useEffect(() => {
     if (!exchanges.length) return;
     // Try to load from localStorage first
@@ -270,7 +275,8 @@ export default function FundingTable({
             exchanges={exchanges}
             selectedExchanges={selectedExchanges}
             onToggleExchange={toggleExchange}
-            onResetExchanges={resetExchanges}
+            onCheckAllExchanges={resetExchanges}
+            onUncheckAllExchanges={clearExchanges}
             filterOpen={filterOpen}
             onFilterOpenChange={setFilterOpen}
             minOI={minOI}

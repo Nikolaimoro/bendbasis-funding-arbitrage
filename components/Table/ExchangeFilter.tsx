@@ -11,7 +11,8 @@ interface ExchangeFilterProps {
   exchanges: string[];
   selectedExchanges: string[];
   onToggleExchange: (exchange: string) => void;
-  onResetExchanges: () => void;
+  onCheckAll: () => void;
+  onUncheckAll: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -20,11 +21,13 @@ export default function ExchangeFilter({
   exchanges,
   selectedExchanges,
   onToggleExchange,
-  onResetExchanges,
+  onCheckAll,
+  onUncheckAll,
   open,
   onOpenChange,
 }: ExchangeFilterProps) {
-  const canReset = exchanges.length > 0 && selectedExchanges.length !== exchanges.length;
+  const canCheckAll = exchanges.length > 0 && selectedExchanges.length !== exchanges.length;
+  const canUncheckAll = selectedExchanges.length > 0;
 
   return (
     <div className="relative">
@@ -43,42 +46,62 @@ export default function ExchangeFilter({
             className="fixed inset-0 z-40"
             onClick={() => onOpenChange(false)}
           />
-          <div className="absolute z-50 mt-2 bg-[#292e40] border border-[#343a4e] rounded w-56 p-2 shadow-lg animate-dropdown">
+          <div className="absolute z-50 mt-2 bg-[#292e40] border border-[#343a4e] rounded w-[min(92vw,340px)] sm:w-72 p-2 shadow-lg animate-dropdown right-0 sm:left-0 sm:right-auto">
             <div className="flex items-center justify-between px-2 pb-2 text-xs">
               <span className="font-light text-gray-300">Select Exchanges</span>
-              <button
-                type="button"
-                onClick={onResetExchanges}
-                disabled={!canReset}
-                className={[
-                  "font-light transition",
-                  canReset
-                    ? "text-gray-200 underline underline-offset-2"
-                    : "text-gray-400/50",
-                ].join(" ")}
-              >
-                Reset
-              </button>
-            </div>
-            {exchanges.map((ex) => (
-              <label
-                key={ex}
-                className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-[#353b52] rounded items-center justify-between"
-              >
-                {formatExchange(ex)}
-                <input
-                  type="checkbox"
-                  checked={selectedExchanges.includes(ex)}
-                  onChange={() => onToggleExchange(ex)}
-                  className="cursor-pointer h-5 w-5 accent-blue-500"
-                />
-              </label>
-            ))}
-            {exchanges.length === 0 && (
-              <div className="px-2 py-2 text-gray-500 text-sm">
-                No exchanges
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onCheckAll}
+                  disabled={!canCheckAll}
+                  className={[
+                    "font-light transition",
+                    canCheckAll
+                      ? "text-gray-200 underline underline-offset-2"
+                      : "text-gray-400/50",
+                  ].join(" ")}
+                >
+                  Check All
+                </button>
+                <span className="text-gray-500">/</span>
+                <button
+                  type="button"
+                  onClick={onUncheckAll}
+                  disabled={!canUncheckAll}
+                  className={[
+                    "font-light transition",
+                    canUncheckAll
+                      ? "text-gray-200 underline underline-offset-2"
+                      : "text-gray-400/50",
+                  ].join(" ")}
+                >
+                  Uncheck All
+                </button>
               </div>
-            )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 max-h-[60vh] overflow-y-auto pr-1">
+              {exchanges.map((ex) => (
+                <label
+                  key={ex}
+                  className="flex gap-2 px-2 py-1 cursor-pointer hover:bg-[#353b52] rounded items-center"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedExchanges.includes(ex)}
+                    onChange={() => onToggleExchange(ex)}
+                    className="cursor-pointer h-4 w-4 accent-blue-500"
+                  />
+                  <span className="text-sm text-gray-200">
+                    {formatExchange(ex)}
+                  </span>
+                </label>
+              ))}
+              {exchanges.length === 0 && (
+                <div className="px-2 py-2 text-gray-500 text-sm">
+                  No exchanges
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}

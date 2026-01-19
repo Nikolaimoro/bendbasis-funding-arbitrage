@@ -16,16 +16,16 @@ function BurgerIcon({ open, color = "white", onClick }: BurgerIconProps) {
     <button
       type="button"
       onClick={onClick}
-      className="relative w-6 h-6 flex flex-col items-center justify-center gap-1.5"
+      className="relative w-6 h-6 flex flex-col items-center justify-center gap-1.25"
       aria-label={open ? "Close menu" : "Open menu"}
     >
       <span
-        className={`block w-5 h-[2px] ${lineColor} transition-all duration-300 ${
-          open ? "rotate-45 translate-y-[5px]" : ""
+        className={`block w-[22px] h-[1.5px] ${lineColor} transition-all duration-300 ${
+          open ? "rotate-45 translate-y-[4px]" : ""
         }`}
       />
       <span
-        className={`block w-5 h-[2px] ${lineColor} transition-all duration-300 ${
+        className={`block w-[22px] h-[1.5px] ${lineColor} transition-all duration-300 ${
           open ? "-rotate-45 -translate-y-[3px]" : ""
         }`}
       />
@@ -132,13 +132,13 @@ export default function AppHeader() {
         href={href}
         onClick={() => setMobileMenuOpen(false)}
         className={[
-          "block text-2xl font-roboto font-normal py-4 text-center transition-colors duration-200",
+          "block w-full text-lg font-roboto font-normal py-3 text-left transition-colors duration-200",
           active ? "text-white" : "text-gray-400 hover:text-white",
         ].join(" ")}
       >
         {label}
         {active && (
-          <span className="block mx-auto mt-2 w-12 h-[2px] bg-gradient-to-r from-[#9E5DEE] to-[#FA814D]" />
+          <span className="block mt-2 w-12 h-[2px] bg-gradient-to-r from-[#9E5DEE] to-[#FA814D]" />
         )}
       </Link>
     );
@@ -192,14 +192,14 @@ export default function AppHeader() {
       <div
         className={[
           "fixed inset-0 z-40 bg-[#1c202f] pt-[52px]",
-          "flex flex-col items-center justify-center",
+          "flex flex-col",
           "transition-all duration-300 ease-out md:hidden",
           mobileMenuOpen
             ? "opacity-100 pointer-events-auto translate-y-0"
             : "opacity-0 pointer-events-none -translate-y-4",
         ].join(" ")}
       >
-        <nav className="flex flex-col items-center gap-2">
+        <nav className="flex flex-col items-start gap-1 w-full px-6 pt-6">
           {mobileNavLink("/funding", "Funding")}
           {mobileNavLink("/markets", "Markets")}
           {mobileNavLink("/arbitrage", "Arbitrage")}

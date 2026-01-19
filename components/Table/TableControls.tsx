@@ -10,7 +10,8 @@ interface TableControlsProps {
   exchanges: string[];
   selectedExchanges: string[];
   onToggleExchange: (exchange: string) => void;
-  onResetExchanges: () => void;
+  onCheckAllExchanges: () => void;
+  onUncheckAllExchanges: () => void;
   filterOpen: boolean;
   onFilterOpenChange: (open: boolean) => void;
   minOI: number | "";
@@ -32,7 +33,8 @@ export default function TableControls({
   exchanges,
   selectedExchanges,
   onToggleExchange,
-  onResetExchanges,
+  onCheckAllExchanges,
+  onUncheckAllExchanges,
   filterOpen,
   onFilterOpenChange,
   minOI,
@@ -64,7 +66,8 @@ export default function TableControls({
         exchanges={exchanges}
         selectedExchanges={selectedExchanges}
         onToggleExchange={onToggleExchange}
-        onResetExchanges={onResetExchanges}
+        onCheckAll={onCheckAllExchanges}
+        onUncheckAll={onUncheckAllExchanges}
         open={filterOpen}
         onOpenChange={onFilterOpenChange}
       />

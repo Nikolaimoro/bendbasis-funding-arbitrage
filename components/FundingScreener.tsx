@@ -441,8 +441,12 @@ export default function FundingScreener() {
                   );
                   resetPage();
                 }}
-                onResetExchanges={() => {
+                onCheckAll={() => {
                   setSelectedExchanges(exchanges);
+                  resetPage();
+                }}
+                onUncheckAll={() => {
+                  setSelectedExchanges([]);
                   resetPage();
                 }}
                 open={filterOpen}
