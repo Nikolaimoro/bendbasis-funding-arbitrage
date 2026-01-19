@@ -173,13 +173,13 @@ function AprInfo() {
       const rect = buttonRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const maxWidth = Math.min(320, viewportWidth - 32);
-      const minLeft = 16;
-      const maxLeft = Math.max(16, viewportWidth - 16 - maxWidth);
-      const desiredLeft = rect.left - 8;
-      const clampedLeft = Math.min(Math.max(desiredLeft, minLeft), maxLeft);
+      const minCenter = 16 + maxWidth / 2;
+      const maxCenter = Math.max(minCenter, viewportWidth - 16 - maxWidth / 2);
+      const desiredCenter = rect.left + rect.width / 2;
+      const clampedCenter = Math.min(Math.max(desiredCenter, minCenter), maxCenter);
       setTooltipPos({
-        top: rect.top + rect.height / 2,
-        left: clampedLeft,
+        top: rect.top - 8,
+        left: clampedCenter,
       });
       setTooltipWidth(maxWidth);
       setShowTooltip(true);
@@ -206,10 +206,10 @@ function AprInfo() {
             style={{ top: tooltipPos.top, left: tooltipPos.left, maxWidth: tooltipWidth }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className="fixed z-[9999] w-64 sm:w-80 max-w-[calc(100vw-32px)] p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed text-left animate-tooltip pointer-events-auto"
+            className="fixed z-[9999] -translate-x-1/2 -translate-y-full w-64 sm:w-80 max-w-[calc(100vw-32px)] p-3 rounded-lg bg-[#292e40] border border-[#343a4e] shadow-xl text-xs text-gray-300 leading-relaxed text-left animate-tooltip pointer-events-auto"
           >
             <p className="text-left">Estimated APR based on historical funding data over the last 15 days.</p>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#343a4e]" />
+            <div className="absolute left-1/2 bottom-0 translate-y-full -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#343a4e]" />
           </div>,
           document.body
         )}
