@@ -27,6 +27,7 @@ type ComboboxType = "token" | "long-ex" | "short-ex";
 
 export default function BacktesterForm({ tokens, exchanges, initialToken = "", initialLongEx = "", initialShortEx = "", initialLongQuote = "", initialShortQuote = "" }: BacktesterFormProps) {
   const autoRunRef = useRef(false);
+  const autoSyncRef = useRef<string>("");
   const [selectedToken, setSelectedToken] = useState<string>(initialToken);
   const [selectedLongEx, setSelectedLongEx] = useState<string>(initialLongEx);
   const [selectedLongQuote, setSelectedLongQuote] = useState<string>(initialLongQuote);
@@ -195,6 +196,16 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       selectedLongMarketId &&
       selectedShortMarketId
     ) {
+      if (typeof window !== "undefined" && !window.location.search) {
+        const exchange1 = `${selectedLongEx}${selectedLongQuote.toLowerCase()}`;
+        const exchange2 = `${selectedShortEx}${selectedShortQuote.toLowerCase()}`;
+        const params = new URLSearchParams({
+          token: selectedToken,
+          exchange1,
+          exchange2,
+        });
+        window.history.replaceState({}, "", `?${params.toString()}`);
+      }
       setChartData({
         token: selectedToken,
         longEx: selectedLongEx,
@@ -212,6 +223,57 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
     initialToken,
     initialLongEx,
     initialShortEx,
+    selectedToken,
+    selectedLongEx,
+    selectedShortEx,
+    selectedLongQuote,
+    selectedShortQuote,
+    selectedLongMarketId,
+    selectedShortMarketId,
+    selectedLongRefUrl,
+    selectedShortRefUrl,
+  ]);
+
+  // Auto-run and sync URL when fields are valid (no Run click needed)
+  useEffect(() => {
+    if (
+      !selectedToken ||
+      !selectedLongEx ||
+      !selectedShortEx ||
+      !selectedLongQuote ||
+      !selectedShortQuote ||
+      !selectedLongMarketId ||
+      !selectedShortMarketId
+    ) {
+      return;
+    }
+
+    const exchange1 = `${selectedLongEx}${selectedLongQuote.toLowerCase()}`;
+    const exchange2 = `${selectedShortEx}${selectedShortQuote.toLowerCase()}`;
+    const params = new URLSearchParams({
+      token: selectedToken,
+      exchange1,
+      exchange2,
+    });
+    const nextQuery = `?${params.toString()}`;
+
+    if (typeof window !== "undefined" && window.location.search !== nextQuery && autoSyncRef.current !== nextQuery) {
+      window.history.replaceState({}, "", nextQuery);
+      autoSyncRef.current = nextQuery;
+    }
+
+    setChartData({
+      token: selectedToken,
+      longEx: selectedLongEx,
+      shortEx: selectedShortEx,
+      longQuote: selectedLongQuote,
+      shortQuote: selectedShortQuote,
+      longMarketId: selectedLongMarketId,
+      shortMarketId: selectedShortMarketId,
+      longRefUrl: selectedLongRefUrl,
+      shortRefUrl: selectedShortRefUrl,
+    });
+  }, [
     selectedToken,
     selectedLongEx,
     selectedShortEx,

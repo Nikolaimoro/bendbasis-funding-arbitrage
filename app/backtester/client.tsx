@@ -45,16 +45,18 @@ export default function BacktesterClient({ tokens, exchanges }: BacktesterClient
   const searchParams = useSearchParams();
 
   // Initialize from URL params or empty
-  const initialToken = searchParams.get("token") || "";
+  const urlToken = searchParams.get("token") || "";
   const exchange1Param = searchParams.get("exchange1") || "";
   const exchange2Param = searchParams.get("exchange2") || "";
+  const hasParams = Boolean(urlToken || exchange1Param || exchange2Param);
+  const initialToken = hasParams ? urlToken : "BTC";
 
   // Parse exchange+quote format from URL
   const exchange1Parsed = parseExchangeQuote(exchange1Param, exchanges);
   const exchange2Parsed = parseExchangeQuote(exchange2Param, exchanges);
 
-  const initialLongEx = exchange1Parsed?.exchange || "";
-  const initialShortEx = exchange2Parsed?.exchange || "";
+  const initialLongEx = exchange1Parsed?.exchange || (hasParams ? "" : "bybit");
+  const initialShortEx = exchange2Parsed?.exchange || (hasParams ? "" : "binance");
   const initialLongQuote = exchange1Parsed?.quote || "";
   const initialShortQuote = exchange2Parsed?.quote || "";
 
