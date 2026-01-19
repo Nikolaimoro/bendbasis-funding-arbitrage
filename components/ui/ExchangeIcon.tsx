@@ -62,7 +62,7 @@ export default function ExchangeIcon({
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-md shrink-0 ${className}`}
+      className={`inline-flex items-center justify-center rounded-md overflow-hidden shrink-0 ${className}`}
       style={{
         width: size,
         height: size,
