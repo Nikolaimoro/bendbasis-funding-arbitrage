@@ -300,7 +300,7 @@ export default function FundingScreener() {
     if (search.trim()) {
       const term = normalizeToken(search.trim());
       result = result.filter((row) =>
-        normalizeToken(row.token ?? "").includes(term)
+        normalizeToken(row.token ?? "").startsWith(term)
       );
     }
 
