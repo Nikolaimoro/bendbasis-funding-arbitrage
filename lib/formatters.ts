@@ -106,8 +106,8 @@ export function normalizeToken(s: string): string {
   const raw = (s ?? "").trim();
   let token = raw.toUpperCase();
 
-  // Remove lowercase k prefix (e.g., kPEPE -> PEPE)
-  if (raw.startsWith("k") && token.length > 1) {
+  // Remove lowercase k prefix only when followed by an uppercase letter (e.g., kPEPE -> PEPE)
+  if (raw.startsWith("k") && raw.length > 1 && /[A-Z]/.test(raw[1])) {
     token = token.slice(1);
   }
 
