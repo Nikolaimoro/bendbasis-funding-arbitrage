@@ -93,6 +93,7 @@ function StatCard({
   subValue,
   subValueColor,
   className,
+  alignSubValueBottom,
 }: { 
   icon: React.ElementType; 
   iconColor: string; 
@@ -101,18 +102,19 @@ function StatCard({
   subValue?: React.ReactNode;
   subValueColor?: string;
   className?: string;
+  alignSubValueBottom?: boolean;
 }) {
   return (
-    <div className={`bg-[#1c202f] border border-[#343a4e] rounded-2xl p-4 min-w-[140px] ${className || ""}`}>
+    <div className={`bg-[#1c202f] border border-[#343a4e] rounded-2xl p-4 min-w-[140px] flex flex-col ${className || ""}`}>
       <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
         <Icon size={14} className={iconColor} />
         <span>{label}</span>
       </div>
-      <div className="text-xl font-semibold text-gray-100 font-mono tabular-nums">
+      <div className={`text-xl font-semibold text-gray-100 font-mono tabular-nums ${alignSubValueBottom ? "" : ""}`}>
         {value}
       </div>
       {subValue && (
-        <div className={`text-xs mt-1 ${subValueColor || "text-gray-500"}`}>
+        <div className={`text-xs ${alignSubValueBottom ? "mt-auto" : "mt-1"} ${subValueColor || "text-gray-500"}`}>
           {subValue}
         </div>
       )}
@@ -138,6 +140,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
   const [rows, setRows] = useState<PnLRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string>("");
+  const [showPositionTip, setShowPositionTip] = useState(false);
+  const [showCostTip, setShowCostTip] = useState(false);
 
   // Inputs
   const [positionInput, setPositionInput] = useState<string>("10,000");
@@ -490,13 +494,27 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
               Position
-              <span className="relative group inline-flex">
-                <Info size={12} className="text-gray-500" />
-                <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 rounded-lg bg-[#1c202f] border border-[#343a4e] text-[11px] shadow-lg z-50">
-                  <span className="text-gray-300">Position per leg.</span>
-                  <hr className="border-[#343a4e] my-1.5" />
-                  <span className="text-gray-500">Total: ${(parsedPositionSize * 2).toLocaleString()}</span>
-                </span>
+              <span
+                className="relative inline-flex"
+                onMouseEnter={() => setShowPositionTip(true)}
+                onMouseLeave={() => setShowPositionTip(false)}
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowPositionTip((prev) => !prev);
+                  }}
+                  className="inline-flex"
+                  aria-label="Position size info"
+                >
+                  <Info size={12} className="text-gray-500" />
+                </button>
+                {showPositionTip && (
+                  <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 rounded-lg bg-[#292e40] border border-[#343a4e] text-[11px] shadow-lg z-50">
+                    <span className="text-gray-300">Position size, per leg</span>
+                  </span>
+                )}
               </span>
             </label>
             <div className="relative">
@@ -523,13 +541,28 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
               Cost
-              <span className="relative group inline-flex">
-                <Info size={12} className="text-gray-500" />
-                <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-lg bg-[#1c202f] border border-[#343a4e] text-[11px] shadow-lg z-50 whitespace-normal">
-                  <span className="text-gray-300">Total execution cost (open + close, both legs).</span>
-                  <hr className="border-[#343a4e] my-1.5" />
-                  <span className="text-gray-500">Includes slippage + fees.</span>
-                </span>
+              <span
+                className="relative inline-flex"
+                onMouseEnter={() => setShowCostTip(true)}
+                onMouseLeave={() => setShowCostTip(false)}
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCostTip((prev) => !prev);
+                  }}
+                  className="inline-flex"
+                  aria-label="Execution cost info"
+                >
+                  <Info size={12} className="text-gray-500" />
+                </button>
+                {showCostTip && (
+                  <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-lg bg-[#292e40] border border-[#343a4e] text-[11px] shadow-lg z-50 whitespace-normal">
+                    <span className="text-gray-300">Total execution cost</span>
+                    <span className="block text-gray-400">(open + close, both legs)</span>
+                  </span>
+                )}
               </span>
             </label>
             <div className="relative">
@@ -574,7 +607,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue={<span className="text-base">{formatPercent(pnlCalculations.totalPnLPercent)}</span>}
               subValueColor={pnlCalculations.totalPnL >= 0 ? "text-green-400/70" : "text-red-400/70"}
-              className="row-span-2"
+              className="row-span-2 col-span-2 sm:col-span-1 order-1 sm:order-none"
             />
             
             <StatCard
@@ -588,6 +621,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue={formatPercent(pnlCalculations.avgDailyPnLPercent)}
               subValueColor={pnlCalculations.avgDailyPnL >= 0 ? "text-green-400/70" : "text-red-400/70"}
+              alignSubValueBottom
+              className="order-2 sm:order-none"
             />
 
             <StatCard
@@ -600,6 +635,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 </span>
               }
               subValue="before costs"
+              alignSubValueBottom
+              className="order-4 sm:order-none"
             />
 
             <StatCard
@@ -612,6 +649,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 </span>
               }
               subValue={`${pnlCalculations.winningDays} days`}
+              alignSubValueBottom
+              className="order-6 sm:order-none"
             />
 
             <StatCard
@@ -624,6 +663,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 </span>
               }
               subValue={pnlCalculations.bestDay.date ? new Date(pnlCalculations.bestDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
+              alignSubValueBottom
+              className="order-8 sm:order-none"
             />
 
             <StatCard
@@ -636,6 +677,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 </span>
               }
               subValue="annualized"
+              alignSubValueBottom
+              className="order-3 sm:order-none"
             />
 
             <StatCard
@@ -648,6 +691,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 </span>
               }
               subValue="slippage + fees"
+              alignSubValueBottom
+              className="order-5 sm:order-none"
             />
 
             <StatCard
@@ -660,6 +705,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 </span>
               }
               subValue="to breakeven"
+              alignSubValueBottom
+              className="order-7 sm:order-none"
             />
 
             <StatCard
@@ -672,6 +719,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 </span>
               }
               subValue={pnlCalculations.worstDay.date ? new Date(pnlCalculations.worstDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
+              alignSubValueBottom
+              className="order-9 sm:order-none"
             />
           </div>
         ) : null}
