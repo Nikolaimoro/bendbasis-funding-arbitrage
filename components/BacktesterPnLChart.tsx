@@ -132,6 +132,10 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
 
   const positionSize = parsedPositionSize > 0 ? parsedPositionSize : 10000;
   const totalPositionSize = positionSize * 2;
+  const totalExecutionCost = useMemo(() => {
+    const execCostDecimal = executionCost / 100;
+    return positionSize * execCostDecimal * 2;
+  }, [executionCost, positionSize]);
 
   const executionCost = useMemo(() => {
     const parsed = Number(executionCostInput);
