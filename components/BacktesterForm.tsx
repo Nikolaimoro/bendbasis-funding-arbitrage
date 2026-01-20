@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, Suspense } from "react";
-import { ArrowRightLeft, RefreshCw } from "lucide-react";
+import { ArrowRightLeft, RefreshCw, Search, ChevronDown } from "lucide-react";
 import { normalizeToken } from "@/lib/formatters";
 import { EXCHANGE_LABEL } from "@/lib/constants";
 import { TAILWIND } from "@/lib/theme";
@@ -358,9 +358,10 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
             <label className="block text-xs text-gray-500 mb-1">Token</label>
             <button
               onClick={() => setOpenCombo(openCombo === "token" ? null : "token")}
-              className="w-full text-left text-sm bg-[#1c202f] border border-[#343a4e] rounded-lg px-3 py-2 text-gray-200 hover:border-[#4a5568] transition"
+              className={`${TAILWIND.button.secondary} w-full text-left text-sm inline-flex items-center justify-between gap-2`}
             >
-              {selectedToken || "Select token..."}
+              <span className="truncate">{selectedToken || "Select token..."}</span>
+              <Search className="h-4 w-4 text-gray-300 shrink-0" />
             </button>
 
             {openCombo === "token" && (
@@ -403,14 +404,17 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
             <label className="block text-xs text-gray-500 mb-1">Long</label>
             <button
               onClick={() => setOpenCombo(openCombo === "long-ex" ? null : "long-ex")}
-              className="w-full text-left text-sm bg-[#1c202f] border border-[#343a4e] rounded-lg px-3 py-2 text-gray-200 hover:border-[#4a5568] transition flex items-center gap-2"
+              className={`${TAILWIND.button.secondary} w-full text-left text-sm inline-flex items-center justify-between gap-2`}
             >
               {selectedLongEx ? (
-                <>
+                <span className="inline-flex items-center gap-2 truncate">
                   <ExchangeIcon exchange={selectedLongEx} size={16} />
                   {EXCHANGE_LABEL[selectedLongEx] || selectedLongEx}{selectedLongQuote ? ` (${selectedLongQuote})` : ""}
-                </>
-              ) : "Select..."}
+                </span>
+              ) : (
+                <span className="truncate">Select...</span>
+              )}
+              <ChevronDown className="h-4 w-4 text-gray-300 shrink-0" />
             </button>
 
             {openCombo === "long-ex" && (
@@ -466,7 +470,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
           <button
             onClick={handleSwapExchanges}
             disabled={!selectedLongEx || !selectedShortEx}
-            className="h-9 w-9 flex items-center justify-center bg-[#1c202f] border border-[#343a4e] rounded-lg text-gray-400 hover:text-white hover:border-[#4a5568] transition disabled:opacity-40"
+            className={`${TAILWIND.button.secondary} h-9 w-9 flex items-center justify-center p-0`}
             title="Swap Long and Short"
           >
             <ArrowRightLeft size={16} />
@@ -477,14 +481,17 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
             <label className="block text-xs text-gray-500 mb-1">Short</label>
             <button
               onClick={() => setOpenCombo(openCombo === "short-ex" ? null : "short-ex")}
-              className="w-full text-left text-sm bg-[#1c202f] border border-[#343a4e] rounded-lg px-3 py-2 text-gray-200 hover:border-[#4a5568] transition flex items-center gap-2"
+              className={`${TAILWIND.button.secondary} w-full text-left text-sm inline-flex items-center justify-between gap-2`}
             >
               {selectedShortEx ? (
-                <>
+                <span className="inline-flex items-center gap-2 truncate">
                   <ExchangeIcon exchange={selectedShortEx} size={16} />
                   {EXCHANGE_LABEL[selectedShortEx] || selectedShortEx}{selectedShortQuote ? ` (${selectedShortQuote})` : ""}
-                </>
-              ) : "Select..."}
+                </span>
+              ) : (
+                <span className="truncate">Select...</span>
+              )}
+              <ChevronDown className="h-4 w-4 text-gray-300 shrink-0" />
             </button>
 
             {openCombo === "short-ex" && (
@@ -540,7 +547,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
           <button
             onClick={handleRun}
             disabled={loading || !selectedToken || !selectedLongEx || !selectedShortEx}
-            className="h-9 px-3 flex items-center gap-1.5 bg-[#1c202f] border border-[#343a4e] rounded-lg text-sm text-gray-400 hover:text-white hover:border-[#4a5568] transition disabled:opacity-40"
+            className={`${TAILWIND.button.secondary} h-9 px-3 flex items-center gap-1.5 text-sm`}
             title="Reload data"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />

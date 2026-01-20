@@ -42,15 +42,18 @@ export default function ExchangeIcon({
 }: ExchangeIconProps) {
   const config = EXCHANGE_ICONS[exchange.toLowerCase()];
   
+  const borderRadius = Math.max(4, Math.round(size * 0.25));
+
   if (!config) {
     // Fallback: show first letter in a rounded square
     return (
       <span
-        className={`inline-flex items-center justify-center rounded-lg text-[10px] font-bold text-gray-400 ${className}`}
+        className={`inline-flex items-center justify-center text-[10px] font-bold text-gray-400 ${className}`}
         style={{
           width: size,
           height: size,
           backgroundColor: bgColor || "#1a1a2e",
+          borderRadius,
         }}
       >
         {exchange.charAt(0).toUpperCase()}
@@ -64,11 +67,12 @@ export default function ExchangeIcon({
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-lg overflow-hidden shrink-0 ${className}`}
+      className={`inline-flex items-center justify-center overflow-hidden shrink-0 ${className}`}
       style={{
         width: size,
         height: size,
         backgroundColor: bg,
+        borderRadius,
       }}
     >
       <Image

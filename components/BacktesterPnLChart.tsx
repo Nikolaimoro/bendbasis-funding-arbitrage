@@ -469,7 +469,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
         {/* Compact Controls Row */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Time Window Pills */}
-          <div className="flex gap-1 bg-[#1c202f] rounded-lg p-1">
+          <div className="flex gap-1 bg-[#1c202f] border border-[#343a4e] rounded-lg p-1">
             {[1, 7, 30].map((value) => (
               <button
                 key={value}
@@ -478,7 +478,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
                   days === value
                     ? "bg-[#343a4e] text-white"
-                    : "text-gray-400 hover:text-white"
+                    : "text-gray-400 hover:text-white hover:bg-[#353b52]"
                 }`}
               >
                 {value}d
