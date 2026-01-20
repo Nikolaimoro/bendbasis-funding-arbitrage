@@ -83,7 +83,6 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
   const [rows, setRows] = useState<PnLRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string>("");
-  const [chartKey, setChartKey] = useState(0);
 
   // Inputs
   const [positionInput, setPositionInput] = useState<string>("10,000");
@@ -98,8 +97,7 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
     let cancelled = false;
     setLoading(true);
     setErr("");
-    setRows([]);
-    setChartKey((prev) => prev + 1);
+    setRows((prev) => prev);
 
     fetchPnLData({
       longMarketId: chartData.longMarketId,
@@ -360,8 +358,8 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
                 <span className="relative group inline-flex items-center">
                   <Info size={14} className="text-gray-400" />
                   <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-md bg-[#292e40] border border-[#343a4e] text-[11px] text-gray-300 shadow-lg">
-                    <span>Amount per leg. Total position size is double.</span>
-                    <span className="mt-1 block text-gray-400">Total: {formatCurrency(totalPositionSize)}</span>
+                    <span>Position Size per leg</span>
+                    <span className="mt-1 block text-gray-400">Total (long + short): {formatCurrency(totalPositionSize)}</span>
                   </span>
                 </span>
               </label>
@@ -389,8 +387,8 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
                 <span className="relative group inline-flex items-center">
                   <Info size={14} className="text-gray-400" />
                   <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-md bg-[#292e40] border border-[#343a4e] text-[11px] text-gray-300 shadow-lg">
-                    <span>Total execution cost for open + close across both legs.</span>
-                    <span className="mt-1 block text-gray-400">Total: {formatCurrency(totalExecutionCost)}</span>
+                    <span>Execution Cost (open + close, both legs)</span>
+                    <span className="mt-1 block text-gray-400">Includes slippage + fees</span>
                   </span>
                 </span>
               </label>
@@ -411,7 +409,7 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
           </div>
 
           {/* PnL Summary */}
-          <div className="bg-[#1c202f] border border-[#343a4e] rounded-lg p-4 space-y-3">
+          <div className="bg-[#1c202f] border border-[#343a4e] rounded-lg p-4 space-y-3 min-h-[190px]">
             <h3 className="text-sm font-medium text-gray-400 mb-2">PnL Summary</h3>
             
             {loading ? (
@@ -480,7 +478,7 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
           {!loading && !err && rows.length > 0 && (
             <div className="border border-[#343a4e] rounded p-4 bg-[#292e40] h-72">
               <Chart
-                key={`pnl-chart-${chartData.longMarketId}-${chartData.shortMarketId}-${chartKey}`}
+                key={`pnl-chart-${chartData.longMarketId}-${chartData.shortMarketId}`}
                 type="bar"
                 data={chartDataObj as any}
                 options={options}
