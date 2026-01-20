@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Info } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { COLORS, CHART_CONFIG } from "@/lib/theme";
 import { RPC_FUNCTIONS } from "@/lib/constants";
@@ -48,6 +49,10 @@ interface PnLRow {
 
 interface BacktesterPnLChartProps {
   chartData: BacktesterChartData | null;
+}
+
+function formatCurrency(value: number) {
+  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 async function fetchPnLData(params: {
@@ -126,6 +131,7 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
   }, [positionInput]);
 
   const positionSize = parsedPositionSize > 0 ? parsedPositionSize : 10000;
+  const totalPositionSize = positionSize * 2;
 
   const executionCost = useMemo(() => {
     const parsed = Number(executionCostInput);
@@ -144,7 +150,7 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
       };
     }
 
-    // Execution cost is applied twice (open + close)
+    // Execution cost is a roundtrip cost for one leg; total position has two legs
     const execCostDecimal = executionCost / 100;
     const totalExecutionCost = positionSize * execCostDecimal * 2;
 
@@ -162,11 +168,11 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
       // Event PnL from funding
       let eventPnLValue = (spreadPct / 100) * positionSize;
 
-      // Apply execution cost on first bar (opening)
+      // Apply execution cost on first bar (opening) for both legs
       if (index === 0) {
         eventPnLValue -= positionSize * execCostDecimal;
       }
-      // Apply execution cost on last bar (closing)
+      // Apply execution cost on last bar (closing) for both legs
       if (index === rows.length - 1) {
         eventPnLValue -= positionSize * execCostDecimal;
       }
@@ -345,7 +351,16 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
             <h3 className="text-sm font-medium text-gray-400 mb-2">Parameters</h3>
             
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Position Size (USD)</label>
+              <label className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                <span>Position Size ($)</span>
+                <span className="relative group inline-flex items-center">
+                  <Info size={14} className="text-gray-400" />
+                  <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-md bg-[#292e40] border border-[#343a4e] text-[11px] text-gray-300 shadow-lg">
+                    <span>Amount per leg. Total position size is double.</span>
+                    <span className="mt-1 block text-gray-400">Total: {formatCurrency(totalPositionSize)}</span>
+                  </span>
+                </span>
+              </label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -365,7 +380,16 @@ export default function BacktesterPnLChart({ chartData }: BacktesterPnLChartProp
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Execution Cost (%)</label>
+              <label className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                <span>Execution Cost (%)</span>
+                <span className="relative group inline-flex items-center">
+                  <Info size={14} className="text-gray-400" />
+                  <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-md bg-[#292e40] border border-[#343a4e] text-[11px] text-gray-300 shadow-lg">
+                    <span>Roundtrip cost per leg (open + close). Total cost doubles.</span>
+                    <span className="mt-1 block text-gray-400">Total: {formatCurrency(totalExecutionCost)}</span>
+                  </span>
+                </span>
+              </label>
               <input
                 type="number"
                 value={executionCostInput}
