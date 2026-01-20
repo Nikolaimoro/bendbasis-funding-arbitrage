@@ -359,7 +359,7 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
                   href={chartData.longRefUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-green-400 border border-green-500/30 hover:border-green-500/60 transition"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ExchangeIcon exchange={selectedLongEx || ""} size={18} />
@@ -373,7 +373,7 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
                   href={chartData.shortRefUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-red-400 border border-red-500/30 hover:border-red-500/60 transition"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ExchangeIcon exchange={selectedShortEx || ""} size={18} />

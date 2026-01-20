@@ -91,7 +91,8 @@ function StatCard({
   label, 
   value, 
   subValue,
-  subValueColor
+  subValueColor,
+  className,
 }: { 
   icon: React.ElementType; 
   iconColor: string; 
@@ -99,9 +100,10 @@ function StatCard({
   value: React.ReactNode; 
   subValue?: React.ReactNode;
   subValueColor?: string;
+  className?: string;
 }) {
   return (
-    <div className="bg-[#1c202f] border border-[#343a4e] rounded-xl p-4 min-w-[140px]">
+    <div className={`bg-[#1c202f] border border-[#343a4e] rounded-xl p-4 min-w-[140px] ${className || ""}`}>
       <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
         <Icon size={14} className={iconColor} />
         <span>{label}</span>
@@ -553,110 +555,105 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
             ))}
           </div>
         ) : hasData ? (
-          <div className="space-y-3">
-            {/* Row 1: Main metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              <StatCard
-                icon={TrendingUp}
-                iconColor="text-green-400"
-                label="Total PnL"
-                value={
-                  <span className={pnlCalculations.totalPnL >= 0 ? "text-green-400" : "text-red-400"}>
-                    {formatPercent(pnlCalculations.totalPnLPercent)}
-                  </span>
-                }
-                subValue={formatCurrency(pnlCalculations.totalPnL)}
-                subValueColor={pnlCalculations.totalPnL >= 0 ? "text-green-400/70" : "text-red-400/70"}
-              />
-              
-              <StatCard
-                icon={DollarSign}
-                iconColor="text-blue-400"
-                label="Avg Daily PnL"
-                value={
-                  <span className={pnlCalculations.avgDailyPnL >= 0 ? "text-green-400" : "text-red-400"}>
-                    {formatPercent(pnlCalculations.avgDailyPnLPercent)}
-                  </span>
-                }
-                subValue={formatCurrency(pnlCalculations.avgDailyPnL)}
-                subValueColor={pnlCalculations.avgDailyPnL >= 0 ? "text-green-400/70" : "text-red-400/70"}
-              />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-fr gap-3">
+            <StatCard
+              icon={TrendingUp}
+              iconColor="text-green-400"
+              label="Total PnL"
+              value={
+                <span className={pnlCalculations.totalPnL >= 0 ? "text-green-400" : "text-red-400"}>
+                  {formatPercent(pnlCalculations.totalPnLPercent)}
+                </span>
+              }
+              subValue={formatCurrency(pnlCalculations.totalPnL)}
+              subValueColor={pnlCalculations.totalPnL >= 0 ? "text-green-400/70" : "text-red-400/70"}
+              className="row-span-2"
+            />
+            
+            <StatCard
+              icon={DollarSign}
+              iconColor="text-blue-400"
+              label="Avg Daily PnL"
+              value={
+                <span className={pnlCalculations.avgDailyPnL >= 0 ? "text-green-400" : "text-red-400"}>
+                  {formatPercent(pnlCalculations.avgDailyPnLPercent)}
+                </span>
+              }
+              subValue={formatCurrency(pnlCalculations.avgDailyPnL)}
+              subValueColor={pnlCalculations.avgDailyPnL >= 0 ? "text-green-400/70" : "text-red-400/70"}
+            />
 
-              <StatCard
-                icon={Activity}
-                iconColor="text-purple-400"
-                label="APR"
-                value={
-                  <span className={pnlCalculations.apr >= 0 ? "text-green-400" : "text-red-400"}>
-                    {formatPercent(pnlCalculations.apr)}
-                  </span>
-                }
-                subValue="annualized"
-              />
+            <StatCard
+              icon={Activity}
+              iconColor="text-purple-400"
+              label="APR"
+              value={
+                <span className={pnlCalculations.apr >= 0 ? "text-green-400" : "text-red-400"}>
+                  {formatPercent(pnlCalculations.apr)}
+                </span>
+              }
+              subValue="annualized"
+            />
 
-              <StatCard
-                icon={Percent}
-                iconColor="text-cyan-400"
-                label="Win Rate"
-                value={
-                  <span className={pnlCalculations.winRate >= 50 ? "text-green-400" : "text-gray-200"}>
-                    {pnlCalculations.winRate.toFixed(1)}%
-                  </span>
-                }
-                subValue={`${pnlCalculations.winningDays}/${pnlCalculations.periodDays} days`}
-              />
-            </div>
+            <StatCard
+              icon={Percent}
+              iconColor="text-cyan-400"
+              label="Win Rate"
+              value={
+                <span className={pnlCalculations.winRate >= 50 ? "text-green-400" : "text-gray-200"}>
+                  {pnlCalculations.winRate.toFixed(1)}%
+                </span>
+              }
+              subValue={`${pnlCalculations.winningDays} days`}
+            />
 
-            {/* Row 2: Secondary metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              <StatCard
-                icon={TrendingUp}
-                iconColor="text-emerald-400"
-                label="Funding PnL"
-                value={
-                  <span className={pnlCalculations.totalFundingPnL >= 0 ? "text-green-400" : "text-red-400"}>
-                    {formatCurrency(pnlCalculations.totalFundingPnL)}
-                  </span>
-                }
-                subValue="before costs"
-              />
+            <StatCard
+              icon={TrendingUp}
+              iconColor="text-emerald-400"
+              label="Funding PnL"
+              value={
+                <span className={pnlCalculations.totalFundingPnL >= 0 ? "text-green-400" : "text-red-400"}>
+                  {formatCurrency(pnlCalculations.totalFundingPnL)}
+                </span>
+              }
+              subValue="before costs"
+            />
 
-              <StatCard
-                icon={Zap}
-                iconColor="text-orange-400"
-                label="Execution Cost"
-                value={
-                  <span className="text-red-400">
-                    -{formatCurrency(pnlCalculations.totalExecutionCost)}
-                  </span>
-                }
-                subValue="slippage + fees"
-              />
+            <StatCard
+              icon={Zap}
+              iconColor="text-orange-400"
+              label="Execution Cost"
+              value={
+                <span className="text-red-400">
+                  -{formatCurrency(pnlCalculations.totalExecutionCost)}
+                </span>
+              }
+              subValue="slippage + fees"
+            />
 
-              <StatCard
-                icon={Clock}
-                iconColor="text-yellow-400"
-                label="Payback Period"
-                value={
-                  <span className={pnlCalculations.paybackPeriod !== null && pnlCalculations.paybackPeriod <= 7 ? "text-green-400" : "text-gray-200"}>
-                    {pnlCalculations.paybackPeriod !== null ? `${pnlCalculations.paybackPeriod.toFixed(1)}d` : "N/A"}
-                  </span>
-                }
-                subValue="to breakeven"
-              />
+            <StatCard
+              icon={Clock}
+              iconColor="text-yellow-400"
+              label="Payback Period"
+              value={
+                <span className={pnlCalculations.paybackPeriod !== null && pnlCalculations.paybackPeriod <= 7 ? "text-green-400" : "text-gray-200"}>
+                  {pnlCalculations.paybackPeriod !== null ? `${pnlCalculations.paybackPeriod.toFixed(1)}d` : "N/A"}
+                </span>
+              }
+              subValue="to breakeven"
+            />
 
-              <StatCard
-                icon={ArrowUpRight}
-                iconColor="text-green-400"
-                label="Best Day"
-                value={
-                  <span className="text-green-400">
-                    {formatCurrency(pnlCalculations.bestDay.pnl)}
-                  </span>
-                }
-                subValue={pnlCalculations.bestDay.date ? new Date(pnlCalculations.bestDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
-              />
-            </div>
+            <StatCard
+              icon={ArrowUpRight}
+              iconColor="text-green-400"
+              label="Best Day"
+              value={
+                <span className="text-green-400">
+                  {formatCurrency(pnlCalculations.bestDay.pnl)}
+                </span>
+              }
+              subValue={pnlCalculations.bestDay.date ? new Date(pnlCalculations.bestDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
+            />
           </div>
         ) : null}
       </div>
