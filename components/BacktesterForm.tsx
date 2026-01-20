@@ -351,7 +351,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
   return (
     <div ref={containerRef} className="space-y-6">
       {/* Compact Input Panel */}
-      <div className={`${TAILWIND.bg.surface} ${TAILWIND.border.default} rounded-xl p-4`}>
+      <div className={`${TAILWIND.bg.surface} ${TAILWIND.border.default} rounded-2xl p-4`}>
         <div className="flex flex-wrap items-end gap-3">
           {/* Token Combobox */}
           <div className="relative flex-1 min-w-[140px]">

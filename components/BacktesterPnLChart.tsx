@@ -103,7 +103,7 @@ function StatCard({
   className?: string;
 }) {
   return (
-    <div className={`bg-[#1c202f] border border-[#343a4e] rounded-xl p-4 min-w-[140px] ${className || ""}`}>
+    <div className={`bg-[#292e40] border border-[#343a4e] rounded-2xl p-4 min-w-[140px] ${className || ""}`}>
       <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
         <Icon size={14} className={iconColor} />
         <span>{label}</span>
@@ -123,7 +123,7 @@ function StatCard({
 // Skeleton Stat Card for loading state
 function StatCardSkeleton() {
   return (
-    <div className="bg-[#1c202f] border border-[#343a4e] rounded-xl p-4 min-w-[140px] animate-pulse">
+    <div className="bg-[#292e40] border border-[#343a4e] rounded-2xl p-4 min-w-[140px] animate-pulse">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-3.5 h-3.5 rounded bg-[#343a4e]" />
         <div className="h-3 w-16 rounded bg-[#343a4e]" />
@@ -459,7 +459,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
   const hasData = rows.length > 0 && !loading;
 
   return (
-    <div className="bg-[#292e40] border border-[#343a4e] rounded-xl p-6 mt-6">
+    <div className="bg-[#292e40] border border-[#343a4e] rounded-2xl p-6 mt-6">
       {/* Header with compact controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h2 className="text-lg font-roboto font-normal text-gray-200">
@@ -469,7 +469,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
         {/* Compact Controls Row */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Time Window Pills */}
-          <div className="flex gap-1 bg-[#1c202f] border border-[#343a4e] rounded-lg p-1">
+          <div className="flex gap-1 bg-[#383d50] border border-transparent rounded-xl p-1">
             {[1, 7, 30].map((value) => (
               <button
                 key={value}
@@ -478,7 +478,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
                   days === value
                     ? "bg-[#343a4e] text-white"
-                    : "text-gray-400 hover:text-white hover:bg-[#353b52]"
+                    : "text-gray-300 hover:text-white hover:bg-[#353b52]"
                 }`}
               >
                 {value}d
@@ -514,7 +514,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                   const normalized = parsedPositionSize.toLocaleString("en-US", { maximumFractionDigits: 0 });
                   setPositionInput(normalized);
                 }}
-                className="w-24 pl-5 pr-2 py-1.5 bg-[#1c202f] border border-[#343a4e] rounded-lg text-white text-sm focus:outline-none focus:border-[#4a5568]"
+                className="w-24 pl-5 pr-2 py-1.5 bg-[#383d50] border border-transparent rounded-lg text-white text-sm focus:outline-none focus:border-white"
               />
             </div>
           </div>
@@ -542,7 +542,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                     setExecutionCostInput("0.4");
                   }
                 }}
-                className="w-16 px-2 py-1.5 bg-[#1c202f] border border-[#343a4e] rounded-lg text-white text-sm focus:outline-none focus:border-[#4a5568]"
+                className="w-16 px-2 py-1.5 bg-[#383d50] border border-transparent rounded-lg text-white text-sm focus:outline-none focus:border-white"
                 min={0}
                 step={0.1}
               />
@@ -678,7 +678,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
       </div>
 
       {/* Chart */}
-      <div className="relative border border-[#343a4e] rounded-xl p-4 bg-[#1c202f] h-72">
+      <div className="relative border border-[#343a4e] rounded-2xl p-4 bg-[#292e40] h-72">
         {rows.length > 0 ? (
           <Chart
             key={`pnl-chart-${chartData.longMarketId}-${chartData.shortMarketId}`}
@@ -693,13 +693,13 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
         )}
 
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-200 bg-[#1c202f]/80 rounded-xl">
+          <div className="absolute inset-0 flex items-center justify-center text-gray-200 bg-[#1c202f]/80 rounded-2xl">
             <p>Loading PnL data...</p>
           </div>
         )}
 
         {err && (
-          <div className="absolute inset-0 flex items-center justify-center text-red-400 bg-red-950/40 rounded-xl">
+          <div className="absolute inset-0 flex items-center justify-center text-red-400 bg-red-950/40 rounded-2xl">
             <p>{err}</p>
           </div>
         )}
