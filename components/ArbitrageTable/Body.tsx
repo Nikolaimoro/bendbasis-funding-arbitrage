@@ -57,7 +57,7 @@ function StabilityBar({ value }: { value: number | null }) {
         createPortal(
           <div
             style={{ top: tooltipPos.top - 8, left: tooltipPos.left }}
-            className="fixed z-[9999] px-2 py-1 rounded-md bg-[#292e40] border border-[#343a4e] text-xs text-gray-200 shadow-lg pointer-events-none -translate-x-1/2 -translate-y-full"
+            className="fixed z-[9999] px-2 py-1 rounded-lg bg-[#292e40] border border-[#343a4e] text-xs text-gray-200 shadow-lg pointer-events-none -translate-x-1/2 -translate-y-full"
           >
             {label}
           </div>,
@@ -281,7 +281,7 @@ function LongButton({ href, label, exchange }: LongButtonProps) {
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
       className="
-        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] sm:px-3 sm:py-1 sm:text-sm font-medium
+        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] sm:px-3 sm:py-1 sm:text-sm font-medium
         -translate-x-0.5 sm:translate-x-0
         text-green-400
         border border-green-500/30
@@ -311,7 +311,7 @@ function ShortButton({ href, label, exchange }: ShortButtonProps) {
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
       className="
-        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] sm:px-3 sm:py-1 sm:text-sm font-medium
+        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] sm:px-3 sm:py-1 sm:text-sm font-medium
         -translate-x-0.5 sm:translate-x-0
         text-red-400
         border border-red-500/30

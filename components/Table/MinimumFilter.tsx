@@ -207,7 +207,7 @@ function GradientSlider({
               onChange(parsed === "" ? "" : clampValue(Math.round(parsed), maxValue));
             }}
             placeholder="0"
-            className="w-28 bg-[#383d50] border border-transparent rounded px-2 py-1 text-xs text-gray-200 focus:outline-none text-center"
+            className="w-28 bg-[#383d50] border border-transparent rounded-lg px-2 py-1 text-xs text-gray-200 focus:outline-none text-center"
           />
           {typeof value === "number" && value > 0 && (
             <button
@@ -272,7 +272,7 @@ export default function MinimumFilter({
             className="fixed inset-0 z-40"
             onClick={() => onOpenChange(false)}
           />
-          <div className="absolute z-50 mt-2 bg-[#292e40] border border-[#343a4e] rounded w-64 p-3 shadow-lg space-y-4 animate-tooltip-zoom">
+          <div className="absolute z-50 mt-2 bg-[#292e40] border border-[#343a4e] rounded-lg w-64 p-3 shadow-lg space-y-4 animate-tooltip-zoom">
             <GradientSlider
               label="Min Open Interest"
               value={minOI}

@@ -71,10 +71,10 @@ export const TAILWIND = {
     title: "text-lg font-roboto font-normal text-gray-100 truncate",
   },
   button: {
-    secondary: "bg-[#383d50] border border-transparent px-3 py-2 rounded-md text-gray-200 transition-colors duration-200 hover:border-white disabled:opacity-40",
+    secondary: "bg-[#383d50] border border-transparent px-3 py-2 rounded-lg text-gray-200 transition-colors duration-200 hover:border-white disabled:opacity-40",
   },
   input: {
-    default: "rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-0",
+    default: "rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-0",
   },
 } as const;
 

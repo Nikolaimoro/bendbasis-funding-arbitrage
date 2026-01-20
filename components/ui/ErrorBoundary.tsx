@@ -52,7 +52,7 @@ export default class ErrorBoundary extends React.Component<
           <p className="text-red-300 text-sm mb-4">{this.state.error.message}</p>
           <button
             onClick={this.reset}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
           >
             Try again
           </button>

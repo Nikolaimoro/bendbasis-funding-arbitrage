@@ -51,7 +51,7 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(Math.max(0, currentPage - 1))}
             disabled={currentPage === 0}
-            className="h-8 w-8 rounded-md flex items-center justify-center text-gray-300 transition-colors hover:bg-[#383d50] disabled:opacity-40"
+            className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-300 transition-colors hover:bg-[#383d50] disabled:opacity-40"
             type="button"
             aria-label="Previous page"
           >
@@ -61,7 +61,7 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(Math.min(totalPages - 1, currentPage + 1))}
             disabled={currentPage + 1 >= totalPages}
-            className="h-8 w-8 rounded-md flex items-center justify-center text-gray-300 transition-colors hover:bg-[#383d50] disabled:opacity-40"
+            className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-300 transition-colors hover:bg-[#383d50] disabled:opacity-40"
             type="button"
             aria-label="Next page"
           >

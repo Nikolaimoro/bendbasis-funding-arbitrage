@@ -316,32 +316,32 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
       </h2>
 
       {!isLoaded ? (
-        <div className="h-96 flex items-center justify-center text-gray-500 rounded border border-[#343a4e]">
+        <div className="h-96 flex items-center justify-center text-gray-500 rounded-lg border border-[#343a4e]">
           <p>Run a backtest to see funding rates as line charts and spread as bars.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {/* Chart Container */}
           {loading && (
-            <div className="h-96 flex items-center justify-center text-gray-500 rounded border border-[#343a4e]">
+            <div className="h-96 flex items-center justify-center text-gray-500 rounded-lg border border-[#343a4e]">
               <p>Loading chart data...</p>
             </div>
           )}
 
           {err && (
-            <div className="h-96 flex items-center justify-center text-red-400 rounded border border-red-800 bg-red-950/20">
+            <div className="h-96 flex items-center justify-center text-red-400 rounded-lg border border-red-800 bg-red-950/20">
               <p>{err}</p>
             </div>
           )}
 
           {!loading && !err && rows.length === 0 && (
-            <div className="h-96 flex items-center justify-center text-gray-500 rounded border border-[#343a4e]">
+            <div className="h-96 flex items-center justify-center text-gray-500 rounded-lg border border-[#343a4e]">
               <p>No data available for this period.</p>
             </div>
           )}
 
           {!loading && !err && rows.length > 0 && (
-            <div className="border border-[#343a4e] rounded p-4 bg-[#292e40] h-96">
+            <div className="border border-[#343a4e] rounded-lg p-4 bg-[#292e40] h-96">
               <Chart
                 key={`chart-${chartData.longMarketId}-${chartData.shortMarketId}-${chartKey}`}
                 type="bar"
@@ -359,7 +359,7 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
                   href={chartData.longRefUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ExchangeIcon exchange={selectedLongEx || ""} size={18} />
@@ -373,7 +373,7 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
                   href={chartData.shortRefUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ExchangeIcon exchange={selectedShortEx || ""} size={18} />

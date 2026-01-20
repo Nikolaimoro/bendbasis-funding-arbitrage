@@ -367,7 +367,7 @@ export default function FundingScreener() {
           <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={() => setRetryToken((t) => t + 1)}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-md ${TAILWIND.bg.surface} ${TAILWIND.border.default} ${TAILWIND.text.primary} hover:border-white transition-colors`}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${TAILWIND.bg.surface} ${TAILWIND.border.default} ${TAILWIND.text.primary} hover:border-white transition-colors`}
           >
             <RefreshCw className="h-4 w-4" />
             Retry

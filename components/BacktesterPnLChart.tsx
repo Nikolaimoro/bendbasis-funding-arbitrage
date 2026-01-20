@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Info } from "lucide-react";
+import { Info, TrendingUp, DollarSign, Activity, Calendar, ArrowUpRight, ArrowDownRight, BarChart3, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { COLORS, CHART_CONFIG } from "@/lib/theme";
 import { RPC_FUNCTIONS } from "@/lib/constants";
-import { formatCompactUSD } from "@/lib/formatters";
 import type { BacktesterChartData } from "@/lib/types/backtester";
 import {
   Chart as ChartJS,
@@ -52,12 +51,13 @@ interface BacktesterPnLChartProps {
   runToken?: number;
 }
 
-function formatCurrency(value: number) {
-  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function formatCurrency(value: number, decimals = 2) {
+  return `$${value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
 }
 
-function formatWholeCurrency(value: number) {
-  return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+function formatPercent(value: number, decimals = 2) {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${value.toFixed(decimals)}%`;
 }
 
 async function fetchPnLData(params: {
@@ -82,6 +82,38 @@ async function fetchPnLData(params: {
   if (error) throw error;
 
   return (data ?? []) as PnLRow[];
+}
+
+// Stat Card Component
+function StatCard({ 
+  icon: Icon, 
+  iconColor, 
+  label, 
+  value, 
+  subValue 
+}: { 
+  icon: React.ElementType; 
+  iconColor: string; 
+  label: string; 
+  value: React.ReactNode; 
+  subValue?: React.ReactNode;
+}) {
+  return (
+    <div className="bg-[#1c202f] border border-[#343a4e] rounded-xl p-4 min-w-[140px]">
+      <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
+        <Icon size={14} className={iconColor} />
+        <span>{label}</span>
+      </div>
+      <div className="text-xl font-semibold text-gray-100 font-mono tabular-nums">
+        {value}
+      </div>
+      {subValue && (
+        <div className="text-xs text-gray-500 mt-1">
+          {subValue}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPnLChartProps) {
@@ -140,12 +172,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
 
   const positionSize = parsedPositionSize > 0 ? parsedPositionSize : 10000;
   const totalPositionSize = positionSize * 2;
-  const totalExecutionCost = useMemo(() => {
-    const execCostDecimal = executionCost / 100;
-    return positionSize * execCostDecimal;
-  }, [executionCost, positionSize]);
 
-  // Calculate PnL values
+  // Calculate PnL values and metrics
   const pnlCalculations = useMemo(() => {
     if (rows.length === 0) {
       return {
@@ -154,6 +182,14 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
         totalFundingPnL: 0,
         totalExecutionCost: 0,
         totalPnL: 0,
+        totalPnLPercent: 0,
+        avgDailyPnL: 0,
+        avgDailyPnLPercent: 0,
+        apr: 0,
+        sharpeRatio: 0,
+        bestDay: { date: "", pnl: 0 },
+        worstDay: { date: "", pnl: 0 },
+        periodDays: 0,
       };
     }
 
@@ -163,13 +199,18 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
 
     // Each spread_pct is already a percentage
     // For position PnL: (spread_pct / 100) * positionSize
-    const eventPnL: { x: number; y: number; isFirst?: boolean; isLast?: boolean }[] = [];
+    const eventPnL: { x: number; y: number }[] = [];
     let cumulativePnL = 0;
     const cumPnL: { x: number; y: number }[] = [];
+    const dailyPnLs: number[] = [];
+
+    // Group by day for daily stats
+    const dailyMap = new Map<string, number>();
 
     rows.forEach((row, index) => {
       if (!row.t) return;
       const timestamp = new Date(row.t).getTime();
+      const dateKey = row.t.slice(0, 10); // YYYY-MM-DD
       const spreadPct = row.spread_pct ?? 0;
 
       // Event PnL from funding
@@ -185,6 +226,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
       }
 
       cumulativePnL += eventPnLValue;
+      dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + eventPnLValue);
 
       eventPnL.push({ x: timestamp, y: eventPnLValue });
       cumPnL.push({ x: timestamp, y: cumulativePnL });
@@ -196,12 +238,53 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
       return sum + (spreadPct / 100) * positionSize;
     }, 0);
 
+    const totalPnL = totalFundingPnL - totalExecutionCost;
+    const totalPnLPercent = (totalPnL / positionSize) * 100;
+
+    // Daily metrics
+    const dailyPnLArray = Array.from(dailyMap.entries());
+    dailyPnLArray.forEach(([, pnl]) => dailyPnLs.push(pnl));
+
+    const periodDays = dailyPnLArray.length;
+    const avgDailyPnL = periodDays > 0 ? totalPnL / periodDays : 0;
+    const avgDailyPnLPercent = periodDays > 0 ? totalPnLPercent / periodDays : 0;
+
+    // APR calculation
+    const apr = avgDailyPnLPercent * 365;
+
+    // Best and worst day
+    let bestDay = { date: "", pnl: -Infinity };
+    let worstDay = { date: "", pnl: Infinity };
+    dailyPnLArray.forEach(([date, pnl]) => {
+      if (pnl > bestDay.pnl) bestDay = { date, pnl };
+      if (pnl < worstDay.pnl) worstDay = { date, pnl };
+    });
+    if (!Number.isFinite(bestDay.pnl)) bestDay = { date: "", pnl: 0 };
+    if (!Number.isFinite(worstDay.pnl)) worstDay = { date: "", pnl: 0 };
+
+    // Sharpe Ratio calculation
+    // Using daily returns; risk-free rate assumed 0 for crypto
+    const meanDailyReturn = dailyPnLs.length > 0 ? dailyPnLs.reduce((a, b) => a + b, 0) / dailyPnLs.length : 0;
+    const variance = dailyPnLs.length > 1
+      ? dailyPnLs.reduce((sum, v) => sum + Math.pow(v - meanDailyReturn, 2), 0) / (dailyPnLs.length - 1)
+      : 0;
+    const stdDev = Math.sqrt(variance);
+    const sharpeRatio = stdDev > 0 ? (meanDailyReturn / stdDev) * Math.sqrt(365) : 0;
+
     return {
       eventPnL,
       cumPnL,
       totalFundingPnL,
       totalExecutionCost,
-      totalPnL: totalFundingPnL - totalExecutionCost,
+      totalPnL,
+      totalPnLPercent,
+      avgDailyPnL,
+      avgDailyPnLPercent,
+      apr,
+      sharpeRatio,
+      bestDay,
+      worstDay,
+      periodDays,
     };
   }, [rows, positionSize, executionCost]);
 
@@ -308,7 +391,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
           title: { display: true, text: "Cumulative PnL ($)", color: COLORS.text.secondary },
           ticks: {
             color: COLORS.text.secondary,
-            callback: (value) => (typeof value === "number" ? `$${value}` : ""),
+            callback: (value) => (typeof value === "number" ? `$${value.toFixed(2)}` : ""),
           },
           grid: {
             color: (ctx) => (ctx.tick?.value === 0 ? COLORS.chart.gridZero : COLORS.chart.grid),
@@ -320,7 +403,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
           title: { display: true, text: "Event PnL ($)", color: COLORS.text.secondary },
           ticks: {
             color: COLORS.text.secondary,
-            callback: (value) => (typeof value === "number" ? `$${value}` : ""),
+            callback: (value) => (typeof value === "number" ? `$${value.toFixed(2)}` : ""),
           },
           grid: { drawOnChartArea: false },
         },
@@ -333,50 +416,49 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
     return null;
   }
 
+  const hasData = rows.length > 0 && !loading;
+
   return (
     <div className="bg-[#292e40] border border-[#343a4e] rounded-xl p-6 mt-6">
-      <h2 className="text-lg font-roboto font-normal mb-4 text-gray-200">
-        PnL Calculator
-      </h2>
-
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* Left Panel - Inputs & Summary */}
-        <div className="w-full lg:w-64 shrink-0 space-y-4">
-          {/* Time Window */}
-          <div className="bg-[#1c202f] border border-[#343a4e] rounded-lg p-3">
-            <div className="text-xs text-gray-500 mb-2">Time Window</div>
-            <div className="flex flex-wrap gap-2">
-              {[1, 3, 7, 15, 30].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setDays(value)}
-                  className={`px-2.5 py-1 rounded text-xs border transition ${
-                    days === value
-                      ? "bg-[#343a4e] border-[#47506b] text-white"
-                      : "bg-transparent border-[#343a4e] text-gray-400 hover:text-white"
-                  }`}
-                >
-                  {value}d
-                </button>
-              ))}
-            </div>
+      {/* Header with compact controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h2 className="text-lg font-roboto font-normal text-gray-200">
+          PnL Calculator
+        </h2>
+        
+        {/* Compact Controls Row */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Time Window Pills */}
+          <div className="flex gap-1 bg-[#1c202f] rounded-lg p-1">
+            {[1, 7, 30].map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setDays(value)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
+                  days === value
+                    ? "bg-[#343a4e] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {value}d
+              </button>
+            ))}
           </div>
-          {/* Inputs */}
-          <div className="bg-[#1c202f] border border-[#343a4e] rounded-lg p-4 space-y-3">
-            <h3 className="text-sm font-medium text-gray-400 mb-2">Parameters</h3>
-            
-            <div>
-              <label className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                <span>Position Size ($)</span>
-                <span className="relative group inline-flex items-center">
-                  <Info size={14} className="text-gray-400" />
-                  <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-md bg-[#292e40] border border-[#343a4e] text-[11px] text-gray-300 shadow-lg">
-                    <span>Position Size per leg</span>
-                    <span className="mt-1 block text-gray-400">Total (long + short): {formatWholeCurrency(totalPositionSize)}</span>
-                  </span>
+
+          {/* Position Size Input */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
+              Position
+              <span className="relative group inline-flex">
+                <Info size={12} className="text-gray-500" />
+                <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 rounded-lg bg-[#1c202f] border border-[#343a4e] text-[11px] text-gray-300 shadow-lg z-50">
+                  Position per leg. Total: ${(parsedPositionSize * 2).toLocaleString()}
                 </span>
-              </label>
+              </span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -387,25 +469,26 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                     setPositionInput("10,000");
                     return;
                   }
-                  const normalized = parsedPositionSize
-                    .toLocaleString("en-US", { maximumFractionDigits: 0 });
+                  const normalized = parsedPositionSize.toLocaleString("en-US", { maximumFractionDigits: 0 });
                   setPositionInput(normalized);
                 }}
-                className="w-full px-3 py-2 bg-[#292e40] border border-[#343a4e] rounded text-white text-sm focus:outline-none focus:border-[#4a5568]"
+                className="w-24 pl-5 pr-2 py-1.5 bg-[#1c202f] border border-[#343a4e] rounded-lg text-white text-sm focus:outline-none focus:border-[#4a5568]"
               />
             </div>
+          </div>
 
-            <div>
-              <label className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                <span>Execution Cost (%)</span>
-                <span className="relative group inline-flex items-center">
-                  <Info size={14} className="text-gray-400" />
-                  <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-md bg-[#292e40] border border-[#343a4e] text-[11px] text-gray-300 shadow-lg">
-                    <span>Execution Cost (open + close, both legs)</span>
-                    <span className="mt-1 block text-gray-400">Includes slippage + fees</span>
-                  </span>
+          {/* Execution Cost Input */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1">
+              Cost
+              <span className="relative group inline-flex">
+                <Info size={12} className="text-gray-500" />
+                <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 rounded-lg bg-[#1c202f] border border-[#343a4e] text-[11px] text-gray-300 shadow-lg z-50">
+                  Total execution cost (open + close, both legs). Includes slippage + fees.
                 </span>
-              </label>
+              </span>
+            </label>
+            <div className="relative">
               <input
                 type="number"
                 value={executionCostInput}
@@ -415,90 +498,155 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                     setExecutionCostInput("0.4");
                   }
                 }}
-                className="w-full px-3 py-2 bg-[#292e40] border border-[#343a4e] rounded text-white text-sm focus:outline-none focus:border-[#4a5568]"
+                className="w-16 px-2 py-1.5 bg-[#1c202f] border border-[#343a4e] rounded-lg text-white text-sm focus:outline-none focus:border-[#4a5568]"
                 min={0}
                 step={0.1}
               />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
             </div>
-          </div>
-
-          {/* PnL Summary */}
-          <div className="bg-[#1c202f] border border-[#343a4e] rounded-lg p-4 space-y-3 min-h-[190px]">
-            <h3 className="text-sm font-medium text-gray-400 mb-2">PnL Summary</h3>
-            
-            {loading ? (
-              <div className="text-gray-500 text-sm">Loading...</div>
-            ) : rows.length === 0 ? (
-              <div className="text-gray-500 text-sm">No data</div>
-            ) : (
-              <>
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Total PnL</div>
-                  <div
-                    className={`text-xl font-bold font-mono tabular-nums ${
-                      pnlCalculations.totalPnL >= 0 ? "text-green-400" : "text-red-400"
-                    }`}
-                  >
-                    {pnlCalculations.totalPnL >= 0 ? "+" : ""}
-                    ${pnlCalculations.totalPnL.toFixed(2)}
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-[#343a4e] space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Funding PnL</span>
-                    <span
-                      className={`font-mono tabular-nums ${
-                        pnlCalculations.totalFundingPnL >= 0 ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {pnlCalculations.totalFundingPnL >= 0 ? "+" : ""}
-                      ${pnlCalculations.totalFundingPnL.toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Execution Cost</span>
-                    <span className="font-mono tabular-nums text-red-400">
-                      -${pnlCalculations.totalExecutionCost.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Right Panel - Chart */}
-        <div className="flex-1 min-w-0">
-          <div className="relative border border-[#343a4e] rounded p-4 bg-[#292e40] h-72">
-            {rows.length > 0 ? (
-              <Chart
-                key={`pnl-chart-${chartData.longMarketId}-${chartData.shortMarketId}`}
-                type="bar"
-                data={chartDataObj as any}
-                options={options}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                <p>No data available for this period.</p>
-              </div>
-            )}
-
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center text-gray-200 bg-[#1c202f]/60">
-                <p>Loading PnL data...</p>
-              </div>
-            )}
-
-            {err && (
-              <div className="absolute inset-0 flex items-center justify-center text-red-400 bg-red-950/40">
-                <p>{err}</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* Performance Summary Cards */}
+      {hasData && (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-400 mb-3">Performance Summary</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+            <StatCard
+              icon={TrendingUp}
+              iconColor="text-green-400"
+              label="Total PnL"
+              value={
+                <span className={pnlCalculations.totalPnL >= 0 ? "text-green-400" : "text-red-400"}>
+                  {formatPercent(pnlCalculations.totalPnLPercent)}
+                </span>
+              }
+              subValue={formatCurrency(pnlCalculations.totalPnL)}
+            />
+            
+            <StatCard
+              icon={DollarSign}
+              iconColor="text-blue-400"
+              label="Avg Daily PnL"
+              value={
+                <span className={pnlCalculations.avgDailyPnL >= 0 ? "text-green-400" : "text-red-400"}>
+                  {formatPercent(pnlCalculations.avgDailyPnLPercent)}
+                </span>
+              }
+              subValue={formatCurrency(pnlCalculations.avgDailyPnL)}
+            />
+
+            <StatCard
+              icon={Activity}
+              iconColor="text-purple-400"
+              label="APR"
+              value={
+                <span className={pnlCalculations.apr >= 0 ? "text-green-400" : "text-red-400"}>
+                  {formatPercent(pnlCalculations.apr)}
+                </span>
+              }
+              subValue="annualized"
+            />
+
+            <StatCard
+              icon={TrendingUp}
+              iconColor="text-emerald-400"
+              label="Funding PnL"
+              value={
+                <span className={pnlCalculations.totalFundingPnL >= 0 ? "text-green-400" : "text-red-400"}>
+                  {formatCurrency(pnlCalculations.totalFundingPnL)}
+                </span>
+              }
+              subValue="before costs"
+            />
+
+            <StatCard
+              icon={Zap}
+              iconColor="text-orange-400"
+              label="Execution Cost"
+              value={
+                <span className="text-red-400">
+                  -{formatCurrency(pnlCalculations.totalExecutionCost)}
+                </span>
+              }
+              subValue={`${executionCost}% of position`}
+            />
+
+            <StatCard
+              icon={BarChart3}
+              iconColor="text-cyan-400"
+              label="Sharpe Ratio"
+              value={
+                <span className={pnlCalculations.sharpeRatio >= 1 ? "text-green-400" : pnlCalculations.sharpeRatio >= 0 ? "text-gray-200" : "text-red-400"}>
+                  {pnlCalculations.sharpeRatio.toFixed(2)}
+                </span>
+              }
+              subValue="annualized"
+            />
+
+            <StatCard
+              icon={ArrowUpRight}
+              iconColor="text-green-400"
+              label="Best Day"
+              value={
+                <span className="text-green-400">
+                  {formatCurrency(pnlCalculations.bestDay.pnl)}
+                </span>
+              }
+              subValue={pnlCalculations.bestDay.date ? new Date(pnlCalculations.bestDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
+            />
+
+            <StatCard
+              icon={ArrowDownRight}
+              iconColor="text-red-400"
+              label="Worst Day"
+              value={
+                <span className="text-red-400">
+                  {formatCurrency(pnlCalculations.worstDay.pnl)}
+                </span>
+              }
+              subValue={pnlCalculations.worstDay.date ? new Date(pnlCalculations.worstDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Chart */}
+      <div className="relative border border-[#343a4e] rounded-xl p-4 bg-[#1c202f] h-72">
+        {rows.length > 0 ? (
+          <Chart
+            key={`pnl-chart-${chartData.longMarketId}-${chartData.shortMarketId}`}
+            type="bar"
+            data={chartDataObj as any}
+            options={options}
+          />
+        ) : (
+          <div className="h-full flex items-center justify-center text-gray-500">
+            <p>No data available for this period.</p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-200 bg-[#1c202f]/80 rounded-xl">
+            <p>Loading PnL data...</p>
+          </div>
+        )}
+
+        {err && (
+          <div className="absolute inset-0 flex items-center justify-center text-red-400 bg-red-950/40 rounded-xl">
+            <p>{err}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Period info */}
+      {hasData && (
+        <div className="mt-3 text-center text-xs text-gray-500">
+          <Calendar size={12} className="inline mr-1" />
+          {pnlCalculations.periodDays} days • Position: {formatCurrency(positionSize, 0)} per leg ({formatCurrency(totalPositionSize, 0)} total)
+        </div>
+      )}
     </div>
   );
 }

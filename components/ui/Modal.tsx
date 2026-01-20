@@ -59,7 +59,7 @@ export function Modal({
                   <button
                     type="button"
                     onClick={onRetry}
-                    className="px-3 py-1.5 rounded border border-gray-600 text-sm text-gray-200 hover:border-gray-400 transition"
+                    className="px-3 py-1.5 rounded-lg border border-gray-600 text-sm text-gray-200 hover:border-gray-400 transition"
                   >
                     Retry
                   </button>

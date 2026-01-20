@@ -103,7 +103,7 @@ export default function MinAPRFilter({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => onOpenChange(false)} />
-          <div className="absolute z-20 mt-2 bg-[#292e40] border border-[#343a4e] rounded w-56 p-3 shadow-lg space-y-3 animate-tooltip-zoom">
+          <div className="absolute z-20 mt-2 bg-[#292e40] border border-[#343a4e] rounded-lg w-56 p-3 shadow-lg space-y-3 animate-tooltip-zoom">
             <div>
               <label className="block text-sm text-gray-300 mb-1">
                 Min Max Arb (%)
@@ -162,7 +162,7 @@ export default function MinAPRFilter({
                       onMinAPRChange(clamped);
                     }}
                     placeholder="0"
-                    className="w-36 bg-[#383d50] border border-transparent rounded px-2 py-1 text-sm text-gray-200 focus:outline-none"
+                    className="w-36 bg-[#383d50] border border-transparent rounded-lg px-2 py-1 text-sm text-gray-200 focus:outline-none"
                   />
                   {hasActiveFilter && (
                     <button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, Suspense } from "react";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, RefreshCw } from "lucide-react";
 import { normalizeToken } from "@/lib/formatters";
 import { EXCHANGE_LABEL } from "@/lib/constants";
 import { TAILWIND } from "@/lib/theme";
@@ -350,33 +350,29 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
 
   return (
     <div ref={containerRef} className="space-y-6">
-      {/* Inputs Card */}
-      <div className={`${TAILWIND.bg.surface} ${TAILWIND.border.default} rounded-xl p-6`}>
-        <h2 className="text-lg font-roboto font-normal mb-4 text-gray-200">
-          Inputs
-        </h2>
-
-        <div className="space-y-4">
+      {/* Compact Input Panel */}
+      <div className={`${TAILWIND.bg.surface} ${TAILWIND.border.default} rounded-xl p-4`}>
+        <div className="flex flex-wrap items-end gap-3">
           {/* Token Combobox */}
-          <div className="relative">
-            <label className="block text-sm text-gray-400 mb-1">Token</label>
+          <div className="relative flex-1 min-w-[140px]">
+            <label className="block text-xs text-gray-500 mb-1">Token</label>
             <button
               onClick={() => setOpenCombo(openCombo === "token" ? null : "token")}
-              className={`${TAILWIND.button.secondary} w-full text-left text-sm`}
+              className="w-full text-left text-sm bg-[#1c202f] border border-[#343a4e] rounded-lg px-3 py-2 text-gray-200 hover:border-[#4a5568] transition"
             >
-              {selectedToken || "Select or type token..."}
+              {selectedToken || "Select token..."}
             </button>
 
             {openCombo === "token" && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setOpenCombo(null)} />
-                <div className="absolute z-20 w-full mt-1 bg-[#292e40] border border-[#343a4e] rounded shadow-lg">
+                <div className="absolute z-20 w-full mt-1 bg-[#292e40] border border-[#343a4e] rounded-lg shadow-lg animate-tooltip-zoom">
                   <input
                     type="text"
                     placeholder="Search tokens..."
                     value={tokenSearch}
                     onChange={e => setTokenSearch(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#1c202f] border-b border-[#343a4e] rounded-t text-sm text-gray-200 focus:outline-none"
+                    className="w-full px-3 py-2 bg-[#1c202f] border-b border-[#343a4e] rounded-t-lg text-sm text-gray-200 focus:outline-none"
                     autoFocus
                   />
                   <div className="max-h-48 overflow-y-auto">
@@ -402,144 +398,143 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
             )}
           </div>
 
-          {/* Long and Short Exchanges */}
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end">
-            {/* Long Exchange */}
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Long</label>
-              <button
-                onClick={() => setOpenCombo(openCombo === "long-ex" ? null : "long-ex")}
-                className={`${TAILWIND.button.secondary} w-full text-left text-sm`}
-              >
-                {selectedLongEx ? `${EXCHANGE_LABEL[selectedLongEx] || selectedLongEx}${selectedLongQuote ? ` (${selectedLongQuote})` : ""}` : "Select..."}
-              </button>
-
-              {openCombo === "long-ex" && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setOpenCombo(null)} />
-                  <div className="absolute z-20 w-80 mt-1 bg-[#292e40] border border-[#343a4e] rounded shadow-lg">
-                    <input
-                      type="text"
-                      placeholder="Search exchanges..."
-                      value={longExSearch}
-                      onChange={e => setLongExSearch(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#1c202f] border-b border-[#343a4e] rounded-t text-sm text-gray-200 focus:outline-none"
-                      autoFocus
-                    />
-                    <div className="max-h-48 overflow-y-auto">
-                      {filteredLongEx.map(ex => {
-                        const normalizedToken = normalizeToken(selectedToken);
-                        const baseAsset = ex.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
-                        if (!baseAsset) return null;
-                        
-                        return (
-                          <div key={ex.exchange} className="border-b border-[#343a4e] last:border-b-0">
-                            {baseAsset.quotes.map((quote: Quote) => (
-                              <button
-                                key={`${ex.exchange}-${quote.asset}`}
-                                onClick={() => {
-                                  setSelectedLongEx(ex.exchange);
-                                  setSelectedLongQuote(quote.asset);
-                                  setSelectedLongMarketId(quote.marketId);
-                                  setSelectedLongRefUrl(quote.refUrl);
-                                  setLongExSearch("");
-                                  setOpenCombo(null);
-                                }}
-                                className="w-full px-3 py-2 text-left text-sm hover:bg-[#353b52] transition flex items-center gap-2"
-                              >
-                                <ExchangeIcon exchange={ex.exchange} size={16} />
-                                {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{baseAsset.quotes.length > 1 ? ` (${quote.asset})` : ""}
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      })}
-                      {filteredLongEx.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-gray-500">No exchanges found</div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Swap Button */}
+          {/* Long Exchange */}
+          <div className="relative flex-1 min-w-[160px]">
+            <label className="block text-xs text-gray-500 mb-1">Long</label>
             <button
-              onClick={handleSwapExchanges}
-              disabled={!selectedLongEx || !selectedShortEx}
-              className={`${TAILWIND.button.secondary} px-2 py-2`}
-              title="Swap Long and Short"
+              onClick={() => setOpenCombo(openCombo === "long-ex" ? null : "long-ex")}
+              className="w-full text-left text-sm bg-[#1c202f] border border-[#343a4e] rounded-lg px-3 py-2 text-gray-200 hover:border-[#4a5568] transition"
             >
-              <ArrowRightLeft size={18} />
+              {selectedLongEx ? `${EXCHANGE_LABEL[selectedLongEx] || selectedLongEx}${selectedLongQuote ? ` (${selectedLongQuote})` : ""}` : "Select..."}
             </button>
 
-            {/* Short Exchange */}
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Short</label>
-              <button
-                onClick={() => setOpenCombo(openCombo === "short-ex" ? null : "short-ex")}
-                className={`${TAILWIND.button.secondary} w-full text-left text-sm`}
-              >
-                {selectedShortEx ? `${EXCHANGE_LABEL[selectedShortEx] || selectedShortEx}${selectedShortQuote ? ` (${selectedShortQuote})` : ""}` : "Select..."}
-              </button>
-
-              {openCombo === "short-ex" && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setOpenCombo(null)} />
-                  <div className="absolute z-20 w-80 mt-1 bg-[#292e40] border border-[#343a4e] rounded shadow-lg">
-                    <input
-                      type="text"
-                      placeholder="Search exchanges..."
-                      value={shortExSearch}
-                      onChange={e => setShortExSearch(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#1c202f] border-b border-[#343a4e] rounded-t text-sm text-gray-200 focus:outline-none"
-                      autoFocus
-                    />
-                    <div className="max-h-48 overflow-y-auto">
-                      {filteredShortEx.map(ex => {
-                        const normalizedToken = normalizeToken(selectedToken);
-                        const baseAsset = ex.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
-                        if (!baseAsset) return null;
-                        
-                        return (
-                          <div key={ex.exchange} className="border-b border-[#343a4e] last:border-b-0">
-                            {baseAsset.quotes.map((quote: Quote) => (
-                              <button
-                                key={`${ex.exchange}-${quote.asset}`}
-                                onClick={() => {
-                                  setSelectedShortEx(ex.exchange);
-                                  setSelectedShortQuote(quote.asset);
-                                  setSelectedShortMarketId(quote.marketId);
-                                  setSelectedShortRefUrl(quote.refUrl);
-                                  setShortExSearch("");
-                                  setOpenCombo(null);
-                                }}
-                                className="w-full px-3 py-2 text-left text-sm hover:bg-[#353b52] transition flex items-center gap-2"
-                              >
-                                <ExchangeIcon exchange={ex.exchange} size={16} />
-                                {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{baseAsset.quotes.length > 1 ? ` (${quote.asset})` : ""}
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      })}
-                      {filteredShortEx.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-gray-500">No exchanges found</div>
-                      )}
-                    </div>
+            {openCombo === "long-ex" && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setOpenCombo(null)} />
+                <div className="absolute z-20 w-80 mt-1 bg-[#292e40] border border-[#343a4e] rounded-lg shadow-lg animate-tooltip-zoom">
+                  <input
+                    type="text"
+                    placeholder="Search exchanges..."
+                    value={longExSearch}
+                    onChange={e => setLongExSearch(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#1c202f] border-b border-[#343a4e] rounded-t-lg text-sm text-gray-200 focus:outline-none"
+                    autoFocus
+                  />
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredLongEx.map(ex => {
+                      const normalizedToken = normalizeToken(selectedToken);
+                      const baseAsset = ex.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
+                      if (!baseAsset) return null;
+                      
+                      return (
+                        <div key={ex.exchange} className="border-b border-[#343a4e] last:border-b-0">
+                          {baseAsset.quotes.map((quote: Quote) => (
+                            <button
+                              key={`${ex.exchange}-${quote.asset}`}
+                              onClick={() => {
+                                setSelectedLongEx(ex.exchange);
+                                setSelectedLongQuote(quote.asset);
+                                setSelectedLongMarketId(quote.marketId);
+                                setSelectedLongRefUrl(quote.refUrl);
+                                setLongExSearch("");
+                                setOpenCombo(null);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-[#353b52] transition flex items-center gap-2"
+                            >
+                              <ExchangeIcon exchange={ex.exchange} size={16} />
+                              {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{baseAsset.quotes.length > 1 ? ` (${quote.asset})` : ""}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                    {filteredLongEx.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-gray-500">No exchanges found</div>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* RUN Button */}
+          {/* Swap Button */}
+          <button
+            onClick={handleSwapExchanges}
+            disabled={!selectedLongEx || !selectedShortEx}
+            className="h-9 w-9 flex items-center justify-center bg-[#1c202f] border border-[#343a4e] rounded-lg text-gray-400 hover:text-white hover:border-[#4a5568] transition disabled:opacity-40"
+            title="Swap Long and Short"
+          >
+            <ArrowRightLeft size={16} />
+          </button>
+
+          {/* Short Exchange */}
+          <div className="relative flex-1 min-w-[160px]">
+            <label className="block text-xs text-gray-500 mb-1">Short</label>
+            <button
+              onClick={() => setOpenCombo(openCombo === "short-ex" ? null : "short-ex")}
+              className="w-full text-left text-sm bg-[#1c202f] border border-[#343a4e] rounded-lg px-3 py-2 text-gray-200 hover:border-[#4a5568] transition"
+            >
+              {selectedShortEx ? `${EXCHANGE_LABEL[selectedShortEx] || selectedShortEx}${selectedShortQuote ? ` (${selectedShortQuote})` : ""}` : "Select..."}
+            </button>
+
+            {openCombo === "short-ex" && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setOpenCombo(null)} />
+                <div className="absolute z-20 w-80 mt-1 bg-[#292e40] border border-[#343a4e] rounded-lg shadow-lg animate-tooltip-zoom">
+                  <input
+                    type="text"
+                    placeholder="Search exchanges..."
+                    value={shortExSearch}
+                    onChange={e => setShortExSearch(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#1c202f] border-b border-[#343a4e] rounded-t-lg text-sm text-gray-200 focus:outline-none"
+                    autoFocus
+                  />
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredShortEx.map(ex => {
+                      const normalizedToken = normalizeToken(selectedToken);
+                      const baseAsset = ex.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
+                      if (!baseAsset) return null;
+                      
+                      return (
+                        <div key={ex.exchange} className="border-b border-[#343a4e] last:border-b-0">
+                          {baseAsset.quotes.map((quote: Quote) => (
+                            <button
+                              key={`${ex.exchange}-${quote.asset}`}
+                              onClick={() => {
+                                setSelectedShortEx(ex.exchange);
+                                setSelectedShortQuote(quote.asset);
+                                setSelectedShortMarketId(quote.marketId);
+                                setSelectedShortRefUrl(quote.refUrl);
+                                setShortExSearch("");
+                                setOpenCombo(null);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-[#353b52] transition flex items-center gap-2"
+                            >
+                              <ExchangeIcon exchange={ex.exchange} size={16} />
+                              {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{baseAsset.quotes.length > 1 ? ` (${quote.asset})` : ""}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                    {filteredShortEx.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-gray-500">No exchanges found</div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* RUN Button - compact */}
           <button
             onClick={handleRun}
             disabled={loading || !selectedToken || !selectedLongEx || !selectedShortEx}
-            className={`${TAILWIND.button.secondary} w-full mt-2 text-sm`}
+            className="h-9 px-3 flex items-center gap-1.5 bg-[#1c202f] border border-[#343a4e] rounded-lg text-sm text-gray-400 hover:text-white hover:border-[#4a5568] transition disabled:opacity-40"
+            title="Reload data"
           >
-            {loading ? "Running..." : "RUN"}
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            <span className="hidden sm:inline">Run</span>
           </button>
         </div>
       </div>

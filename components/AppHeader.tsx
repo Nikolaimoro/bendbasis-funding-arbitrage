@@ -105,7 +105,7 @@ export default function AppHeader() {
         href={href}
         className={[
           "group relative text-base text-white font-roboto font-normal",
-          "px-2 py-2 rounded-md transition-colors duration-200",
+          "px-2 py-2 rounded-lg transition-colors duration-200",
           "hover:bg-[#383d50]",
           isFirst ? "ml-6" : "",
           // For non-active links, change origin on hover for left-to-right disappear
