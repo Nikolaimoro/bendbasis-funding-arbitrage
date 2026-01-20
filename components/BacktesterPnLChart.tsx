@@ -224,9 +224,11 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
     let cumulativePnL = 0;
     const cumPnL: { x: number; y: number }[] = [];
     const dailyPnLs: number[] = [];
+    const dailyFundingPnLs: number[] = [];
 
     // Group by day for daily stats
     const dailyMap = new Map<string, number>();
+    const dailyFundingMap = new Map<string, number>();
 
     rows.forEach((row, index) => {
       if (!row.t) return;
@@ -235,7 +237,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
       const spreadPct = row.spread_pct ?? 0;
 
       // Event PnL from funding
-      let eventPnLValue = (spreadPct / 100) * positionSize;
+      const fundingPnLValue = (spreadPct / 100) * positionSize;
+      let eventPnLValue = fundingPnLValue;
 
       // Apply half of total execution cost on first bar (opening)
       if (index === 0) {
@@ -248,6 +251,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
 
       cumulativePnL += eventPnLValue;
       dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + eventPnLValue);
+      dailyFundingMap.set(dateKey, (dailyFundingMap.get(dateKey) ?? 0) + fundingPnLValue);
 
       eventPnL.push({ x: timestamp, y: eventPnLValue });
       cumPnL.push({ x: timestamp, y: cumulativePnL });
@@ -265,6 +269,9 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
     // Daily metrics
     const dailyPnLArray = Array.from(dailyMap.entries());
     dailyPnLArray.forEach(([, pnl]) => dailyPnLs.push(pnl));
+
+    const dailyFundingArray = Array.from(dailyFundingMap.entries());
+    dailyFundingArray.forEach(([, pnl]) => dailyFundingPnLs.push(pnl));
 
     const periodDays = dailyPnLArray.length;
     const avgDailyPnL = periodDays > 0 ? totalPnL / periodDays : 0;
@@ -293,8 +300,8 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
     const sharpeRatio = stdDev > 0 ? (meanDailyReturn / stdDev) * Math.sqrt(365) : 0;
 
     // Win Rate calculation: days with PnL > 0
-    const winningDays = dailyPnLs.filter(pnl => pnl > 0).length;
-    const winRate = periodDays > 0 ? (winningDays / periodDays) * 100 : 0;
+    const winningDays = dailyFundingPnLs.filter((pnl) => pnl > 0).length;
+    const winRate = dailyFundingPnLs.length > 0 ? (winningDays / dailyFundingPnLs.length) * 100 : 0;
 
     // Payback Period calculation: days until execution cost is recovered
     // If avgDailyPnL (before execution cost deduction) is positive, calculate days to recover execution cost
@@ -518,7 +525,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               Cost
               <span className="relative group inline-flex">
                 <Info size={12} className="text-gray-500" />
-                <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-52 p-2 rounded-lg bg-[#1c202f] border border-[#343a4e] text-[11px] shadow-lg z-50">
+                <span className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-60 p-2 rounded-lg bg-[#1c202f] border border-[#343a4e] text-[11px] shadow-lg z-50 whitespace-normal">
                   <span className="text-gray-300">Total execution cost (open + close, both legs).</span>
                   <hr className="border-[#343a4e] my-1.5" />
                   <span className="text-gray-500">Includes slippage + fees.</span>
@@ -561,11 +568,11 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               iconColor="text-green-400"
               label="Total PnL"
               value={
-                <span className={`${pnlCalculations.totalPnL >= 0 ? "text-green-400" : "text-red-400"} text-2xl sm:text-3xl`}>
+                <span className={`${pnlCalculations.totalPnL >= 0 ? "text-green-400" : "text-red-400"} text-3xl sm:text-4xl`}>
                   {formatPercent(pnlCalculations.totalPnLPercent)}
                 </span>
               }
-              subValue={<span className="text-sm">{formatCurrency(pnlCalculations.totalPnL)}</span>}
+              subValue={<span className="text-base">{formatCurrency(pnlCalculations.totalPnL)}</span>}
               subValueColor={pnlCalculations.totalPnL >= 0 ? "text-green-400/70" : "text-red-400/70"}
               className="row-span-2"
             />
