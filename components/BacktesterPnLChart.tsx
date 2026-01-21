@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Info, TrendingUp, DollarSign, Activity, ArrowUpRight, ArrowDownRight, Zap, Percent, Clock, BarChart3 } from "lucide-react";
+import { Info, TrendingUp, DollarSign, Activity, ArrowUpRight, ArrowDownRight, Zap, Percent, Clock, BarChart3, Layers } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatCompactUSD, formatExchange } from "@/lib/formatters";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
@@ -642,7 +642,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue="before costs"
               alignSubValueBottom
-              className="order-4 sm:order-none"
+              className="order-3 sm:order-none"
             />
 
             <StatCard
@@ -656,7 +656,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue={`${pnlCalculations.winningDays} days`}
               alignSubValueBottom
-              className="order-6 sm:order-none"
+              className="order-4 sm:order-none"
             />
 
             <StatCard
@@ -670,7 +670,36 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue={pnlCalculations.bestDay.date ? new Date(pnlCalculations.bestDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
               alignSubValueBottom
-              className="order-8 sm:order-none"
+              className="order-5 sm:order-none"
+            />
+
+            <StatCard
+              icon={Layers}
+              iconColor="text-indigo-400"
+              label="Open Interest"
+              value={
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1 text-gray-400">
+                      <ExchangeIcon exchange={chartData.longEx} size={14} />
+                      {formatExchange(chartData.longEx)}
+                    </span>
+                    <span className="font-mono text-gray-100">
+                      {formatCompactUSD(chartData.longOpenInterest ?? null)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1 text-gray-400">
+                      <ExchangeIcon exchange={chartData.shortEx} size={14} />
+                      {formatExchange(chartData.shortEx)}
+                    </span>
+                    <span className="font-mono text-gray-100">
+                      {formatCompactUSD(chartData.shortOpenInterest ?? null)}
+                    </span>
+                  </div>
+                </div>
+              }
+              className="order-6 sm:order-none"
             />
 
             <StatCard
@@ -684,7 +713,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue="annualized"
               alignSubValueBottom
-              className="order-3 sm:order-none"
+              className="order-7 sm:order-none"
             />
 
             <StatCard
@@ -698,7 +727,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue="slippage + fees"
               alignSubValueBottom
-              className="order-5 sm:order-none"
+              className="order-8 sm:order-none"
             />
 
             <StatCard
@@ -712,7 +741,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue="to breakeven"
               alignSubValueBottom
-              className="order-7 sm:order-none"
+              className="order-9 sm:order-none"
             />
 
             <StatCard
@@ -726,7 +755,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
               }
               subValue={pnlCalculations.worstDay.date ? new Date(pnlCalculations.worstDay.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "-"}
               alignSubValueBottom
-              className="order-9 sm:order-none"
+              className="order-10 sm:order-none"
             />
 
             <StatCard
@@ -751,35 +780,6 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
                     </span>
                     <span className="font-mono text-gray-100">
                       {formatCompactUSD(chartData.shortVolume24h ?? null)}
-                    </span>
-                  </div>
-                </div>
-              }
-              className="order-10 sm:order-none"
-            />
-
-            <StatCard
-              icon={Activity}
-              iconColor="text-purple-400"
-              label="Open Interest"
-              value={
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="inline-flex items-center gap-1 text-gray-400">
-                      <ExchangeIcon exchange={chartData.longEx} size={14} />
-                      {formatExchange(chartData.longEx)}
-                    </span>
-                    <span className="font-mono text-gray-100">
-                      {formatCompactUSD(chartData.longOpenInterest ?? null)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="inline-flex items-center gap-1 text-gray-400">
-                      <ExchangeIcon exchange={chartData.shortEx} size={14} />
-                      {formatExchange(chartData.shortEx)}
-                    </span>
-                    <span className="font-mono text-gray-100">
-                      {formatCompactUSD(chartData.shortOpenInterest ?? null)}
                     </span>
                   </div>
                 </div>
