@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import FundingTable from "@/components/FundingTable";
 import { FundingRow } from "@/lib/types";
-import { withTimeout } from "@/lib/async";
+import { getLocalCache, setLocalCache, withTimeout } from "@/lib/async";
 
 const PAGE_SIZE = 1000;
 const TIMEOUT_MS = 8000;
 const MAX_ATTEMPTS = 2;
+const CACHE_KEY = "cache-funding-dashboard-rows";
+const CACHE_TTL_MS = 3 * 60 * 1000;
 
 const fetchFundingRows = async (): Promise<FundingRow[]> => {
   let allRows: FundingRow[] = [];
@@ -47,9 +49,17 @@ export default function FundingTableClient() {
     let cancelled = false;
 
     let attemptId = 0;
+    const cached = getLocalCache<FundingRow[]>(CACHE_KEY, CACHE_TTL_MS);
+    const hasCache = !!cached && cached.length > 0;
+
+    if (hasCache) {
+      setRows(cached!);
+      setLoading(false);
+      setError(null);
+    }
 
     const load = async () => {
-      setLoading(true);
+      setLoading(!hasCache);
       setError(null);
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
@@ -61,10 +71,16 @@ export default function FundingTableClient() {
           if (!cancelled && currentAttempt === attemptId) {
             setRows(allRows);
             setLoading(false);
+            setLocalCache(CACHE_KEY, allRows);
           }
           return;
         } catch (err) {
           if (cancelled || currentAttempt !== attemptId) {
+            return;
+          }
+
+          if (hasCache) {
+            setLoading(false);
             return;
           }
 

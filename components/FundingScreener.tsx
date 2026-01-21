@@ -12,16 +12,31 @@ import {
   SortDir,
 } from "@/lib/types";
 import { SCREENER_TIME_WINDOWS, SCREENER_TIME_LABELS } from "@/lib/constants";
+import { getLocalCache, setLocalCache, withTimeout } from "@/lib/async";
 import Pagination from "@/components/Table/Pagination";
 import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import APRRangeFilter from "@/components/Table/APRRangeFilter";
+const CACHE_KEY = "cache-funding-screener-data";
+const CACHE_TTL_MS = 3 * 60 * 1000;
 import RateCell from "@/components/FundingScreener/RateCell";
 import APRCell from "@/components/FundingScreener/APRCell";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import SortableHeader from "@/components/ui/SortableHeader";
+
+    const cached = getLocalCache<{ columns: ExchangeColumn[]; rows: FundingMatrixRow[] }>(
+      CACHE_KEY,
+      CACHE_TTL_MS
+    );
+    const hasCache = !!cached && cached.rows.length > 0 && cached.columns.length > 0;
+    if (hasCache) {
+      setExchangeColumns(cached!.columns);
+      setRows(cached!.rows);
+      setLoading(false);
+      setError(null);
+    }
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import { TAILWIND } from "@/lib/theme";
-import { withTimeout } from "@/lib/async";
+      setLoading(!hasCache);
 
 /* ================= TYPES ================= */
 
@@ -33,12 +48,18 @@ const FAVORITES_KEY = "funding-screener-favorites";
 const EXCHANGES_KEY = "funding-screener-exchanges";
 
 /* ================= HELPERS ================= */
+            setLocalCache(CACHE_KEY, { columns, rows: matrixData });
 
 function formatColumnHeader(col: ExchangeColumn, exchangesWithMultipleQuotes: Set<string>): string {
   const name = formatExchange(col.exchange);
   if (exchangesWithMultipleQuotes.has(col.exchange)) {
     return `${name} (${col.quote_asset})`;
   }
+
+          if (hasCache) {
+            setLoading(false);
+            return;
+          }
   return name;
 }
 
