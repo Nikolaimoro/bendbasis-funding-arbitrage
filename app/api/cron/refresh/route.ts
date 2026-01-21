@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const TYPES = ["funding", "arbitrage", "screener"] as const;
 
 type TypeKey = (typeof TYPES)[number];
@@ -9,7 +12,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const provided = url.searchParams.get("secret") || request.headers.get("x-cron-secret");
 
-  if (secret && provided !== secret) {
+  if (!secret || provided !== secret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
