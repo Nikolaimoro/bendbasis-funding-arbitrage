@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, ChevronDown, Search, X } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { normalizeToken, formatAPR, formatExchange } from "@/lib/formatters";
 import { getRate, calculateMaxArb, findArbPair } from "@/lib/funding";
 import {
@@ -12,6 +11,7 @@ import {
   SortDir,
 } from "@/lib/types";
 import { SCREENER_TIME_WINDOWS, SCREENER_TIME_LABELS } from "@/lib/constants";
+import { getLocalCache, setLocalCache, withTimeout } from "@/lib/async";
 import Pagination from "@/components/Table/Pagination";
 import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import APRRangeFilter from "@/components/Table/APRRangeFilter";
@@ -21,7 +21,6 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import SortableHeader from "@/components/ui/SortableHeader";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import { TAILWIND } from "@/lib/theme";
-import { withTimeout } from "@/lib/async";
 
 /* ================= TYPES ================= */
 
@@ -31,9 +30,10 @@ const TIMEOUT_MS = 8000;
 const MAX_ATTEMPTS = 2;
 const FAVORITES_KEY = "funding-screener-favorites";
 const EXCHANGES_KEY = "funding-screener-exchanges";
+const CACHE_KEY = "cache-funding-screener-data";
+const CACHE_TTL_MS = 3 * 60 * 1000;
 
 /* ================= HELPERS ================= */
-
 function formatColumnHeader(col: ExchangeColumn, exchangesWithMultipleQuotes: Set<string>): string {
   const name = formatExchange(col.exchange);
   if (exchangesWithMultipleQuotes.has(col.exchange)) {
@@ -91,55 +91,59 @@ export default function FundingScreener() {
     let cancelled = false;
     let attemptId = 0;
 
-    const fetchExchangeColumns = async (): Promise<ExchangeColumn[]> => {
-      const { data, error } = await supabase
-        .from("exchange_columns")
-        .select("*")
-        .order("column_key", { ascending: true });
-      if (error) throw new Error(error.message);
-      return data as ExchangeColumn[];
-    };
+    const cached = getLocalCache<{ columns: ExchangeColumn[]; rows: FundingMatrixRow[] }>(
+      CACHE_KEY,
+      CACHE_TTL_MS
+    );
+    const hasCache = !!cached && cached.rows.length > 0 && cached.columns.length > 0;
+    if (hasCache) {
+      setExchangeColumns(cached!.columns);
+      setRows(cached!.rows);
+      setLoading(false);
+      setError(null);
+    }
 
-    const fetchMatrixData = async (): Promise<FundingMatrixRow[]> => {
-      const tableName = "token_funding_matrix_mv";
-      let allRows: FundingMatrixRow[] = [];
-      let from = 0;
-      const PAGE_SIZE = 1000;
-
-      while (true) {
-        const { data, error } = await supabase
-          .from(tableName)
-          .select("*")
-          .range(from, from + PAGE_SIZE - 1);
-        if (error) throw new Error(error.message);
-        if (!data?.length) break;
-        allRows = allRows.concat(data as FundingMatrixRow[]);
-        if (data.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
+    const fetchScreenerData = async (): Promise<{ columns: ExchangeColumn[]; rows: FundingMatrixRow[] }> => {
+      const res = await fetch("/api/dashboard?type=screener", { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error("Failed to load funding screener data");
       }
-      return allRows;
+      const json = (await res.json()) as {
+        columns?: ExchangeColumn[];
+        rows?: FundingMatrixRow[];
+      };
+      return {
+        columns: json.columns ?? [],
+        rows: json.rows ?? [],
+      };
     };
 
     const load = async () => {
-      setLoading(true);
+      setLoading(!hasCache);
       setError(null);
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const currentAttempt = ++attemptId;
         try {
-          const [columns, matrixData] = await Promise.all([
-            withTimeout(fetchExchangeColumns(), TIMEOUT_MS),
-            withTimeout(fetchMatrixData(), TIMEOUT_MS),
-          ]);
+          const { columns, rows: matrixData } = await withTimeout(
+            fetchScreenerData(),
+            TIMEOUT_MS
+          );
 
           if (!cancelled && currentAttempt === attemptId) {
             setExchangeColumns(columns);
             setRows(matrixData);
             setLoading(false);
+            setLocalCache(CACHE_KEY, { columns, rows: matrixData });
           }
           return;
         } catch (err) {
           if (cancelled || currentAttempt !== attemptId) return;
+
+          if (hasCache) {
+            setLoading(false);
+            return;
+          }
           if (err instanceof Error && err.message === "timeout") {
             if (attempt < MAX_ATTEMPTS - 1) continue;
             setError("Error loading data: Request timed out");

@@ -14,13 +14,15 @@ import ArbitrageTableBody from "@/components/ArbitrageTable/Body";
 import SkeletonLoader from "@/components/ui/SkeletonLoader";
 import { TableEmptyState, TableLoadingState } from "@/components/ui/TableStates";
 import { TAILWIND } from "@/lib/theme";
-import { withTimeout } from "@/lib/async";
+import { getLocalCache, setLocalCache, withTimeout } from "@/lib/async";
 
 /* ================= TYPES ================= */
 
 type SortKey = "opportunity_apr" | "stability";
 const TIMEOUT_MS = 8000;
 const MAX_ATTEMPTS = 2;
+const CACHE_KEY = "cache-arbitrage-rows";
+const CACHE_TTL_MS = 3 * 60 * 1000;
 const EXCHANGES_KEY = "arbitrage-exchanges";
 
 /* ================= COMPONENT ================= */
@@ -93,22 +95,27 @@ export default function ArbitrageTable() {
     let cancelled = false;
     let attemptId = 0;
 
+    const cached = getLocalCache<ArbRow[]>(CACHE_KEY, CACHE_TTL_MS);
+    const hasCache = !!cached && cached.length > 0;
+    if (hasCache) {
+      setRows(cached!);
+      setLoading(false);
+      setError(null);
+    }
+
     const fetchRows = async () => {
-      const { data, error } = await supabase
-        .from(SUPABASE_TABLES.ARB_OPPORTUNITIES)
-        .select("*")
-        .order("stability", { ascending: false })
-        .order("opportunity_apr", { ascending: false });
-
-      if (error) {
-        throw new Error(error.message);
+      const res = await fetch("/api/dashboard?type=arbitrage", {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to load arbitrage data");
       }
-
-      return (data ?? []) as ArbRow[];
+      const json = (await res.json()) as { rows?: ArbRow[] };
+      return json.rows ?? [];
     };
 
     const load = async () => {
-      setLoading(true);
+      setLoading(!hasCache);
       setError(null);
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
@@ -119,10 +126,16 @@ export default function ArbitrageTable() {
           if (!cancelled && currentAttempt === attemptId) {
             setRows(data);
             setLoading(false);
+            setLocalCache(CACHE_KEY, data);
           }
           return;
         } catch (err) {
           if (cancelled || currentAttempt !== attemptId) {
+            return;
+          }
+
+          if (hasCache) {
+            setLoading(false);
             return;
           }
 
