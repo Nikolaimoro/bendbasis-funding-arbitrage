@@ -16,13 +16,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const deploymentUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.VERCEL_URL ||
-    url.origin;
-  const baseUrl = new URL(
-    deploymentUrl.startsWith("http") ? deploymentUrl : `https://${deploymentUrl}`
-  );
+  const baseUrl = new URL(url.origin);
 
   const results = await Promise.all(
     TYPES.map(async (type) => {
