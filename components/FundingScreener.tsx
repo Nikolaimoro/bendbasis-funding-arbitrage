@@ -636,11 +636,14 @@ export default function FundingScreener() {
                                 e.stopPropagation();
                                 setPinnedColumnKey((prev) => (prev === col.column_key ? null : col.column_key));
                               }}
-                              className={`p-0.5 rounded ${isPinned ? "text-emerald-400" : "text-gray-500 hover:text-gray-300"}`}
+                              className={`p-0.5 rounded ${isPinned ? "text-gray-200" : "text-gray-500 hover:text-gray-300"}`}
                               aria-label={isPinned ? "Unpin exchange" : "Pin exchange"}
                               title={isPinned ? "Unpin" : "Pin"}
                             >
-                              <Pin size={12} />
+                              <Pin
+                                size={12}
+                                style={isPinned ? { stroke: "url(#navUnderlineGradient)" } : undefined}
+                              />
                             </button>
                           </div>
                           <SortableHeader
