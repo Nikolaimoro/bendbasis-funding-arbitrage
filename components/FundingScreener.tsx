@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, ChevronDown, Search, X } from "lucide-react";
+import { RefreshCw, ChevronDown, Search, X, Pin } from "lucide-react";
 import { normalizeToken, formatAPR, formatExchange } from "@/lib/formatters";
 import { getRate, calculateMaxArb, findArbPair } from "@/lib/funding";
 import {
@@ -30,6 +30,7 @@ const TIMEOUT_MS = 8000;
 const MAX_ATTEMPTS = 2;
 const FAVORITES_KEY = "funding-screener-favorites";
 const EXCHANGES_KEY = "funding-screener-exchanges";
+const PINNED_KEY = "funding-screener-pinned";
 const CACHE_KEY = "cache-funding-screener-data";
 const CACHE_TTL_MS = 3 * 60 * 1000;
 
@@ -60,6 +61,80 @@ function GradientStar({ filled = false, size = 14 }: { filled?: boolean; size?: 
   );
 }
 
+function findArbPairPinned(
+  markets: Record<string, FundingMatrixMarket> | null | undefined,
+  timeWindow: TimeWindow,
+  selectedColumnKeys: Set<string>,
+  pinnedKey: string | null
+): ArbPair | null {
+  if (!markets) return null;
+  if (!pinnedKey) return findArbPair(markets, timeWindow, selectedColumnKeys);
+  if (!selectedColumnKeys.has(pinnedKey)) return findArbPair(markets, timeWindow, selectedColumnKeys);
+
+  const pinnedMarket = markets[pinnedKey];
+  const pinnedRate = getRate(pinnedMarket, timeWindow);
+  if (!pinnedMarket || pinnedRate === null) {
+    return findArbPair(markets, timeWindow, selectedColumnKeys);
+  }
+
+  const entries: { key: string; market: FundingMatrixMarket; rate: number }[] = [];
+  for (const [columnKey, market] of Object.entries(markets)) {
+    if (!market) continue;
+    if (!selectedColumnKeys.has(columnKey)) continue;
+    if (columnKey === pinnedKey) continue;
+    const rate = getRate(market, timeWindow);
+    if (rate !== null) {
+      entries.push({ key: columnKey, market, rate });
+    }
+  }
+
+  if (entries.length === 0) return null;
+
+  let minEntry = entries[0];
+  let maxEntry = entries[0];
+  for (const entry of entries) {
+    if (entry.rate < minEntry.rate) minEntry = entry;
+    if (entry.rate > maxEntry.rate) maxEntry = entry;
+  }
+
+  const spreadIfPinnedLong = maxEntry.rate - pinnedRate;
+  const spreadIfPinnedShort = pinnedRate - minEntry.rate;
+
+  if (spreadIfPinnedLong >= spreadIfPinnedShort) {
+    if (spreadIfPinnedLong <= 0) return null;
+    return {
+      longKey: pinnedKey,
+      longMarket: pinnedMarket,
+      longRate: pinnedRate,
+      shortKey: maxEntry.key,
+      shortMarket: maxEntry.market,
+      shortRate: maxEntry.rate,
+      spread: spreadIfPinnedLong,
+    };
+  }
+
+  if (spreadIfPinnedShort <= 0) return null;
+  return {
+    longKey: minEntry.key,
+    longMarket: minEntry.market,
+    longRate: minEntry.rate,
+    shortKey: pinnedKey,
+    shortMarket: pinnedMarket,
+    shortRate: pinnedRate,
+    spread: spreadIfPinnedShort,
+  };
+}
+
+function calculateMaxArbPinned(
+  markets: Record<string, FundingMatrixMarket> | null | undefined,
+  timeWindow: TimeWindow,
+  selectedColumnKeys: Set<string>,
+  pinnedKey: string | null
+): number | null {
+  const pair = findArbPairPinned(markets, timeWindow, selectedColumnKeys, pinnedKey);
+  return pair ? pair.spread : null;
+}
+
 /* ================= COMPONENT ================= */
 
 export default function FundingScreener() {
@@ -79,6 +154,7 @@ export default function FundingScreener() {
   const [minAPR, setMinAPR] = useState<number | "">(0);
   const [maxAPRFilter, setMaxAPRFilter] = useState<number | "">("");
   const [favoriteTokens, setFavoriteTokens] = useState<string[]>([]);
+  const [pinnedColumnKey, setPinnedColumnKey] = useState<string | null>(null);
 
   const [sortKey, setSortKey] = useState<SortKey>("max_arb");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -248,15 +324,46 @@ export default function FundingScreener() {
     return new Set(filteredColumns.map((col) => col.column_key));
   }, [filteredColumns]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem(PINNED_KEY);
+      if (!stored) return;
+      setPinnedColumnKey(stored);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (!pinnedColumnKey) {
+        window.localStorage.removeItem(PINNED_KEY);
+      } else {
+        window.localStorage.setItem(PINNED_KEY, pinnedColumnKey);
+      }
+    } catch {
+      // ignore
+    }
+  }, [pinnedColumnKey]);
+
+  useEffect(() => {
+    if (!pinnedColumnKey) return;
+    if (!filteredColumnKeys.has(pinnedColumnKey)) {
+      setPinnedColumnKey(null);
+    }
+  }, [pinnedColumnKey, filteredColumnKeys]);
+
   /* ---------- max APR for slider ---------- */
   const maxAPRValue = useMemo(() => {
     let max = 0;
     for (const row of rows) {
-      const arb = calculateMaxArb(row.markets, timeWindow, filteredColumnKeys);
+      const arb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
       if (arb !== null && arb > max) max = arb;
     }
     return Math.ceil(max);
-  }, [rows, timeWindow, filteredColumnKeys]);
+  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey]);
 
   /* ---------- handlers ---------- */
   const resetPage = () => setPage(0);
@@ -315,7 +422,7 @@ export default function FundingScreener() {
     // Filter by min APR (using filtered exchanges)
     if (typeof minAPR === "number" && minAPR > 0) {
       result = result.filter((row) => {
-        const maxArb = calculateMaxArb(row.markets, timeWindow, filteredColumnKeys);
+        const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
         return maxArb !== null && maxArb >= minAPR;
       });
     }
@@ -323,7 +430,7 @@ export default function FundingScreener() {
     // Filter by max APR (using filtered exchanges)
     if (typeof maxAPRFilter === "number") {
       result = result.filter((row) => {
-        const maxArb = calculateMaxArb(row.markets, timeWindow, filteredColumnKeys);
+        const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
         return maxArb === null || maxArb <= maxAPRFilter;
       });
     }
@@ -342,8 +449,8 @@ export default function FundingScreener() {
       }
 
       if (sortKey === "max_arb") {
-        const aArb = calculateMaxArb(a.markets, timeWindow, filteredColumnKeys) ?? -Infinity;
-        const bArb = calculateMaxArb(b.markets, timeWindow, filteredColumnKeys) ?? -Infinity;
+        const aArb = calculateMaxArbPinned(a.markets, timeWindow, filteredColumnKeys, pinnedColumnKey) ?? -Infinity;
+        const bArb = calculateMaxArbPinned(b.markets, timeWindow, filteredColumnKeys, pinnedColumnKey) ?? -Infinity;
         const cmp = aArb - bArb;
         return sortDir === "asc" ? cmp : -cmp;
       }
@@ -356,7 +463,7 @@ export default function FundingScreener() {
     });
 
     return result;
-  }, [rows, search, sortKey, sortDir, timeWindow, minAPR, maxAPRFilter, favoriteSet, filteredColumnKeys]);
+  }, [rows, search, sortKey, sortDir, timeWindow, minAPR, maxAPRFilter, favoriteSet, filteredColumnKeys, pinnedColumnKey]);
 
   /* ---------- pagination ---------- */
   const totalPages = limit === -1 ? 1 : Math.ceil(filtered.length / limit);
@@ -512,20 +619,40 @@ export default function FundingScreener() {
                       onClick={() => toggleSort("max_arb")}
                     />
                   </th>
-                  {filteredColumns.map((col) => (
-                    <th key={col.column_key} className={`${TAILWIND.table.header} text-center whitespace-nowrap`}>
-                      <div className="flex flex-col items-center gap-1">
-                        <ExchangeIcon exchange={col.exchange} size={22} />
-                        <SortableHeader
-                          label={formatColumnHeader(col, exchangesWithMultipleQuotes)}
-                          active={sortKey === col.column_key}
-                          dir={sortDir}
-                          onClick={() => toggleSort(col.column_key)}
-                          centered
-                        />
-                      </div>
-                    </th>
-                  ))}
+                  {filteredColumns.map((col) => {
+                    const isPinned = pinnedColumnKey === col.column_key;
+                    return (
+                      <th
+                        key={col.column_key}
+                        className={`${TAILWIND.table.header} text-center whitespace-nowrap ${isPinned ? "bg-[#353b52]/60" : ""}`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center gap-1">
+                            <ExchangeIcon exchange={col.exchange} size={22} />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPinnedColumnKey((prev) => (prev === col.column_key ? null : col.column_key));
+                              }}
+                              className={`p-0.5 rounded ${isPinned ? "text-emerald-400" : "text-gray-500 hover:text-gray-300"}`}
+                              aria-label={isPinned ? "Unpin exchange" : "Pin exchange"}
+                              title={isPinned ? "Unpin" : "Pin"}
+                            >
+                              <Pin size={12} />
+                            </button>
+                          </div>
+                          <SortableHeader
+                            label={formatColumnHeader(col, exchangesWithMultipleQuotes)}
+                            active={sortKey === col.column_key}
+                            dir={sortDir}
+                            onClick={() => toggleSort(col.column_key)}
+                            centered
+                          />
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
 
@@ -553,8 +680,8 @@ export default function FundingScreener() {
                   </tr>
                 ) : (
                   paginatedRows.map((row, idx) => {
-                    const maxArb = calculateMaxArb(row.markets, timeWindow, filteredColumnKeys);
-                    const arbPair = findArbPair(row.markets, timeWindow, filteredColumnKeys);
+                    const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
+                    const arbPair = findArbPairPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
 
                     return (
                       <tr
