@@ -25,13 +25,21 @@ export default function AppFooter() {
         className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
         aria-label="Telegram"
       >
-        <svg
+        <span
           aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="h-4 w-4 fill-current"
-        >
-          <path d="M21.76 3.24a1.5 1.5 0 0 0-1.62-.2L2.7 10.4a1.5 1.5 0 0 0 .2 2.8l4.92 1.53 1.88 5.86a1.5 1.5 0 0 0 2.63.5l2.82-3.56 4.98 3.66a1.5 1.5 0 0 0 2.36-.93l3.02-14.1a1.5 1.5 0 0 0-.75-1.92zM9.48 14.3l-.8 3.2-1.06-3.3 9.9-6.16-8.04 6.26z" />
-        </svg>
+          className="h-4 w-4 inline-block"
+          style={{
+            backgroundColor: "currentColor",
+            WebkitMaskImage: "url(/icons/social/telegram.svg)",
+            maskImage: "url(/icons/social/telegram.svg)",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+            maskPosition: "center",
+            WebkitMaskSize: "contain",
+            maskSize: "contain",
+          }}
+        />
       </a>
     </footer>
   );
