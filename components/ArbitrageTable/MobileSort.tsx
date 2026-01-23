@@ -12,6 +12,7 @@ type Props = {
   sortKey: SortKey;
   sortDir: SortDir;
   onSelect: (key: SortKey, dir: SortDir) => void;
+  className?: string;
 };
 
 export default function MobileSort({
@@ -20,6 +21,7 @@ export default function MobileSort({
   sortKey,
   sortDir,
   onSelect,
+  className,
 }: Props) {
   const options: Array<{
     key: SortKey;
@@ -30,14 +32,17 @@ export default function MobileSort({
     { key: "stability", dir: "desc", label: "Highest Stability" },
   ];
 
+  const buttonLabel =
+    sortKey === "stability" ? "Sort by: Stability" : "Sort by: APR";
+
   return (
-    <div className="relative min-[960px]:hidden">
+    <div className={`relative min-[960px]:hidden ${className ?? ""}`}>
       <button
         onClick={() => onOpenChange(!open)}
         className={`${TAILWIND.button.secondary} inline-flex items-center gap-2 text-sm`}
         type="button"
       >
-        <span>Sort</span>
+        <span>{buttonLabel}</span>
         <ChevronDown className="h-4 w-4 text-gray-300" />
       </button>
 

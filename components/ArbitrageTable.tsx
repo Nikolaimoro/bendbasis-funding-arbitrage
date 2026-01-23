@@ -418,6 +418,14 @@ export default function ArbitrageTable() {
         <div className="flex flex-wrap items-center gap-4 px-4 py-4">
           <h2 className="text-base font-roboto text-white">Opportunities</h2>
           <div className="ml-auto flex flex-wrap items-center gap-2">
+            <MobileSort
+              open={mobileSortOpen}
+              onOpenChange={setMobileSortOpen}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSelect={setSort}
+              className="order-1"
+            />
             <TableControls
               search={search}
               onSearchChange={handleSearchChange}
@@ -475,13 +483,6 @@ export default function ArbitrageTable() {
               onFiltersOpenChange={setFiltersOpen}
               searchPlaceholder="Search asset"
               inputClassName={TAILWIND.input.default}
-            />
-            <MobileSort
-              open={mobileSortOpen}
-              onOpenChange={setMobileSortOpen}
-              sortKey={sortKey}
-              sortDir={sortDir}
-              onSelect={setSort}
             />
           </div>
         </div>
