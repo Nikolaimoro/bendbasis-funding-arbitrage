@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { COLORS, CHART_CONFIG } from "@/lib/theme";
 import { ArbChartRow } from "@/lib/types";
@@ -47,6 +48,9 @@ export type ArbitrageChartProps = {
   shortMarketId: number;
   longLabel: string;
   shortLabel: string;
+  longUrl?: string | null;
+  shortUrl?: string | null;
+  backtesterUrl?: string | null;
 };
 
 async function fetchArbChartData(params: {
@@ -106,7 +110,7 @@ async function fetchArbChartData(params: {
 /* ================= COMPONENT ================= */
 
 export default function ArbitrageChart(props: ArbitrageChartProps) {
-  const { open, onClose, baseAsset, longMarketId, shortMarketId, longLabel, shortLabel } = props;
+  const { open, onClose, baseAsset, longMarketId, shortMarketId, longLabel, shortLabel, longUrl, shortUrl, backtesterUrl } = props;
 
   const [rows, setRows] = useState<ArbChartRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -365,14 +369,58 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
       onRetry={() => setRetryKey((value) => value + 1)}
       height={CHART_CONFIG.MODAL_HEIGHT}
     >
-      {rows.length > 0 && (
-        <Chart
-          key={`${longMarketId}-${shortMarketId}`}
-          type="bar"
-          data={chartData as any}
-          options={options}
-        />
-      )}
+      <div className="flex h-full flex-col">
+        <div className="flex-1 min-h-[320px] sm:min-h-[440px]">
+          {rows.length > 0 && (
+            <Chart
+              key={`${longMarketId}-${shortMarketId}`}
+              type="bar"
+              data={chartData as any}
+              options={options}
+            />
+          )}
+        </div>
+        {(longUrl || shortUrl || backtesterUrl) && (
+          <div className="mt-3 flex flex-col items-center gap-2">
+            <div className="w-full max-w-[360px]">
+              <div className="grid grid-cols-2 gap-2">
+                {longUrl && (
+                  <a
+                    href={longUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-green-500/40 px-3 py-2 text-xs text-green-400 hover:border-green-500/70 transition"
+                  >
+                    <ExternalLink size={12} />
+                    Long {longLabel}
+                  </a>
+                )}
+                {shortUrl && (
+                  <a
+                    href={shortUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-red-500/40 px-3 py-2 text-xs text-red-400 hover:border-red-500/70 transition"
+                  >
+                    <ExternalLink size={12} />
+                    Short {shortLabel}
+                  </a>
+                )}
+              </div>
+              {backtesterUrl && (
+                <a
+                  href={backtesterUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex w-full items-center justify-center rounded-lg border border-[#343a4e] px-3 py-2 text-xs text-gray-200 hover:border-white transition"
+                >
+                  Backtester
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </Modal>
   );
 }
