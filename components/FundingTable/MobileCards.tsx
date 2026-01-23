@@ -1,0 +1,197 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
+import { FundingRow } from "@/lib/types";
+import { formatAPR, formatCompactUSD, formatExchange } from "@/lib/formatters";
+import ExchangeIcon from "@/components/ui/ExchangeIcon";
+
+const MOBILE_PAGE_SIZE = 20;
+
+type Props = {
+  rows: FundingRow[];
+  loading: boolean;
+  onOpenChart: (row: FundingRow) => void;
+};
+
+const formatAPRText = (value: number | null) => formatAPR(value);
+
+export default function FundingMobileCards({
+  rows,
+  loading,
+  onOpenChart,
+}: Props) {
+  const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
+  const [fetchingMore, setFetchingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setVisibleCount(MOBILE_PAGE_SIZE);
+    setFetchingMore(false);
+  }, [rows]);
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+    if (visibleCount >= rows.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        if (fetchingMore) return;
+        setFetchingMore(true);
+        setTimeout(() => {
+          setVisibleCount((prev) =>
+            Math.min(prev + MOBILE_PAGE_SIZE, rows.length)
+          );
+          setFetchingMore(false);
+        }, 250);
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [rows.length, visibleCount, fetchingMore]);
+
+  return (
+    <div className="min-[960px]:hidden px-4 pb-4">
+      {loading ? (
+        <div className="grid grid-cols-1 gap-3">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="h-44 rounded-xl bg-[#1c202f] border border-[#343a4e] animate-pulse"
+            />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="text-gray-400 text-sm py-6 text-center">
+          No results for the current filters.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-3">
+            {rows.slice(0, visibleCount).map((row) => (
+              <div
+                key={`${row.exchange}:${row.market}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenChart(row)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpenChart(row);
+                  }
+                }}
+                className="rounded-xl border border-[#343a4e] bg-[#1c202f] p-3 text-xs text-gray-200 flex flex-col gap-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className="text-[10px] text-gray-500 uppercase">
+                      Exchange
+                    </span>
+                    <span className="text-sm font-semibold text-white inline-flex items-center gap-1.5">
+                      <ExchangeIcon exchange={row.exchange} size={16} />
+                      {formatExchange(row.exchange)}
+                    </span>
+                  </div>
+                  {row.market_id && (
+                    <span className="text-[10px] text-gray-500 inline-flex items-center gap-1">
+                      View Chart
+                      <ArrowUpRight size={10} />
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className="text-[10px] text-gray-500 uppercase">
+                      Market
+                    </span>
+                    <span className="text-sm font-mono text-white truncate">
+                      {row.ref_url ? (
+                        <a
+                          href={row.ref_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="text-blue-300 hover:underline"
+                        >
+                          {row.market}
+                        </a>
+                      ) : (
+                        row.market
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] text-gray-500 uppercase">
+                      Now
+                    </span>
+                    <span className="text-sm font-mono text-white">
+                      {formatAPRText(row.funding_rate_now)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border border-[#343a4e] bg-[#202437] px-2 py-2">
+                    <div className="text-[10px] text-gray-500 uppercase">
+                      Open Interest
+                    </div>
+                    <div className="text-sm font-mono text-white">
+                      {formatCompactUSD(row.open_interest)}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-[#343a4e] bg-[#202437] px-2 py-2">
+                    <div className="text-[10px] text-gray-500 uppercase">
+                      Volume 24h
+                    </div>
+                    <div className="text-sm font-mono text-white">
+                      {formatCompactUSD(row.volume_24h)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {(["1d", "3d", "7d", "15d", "30d"] as const).map((label) => (
+                    <div
+                      key={label}
+                      className="flex items-center justify-between rounded-lg border border-[#343a4e] bg-[#202437] px-2 py-2"
+                    >
+                      <span className="text-[10px] text-gray-500 uppercase">
+                        {label}
+                      </span>
+                      <span className="text-sm font-mono text-white">
+                        {formatAPRText(row[label])}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {fetchingMore && (
+            <div className="grid grid-cols-1 gap-3 mt-3">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="h-44 rounded-xl bg-[#1c202f] border border-[#343a4e] animate-pulse"
+                />
+              ))}
+            </div>
+          )}
+
+          <div ref={loadMoreRef} className="h-6" />
+
+          {visibleCount >= rows.length && rows.length > 0 && (
+            <div className="text-center text-gray-400 text-xs py-4">
+              No more results
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

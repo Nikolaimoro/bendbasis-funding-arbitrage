@@ -186,7 +186,7 @@ export default function ArbitrageMobileCards({
                         />
                       </div>
                       <span className="text-[10px] text-gray-500 inline-flex items-center gap-1">
-                        Open Chart
+                        View Chart
                         <ArrowUpRight size={10} />
                       </span>
                     </div>
