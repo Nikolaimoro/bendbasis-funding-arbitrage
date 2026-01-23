@@ -60,7 +60,7 @@ export default function FundingMobileCards({
           {Array.from({ length: 6 }).map((_, idx) => (
             <div
               key={idx}
-              className="h-44 rounded-xl bg-[#1c202f] border border-[#343a4e] animate-pulse"
+              className="h-44 rounded-2xl bg-[#1c202f] border border-[#343a4e] animate-pulse"
             />
           ))}
         </div>
@@ -83,9 +83,9 @@ export default function FundingMobileCards({
                     onOpenChart(row);
                   }
                 }}
-                className="rounded-xl border border-[#343a4e] bg-[#1c202f] p-3 text-xs text-gray-200 flex flex-col gap-3"
+                className="rounded-2xl border border-[#343a4e] bg-[#1c202f] p-4 text-xs text-gray-200 flex flex-col gap-4"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     {row.ref_url ? (
                       <a
@@ -93,15 +93,15 @@ export default function FundingMobileCards({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(event) => event.stopPropagation()}
-                        className="text-sm font-mono text-white inline-flex items-center gap-1.5 hover:underline"
+                        className="text-base font-mono text-white inline-flex items-center gap-2 hover:underline"
                       >
                         <span className="truncate">{row.market}</span>
                         <ExternalLink size={12} className="text-gray-400" />
                       </a>
                     ) : (
-                      <span className="text-sm font-mono text-white inline-flex items-center gap-1.5">
+                      <span className="text-base font-mono text-white inline-flex items-center gap-2">
                         <span className="truncate">{row.market}</span>
-                        <ExternalLink size={12} className="text-gray-500" />
+                        <ExternalLink size={12} className="text-gray-600" />
                       </span>
                     )}
                   </div>
@@ -111,49 +111,52 @@ export default function FundingMobileCards({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-[1.1fr_0.9fr] gap-2">
-                  <div className="rounded-lg border border-[#343a4e] bg-[#202437] px-3 py-3">
-                    <div className="text-[10px] text-gray-500 uppercase">
-                      Now
-                    </div>
-                    <div className="text-lg font-mono text-white">
-                      {formatAPRText(row.funding_rate_now)}
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="rounded-lg border border-[#343a4e] bg-[#202437] px-2 py-2">
-                      <div className="text-[10px] text-gray-500 uppercase">
-                        OI
+                <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+                  {(
+                    ["now", "1d", "3d", "7d", "15d", "30d"] as const
+                  ).map((label) => {
+                    const value =
+                      label === "now"
+                        ? formatAPRText(row.funding_rate_now)
+                        : formatAPRText(row[label]);
+                    return (
+                      <div key={label} className="flex flex-col gap-1">
+                        <span className="text-[10px] text-gray-500 uppercase">
+                          {label === "now" ? "Now" : label}
+                        </span>
+                        <span
+                          className={`font-mono ${
+                            label === "now"
+                              ? "text-base text-white"
+                              : "text-sm text-gray-200"
+                          }`}
+                        >
+                          {value}
+                        </span>
                       </div>
-                      <div className="text-sm font-mono text-white">
-                        {formatCompactUSD(row.open_interest)}
-                      </div>
-                    </div>
-                    <div className="rounded-lg border border-[#343a4e] bg-[#202437] px-2 py-2">
-                      <div className="text-[10px] text-gray-500 uppercase">
-                        Vol 24h
-                      </div>
-                      <div className="text-sm font-mono text-white">
-                        {formatCompactUSD(row.volume_24h)}
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  {(["1d", "3d", "7d", "15d", "30d"] as const).map((label) => (
-                    <div
-                      key={label}
-                      className="flex items-center justify-between rounded-lg border border-[#343a4e] bg-[#202437] px-2 py-2"
-                    >
+                <div className="rounded-xl border border-[#343a4e] bg-[#23283a] px-3 py-2">
+                  <div className="flex items-center justify-between gap-6">
+                    <div className="flex flex-col gap-1">
                       <span className="text-[10px] text-gray-500 uppercase">
-                        {label}
+                        OI
                       </span>
                       <span className="text-sm font-mono text-white">
-                        {formatAPRText(row[label])}
+                        {formatCompactUSD(row.open_interest)}
                       </span>
                     </div>
-                  ))}
+                    <div className="flex flex-col items-end gap-1 text-right">
+                      <span className="text-[10px] text-gray-500 uppercase">
+                        Vol 24h
+                      </span>
+                      <span className="text-sm font-mono text-white">
+                        {formatCompactUSD(row.volume_24h)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {row.market_id && (
@@ -173,10 +176,10 @@ export default function FundingMobileCards({
               {Array.from({ length: 3 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="h-44 rounded-xl bg-[#1c202f] border border-[#343a4e] animate-pulse"
-                />
-              ))}
-            </div>
+                className="h-44 rounded-2xl bg-[#1c202f] border border-[#343a4e] animate-pulse"
+              />
+            ))}
+          </div>
           )}
 
           <div ref={loadMoreRef} className="h-6" />
