@@ -64,7 +64,8 @@ export default function FundingMobileCards({
   }, []);
 
   return (
-    <div className="min-[960px]:hidden px-4 pb-4">
+    <>
+      <div className="min-[960px]:hidden px-4 pb-4">
       {loading ? (
         <div className="grid grid-cols-1 gap-3">
           {Array.from({ length: 6 }).map((_, idx) => (
@@ -201,21 +202,22 @@ export default function FundingMobileCards({
           )}
         </>
       )}
-    </div>
+      </div>
 
-    {showBackToTop && (
-      <button
-        type="button"
-        onClick={() => {
-          if (typeof window !== "undefined") {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }
-        }}
-        className="min-[960px]:hidden fixed bottom-24 right-4 z-40 rounded-full bg-[#1c202f] border border-[#343a4e] text-gray-200 p-2 shadow-lg"
-        aria-label="Back to top"
-      >
-        <ArrowUp size={16} />
-      </button>
-    )}
+      {showBackToTop && (
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
+          className="min-[960px]:hidden fixed bottom-24 right-4 z-40 rounded-full bg-[#1c202f] border border-[#343a4e] text-gray-200 p-2 shadow-lg"
+          aria-label="Back to top"
+        >
+          <ArrowUp size={16} />
+        </button>
+      )}
+    </>
   );
 }
