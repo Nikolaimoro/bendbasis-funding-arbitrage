@@ -52,7 +52,7 @@ export default function ExchangeFilter({
             className="fixed inset-0 z-40"
             onClick={() => onOpenChange(false)}
           />
-          <div className="absolute z-50 mt-2 bg-[#292e40] border border-[#343a4e] rounded-lg w-[92vw] max-w-[420px] sm:w-[380px] p-2 shadow-lg animate-tooltip-zoom right-0 sm:left-0 sm:right-auto">
+          <div className="absolute z-50 mt-2 bg-[#292e40] border border-[#343a4e] rounded-lg left-1/2 -translate-x-1/2 w-[calc(100vw-16px)] max-w-[420px] sm:translate-x-0 sm:left-0 sm:right-auto sm:w-[380px] p-2 shadow-lg animate-tooltip-zoom">
             <div className="flex items-center justify-between px-2 pb-2 text-xs">
               <span className="font-light text-gray-300">Select Exchanges</span>
               <div className="flex items-center gap-2">
@@ -88,15 +88,15 @@ export default function ExchangeFilter({
             {headerExtras && (
               <div className="px-2 pb-2 text-[11px] text-gray-400">{headerExtras}</div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 sm:gap-x-4 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 sm:gap-x-4 max-h-[70vh] sm:max-h-[60vh] overflow-y-auto pr-1">
               {exchanges.map((ex) => (
                 <div
                   key={ex}
-                  className="flex items-center justify-between gap-2 px-2 py-2.5 sm:py-1.5 hover:bg-[#353b52] rounded-lg"
+                  className="flex items-center justify-between gap-1.5 px-2 py-3 sm:py-1.5 hover:bg-[#353b52] rounded-lg"
                 >
                   <label
                     htmlFor={`exchange-${ex}`}
-                    className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0"
+                    className="flex items-center gap-1 cursor-pointer flex-1 min-w-0"
                   >
                     <input
                       id={`exchange-${ex}`}
@@ -112,7 +112,7 @@ export default function ExchangeFilter({
                   </label>
                   {renderExchangeActions && (
                     <div
-                      className="w-6 sm:w-7 flex items-center justify-center"
+                      className="w-7 sm:w-7 flex items-center justify-center"
                       onClick={(event) => {
                         event.stopPropagation();
                       }}

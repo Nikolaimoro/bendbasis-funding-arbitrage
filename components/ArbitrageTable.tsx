@@ -444,7 +444,7 @@ export default function ArbitrageTable() {
                   aria-label={isPinned ? "Unpin exchange" : "Pin exchange"}
                   title={isPinned ? "Unpin" : "Pin"}
                 >
-                  <Pin size={12} />
+                  <Pin size={14} className="sm:scale-90" />
                 </button>
               );
             }}
