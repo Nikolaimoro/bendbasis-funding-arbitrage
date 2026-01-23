@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { ExternalLink, Info } from "lucide-react";
+import { ExternalLink, Info, Pin } from "lucide-react";
 import { formatCompactUSD, formatAPR, formatExchange } from "@/lib/formatters";
 import { TAILWIND } from "@/lib/theme";
 import { ArbRow, SortDir } from "@/lib/types";
@@ -337,29 +337,51 @@ interface LongButtonProps {
   href: string | null;
   label: string;
   exchange: string;
+  pinned?: boolean;
+  onTogglePin?: (exchange: string) => void;
+  showPin?: boolean;
 }
 
-function LongButton({ href, label, exchange }: LongButtonProps) {
+function LongButton({ href, label, exchange, pinned, onTogglePin, showPin }: LongButtonProps) {
   if (!href) return <span className="text-gray-600">–</span>;
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-      className="
-        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] sm:px-3 sm:py-1 sm:text-sm font-medium
-        -translate-x-0.5 sm:translate-x-0
-        text-green-400
-        border border-green-500/30
-        hover:border-green-500/60 transition
-        whitespace-nowrap
-      "
-    >
-      <ExchangeIcon exchange={exchange} size={16} />
-      {label}
-    </a>
+    <div className="inline-flex items-center gap-1">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="
+          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] sm:px-3 sm:py-1 sm:text-sm font-medium
+          -translate-x-0.5 sm:translate-x-0
+          text-green-400
+          border border-green-500/30
+          hover:border-green-500/60 transition
+          whitespace-nowrap
+        "
+      >
+        <ExchangeIcon exchange={exchange} size={16} />
+        {label}
+      </a>
+      {showPin && onTogglePin && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onTogglePin(exchange);
+          }}
+          className={`p-1 rounded-md border ${
+            pinned ? "text-[#FA814D] border-[#FA814D]/40" : "text-gray-500 border-gray-500/30 hover:text-gray-300"
+          }`}
+          aria-label={pinned ? "Unpin long exchange" : "Pin long exchange"}
+          title={pinned ? "Unpin long" : "Pin long"}
+        >
+          <Pin size={12} />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -367,29 +389,51 @@ interface ShortButtonProps {
   href: string | null;
   label: string;
   exchange: string;
+  pinned?: boolean;
+  onTogglePin?: (exchange: string) => void;
+  showPin?: boolean;
 }
 
-function ShortButton({ href, label, exchange }: ShortButtonProps) {
+function ShortButton({ href, label, exchange, pinned, onTogglePin, showPin }: ShortButtonProps) {
   if (!href) return <span className="text-gray-600">–</span>;
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-      className="
-        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] sm:px-3 sm:py-1 sm:text-sm font-medium
-        -translate-x-0.5 sm:translate-x-0
-        text-red-400
-        border border-red-500/30
-        hover:border-red-500/60 transition
-        whitespace-nowrap
-      "
-    >
-      <ExchangeIcon exchange={exchange} size={16} />
-      {label}
-    </a>
+    <div className="inline-flex items-center gap-1">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="
+          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] sm:px-3 sm:py-1 sm:text-sm font-medium
+          -translate-x-0.5 sm:translate-x-0
+          text-red-400
+          border border-red-500/30
+          hover:border-red-500/60 transition
+          whitespace-nowrap
+        "
+      >
+        <ExchangeIcon exchange={exchange} size={16} />
+        {label}
+      </a>
+      {showPin && onTogglePin && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onTogglePin(exchange);
+          }}
+          className={`p-1 rounded-md border ${
+            pinned ? "text-[#FA814D] border-[#FA814D]/40" : "text-gray-500 border-gray-500/30 hover:text-gray-300"
+          }`}
+          aria-label={pinned ? "Unpin short exchange" : "Pin short exchange"}
+          title={pinned ? "Unpin short" : "Pin short"}
+        >
+          <Pin size={12} />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -400,6 +444,9 @@ interface ArbitrageTableBodyProps {
   onSort: (key: SortKey) => void;
   onRowClick?: (row: ArbRow) => void;
   loading?: boolean;
+  pinnedExchanges?: string[];
+  onTogglePinned?: (exchange: string) => void;
+  showPins?: boolean;
 }
 
 /**
@@ -413,7 +460,11 @@ export default function ArbitrageTableBody({
   onSort,
   onRowClick,
   loading = false,
+  pinnedExchanges = [],
+  onTogglePinned,
+  showPins = true,
 }: ArbitrageTableBodyProps) {
+  const pinnedSet = useMemo(() => new Set(pinnedExchanges), [pinnedExchanges]);
   const formatAPRNode = (v: number | null) => {
     const text = formatAPR(v);
     if (text === "–") {
@@ -434,16 +485,16 @@ export default function ArbitrageTableBody({
 
   return (
     <div className="overflow-auto">
-      <table className="w-full text-base table-fixed min-w-[900px] whitespace-nowrap">
+      <table className="w-full text-base table-fixed min-w-[1100px] sm:min-w-[900px] whitespace-nowrap">
         <colgroup>
-          <col className="w-[10%] min-w-[90px]" />
-          <col className="w-[8%] min-w-[70px]" />
-          <col className="w-[16%] min-w-[130px]" />
-          <col className="w-[16%] min-w-[130px]" />
-          <col className="w-[12%] min-w-[110px]" />
-          <col className="w-[12%] min-w-[110px]" />
-          <col className="w-[12%] min-w-[110px]" />
-          <col className="w-[6%] min-w-[50px]" />
+          <col className="w-[11%] min-w-[110px] sm:min-w-[90px]" />
+          <col className="w-[9%] min-w-[90px] sm:min-w-[70px]" />
+          <col className="w-[17%] min-w-[150px] sm:min-w-[130px]" />
+          <col className="w-[17%] min-w-[150px] sm:min-w-[130px]" />
+          <col className="w-[14%] min-w-[150px] sm:min-w-[110px]" />
+          <col className="w-[14%] min-w-[150px] sm:min-w-[110px]" />
+          <col className="w-[10%] min-w-[120px] sm:min-w-[110px]" />
+          <col className="w-[8%] min-w-[70px] sm:min-w-[50px]" />
         </colgroup>
         <thead className="sticky top-0 z-10 text-[13px] bg-[#292e40]">
           <tr className="border-b border-[#343a4e]">
@@ -483,12 +534,12 @@ export default function ArbitrageTableBody({
               </div>
             </th>
 
-            <th className={`${TAILWIND.table.header} pl-24`}>
+            <th className={`${TAILWIND.table.header} pl-24 pr-2 sm:pr-4`}>
               <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
                 Long
               </span>
             </th>
-            <th className={TAILWIND.table.header}>
+            <th className={`${TAILWIND.table.header} pl-6 sm:pl-4`}>
               <span className="inline-flex items-center gap-1 text-left select-none text-gray-400">
                 Short
               </span>
@@ -558,19 +609,25 @@ export default function ArbitrageTableBody({
                   </APRCellWithTooltip>
                 </td>
 
-                <td className="px-4 py-4 pl-24">
+                <td className="px-4 py-4 pl-24 pr-2 sm:pr-4">
                   <LongButton
                     href={r.long_url}
                     label={formatExchange(r.long_exchange)}
                     exchange={r.long_exchange}
+                    pinned={pinnedSet.has(r.long_exchange)}
+                    onTogglePin={onTogglePinned}
+                    showPin={showPins}
                   />
                 </td>
 
-                <td className="px-4 py-4">
+                <td className="px-4 py-4 pl-6 sm:pl-4">
                   <ShortButton
                     href={r.short_url}
                     label={formatExchange(r.short_exchange)}
                     exchange={r.short_exchange}
+                    pinned={pinnedSet.has(r.short_exchange)}
+                    onTogglePin={onTogglePinned}
+                    showPin={showPins}
                   />
                 </td>
 

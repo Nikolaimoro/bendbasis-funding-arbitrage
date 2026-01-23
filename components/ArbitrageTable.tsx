@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Pin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ArbitrageChart from "@/components/ArbitrageChart";
 import { formatExchange, normalizeToken } from "@/lib/formatters";
@@ -24,6 +24,7 @@ const MAX_ATTEMPTS = 2;
 const CACHE_KEY = "cache-arbitrage-rows";
 const CACHE_TTL_MS = 3 * 60 * 1000;
 const EXCHANGES_KEY = "arbitrage-exchanges";
+const PINNED_EXCHANGES_KEY = "arbitrage-pinned-exchanges";
 
 /* ================= COMPONENT ================= */
 
@@ -42,6 +43,8 @@ export default function ArbitrageTable() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [minOI, setMinOI] = useState<number | "">(0);
   const [minVolume, setMinVolume] = useState<number | "">(0);
+
+  const [pinnedExchanges, setPinnedExchanges] = useState<string[]>([]);
 
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(0);
@@ -67,6 +70,16 @@ export default function ArbitrageTable() {
   const handleMinVolumeChange = (value: number | "") => {
     setMinVolume(value);
     resetPage();
+  };
+
+  const togglePinned = (ex: string) => {
+    setPinnedExchanges((prev) =>
+      prev.includes(ex) ? prev.filter((e) => e !== ex) : [...prev, ex]
+    );
+  };
+
+  const clearPinnedExchanges = () => {
+    setPinnedExchanges([]);
   };
 
   const handleLimitChange = (value: number) => {
@@ -203,6 +216,8 @@ export default function ArbitrageTable() {
     [rows]
   );
 
+  const pinnedSet = useMemo(() => new Set(pinnedExchanges), [pinnedExchanges]);
+
   const toggleExchange = (ex: string) => {
     setSelectedExchanges((prev) =>
       prev.includes(ex) ? prev.filter((e) => e !== ex) : [...prev, ex]
@@ -261,6 +276,49 @@ export default function ArbitrageTable() {
     }
   }, [selectedExchanges, exchangesInitialized]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem(PINNED_EXCHANGES_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setPinnedExchanges(parsed.filter((ex): ex is string => typeof ex === "string"));
+          return;
+        }
+      }
+      const storedLong = window.localStorage.getItem("arbitrage-pinned-long");
+      const storedShort = window.localStorage.getItem("arbitrage-pinned-short");
+      const merged = new Set<string>();
+      if (storedLong) {
+        const parsed = JSON.parse(storedLong);
+        if (Array.isArray(parsed)) {
+          parsed.filter((ex): ex is string => typeof ex === "string").forEach((ex) => merged.add(ex));
+        }
+      }
+      if (storedShort) {
+        const parsed = JSON.parse(storedShort);
+        if (Array.isArray(parsed)) {
+          parsed.filter((ex): ex is string => typeof ex === "string").forEach((ex) => merged.add(ex));
+        }
+      }
+      if (merged.size > 0) {
+        setPinnedExchanges(Array.from(merged));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(PINNED_EXCHANGES_KEY, JSON.stringify(pinnedExchanges));
+    } catch {
+      // ignore
+    }
+  }, [pinnedExchanges]);
+
   /**
    * Memoized filtering and sorting of arbitrage opportunities
    * 
@@ -306,11 +364,16 @@ export default function ArbitrageTable() {
     // MV уже отсортирована по apr_spread desc,
     // но после фильтров порядок может "плыть" — перестрахуемся
     return [...data].sort((a, b) => {
-  const av = a[sortKey] ?? 0;
-  const bv = b[sortKey] ?? 0;
-  return sortDir === "asc" ? av - bv : bv - av;
-});
-  }, [rows, search, selectedExchanges, sortKey, sortDir, minOI, minVolume]);
+      if (pinnedSet.size > 0) {
+        const aPinned = pinnedSet.has(a.long_exchange) || pinnedSet.has(a.short_exchange);
+        const bPinned = pinnedSet.has(b.long_exchange) || pinnedSet.has(b.short_exchange);
+        if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      }
+      const av = a[sortKey] ?? 0;
+      const bv = b[sortKey] ?? 0;
+      return sortDir === "asc" ? av - bv : bv - av;
+    });
+  }, [rows, search, selectedExchanges, sortKey, sortDir, minOI, minVolume, pinnedSet]);
 
   /**
    * Pagination: Calculate total pages and slice visible rows
@@ -348,6 +411,43 @@ export default function ArbitrageTable() {
             onUncheckAllExchanges={clearExchanges}
             filterOpen={filterOpen}
             onFilterOpenChange={setFilterOpen}
+            exchangeHeaderExtras={
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={clearPinnedExchanges}
+                  disabled={pinnedExchanges.length === 0}
+                  className={[
+                    "transition",
+                    pinnedExchanges.length
+                      ? "text-gray-200 underline underline-offset-2"
+                      : "text-gray-400/50",
+                  ].join(" ")}
+                >
+                  Reset pinned
+                </button>
+              </div>
+            }
+            renderExchangeActions={(exchange) => {
+              const isPinned = pinnedSet.has(exchange);
+              return (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    togglePinned(exchange);
+                  }}
+                  className={`inline-flex items-center text-[11px] ${
+                    isPinned ? "text-[#FA814D]" : "text-gray-500 hover:text-gray-300"
+                  }`}
+                  aria-label={isPinned ? "Unpin exchange" : "Pin exchange"}
+                  title={isPinned ? "Unpin" : "Pin"}
+                >
+                  <Pin size={14} className="sm:scale-90" />
+                </button>
+              );
+            }}
             minOI={minOI}
             onMinOIChange={handleMinOIChange}
             minVolume={minVolume}
@@ -398,6 +498,9 @@ export default function ArbitrageTable() {
               onSort={toggleSort}
               onRowClick={openChart}
               loading={loading}
+              pinnedExchanges={pinnedExchanges}
+              onTogglePinned={togglePinned}
+              showPins
             />
           </ErrorBoundary>
         )}

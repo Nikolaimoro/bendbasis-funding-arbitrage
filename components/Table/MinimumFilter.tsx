@@ -272,7 +272,7 @@ export default function MinimumFilter({
             className="fixed inset-0 z-40"
             onClick={() => onOpenChange(false)}
           />
-          <div className="absolute z-50 mt-2 bg-[#292e40] border border-[#343a4e] rounded-lg w-64 p-3 shadow-lg space-y-4 animate-tooltip-zoom">
+          <div className="absolute z-50 mt-2 bg-[#292e40] border border-[#343a4e] rounded-lg w-64 p-3 shadow-lg space-y-4 animate-tooltip-zoom max-h-[70vh] overflow-y-auto">
             <GradientSlider
               label="Min Open Interest"
               value={minOI}
