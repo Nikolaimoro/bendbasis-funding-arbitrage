@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUp, ArrowUpRight } from "lucide-react";
 import { ArbRow } from "@/lib/types";
 import { formatCompactUSD, formatExchange } from "@/lib/formatters";
+import { isValidUrl } from "@/lib/validation";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 
 const MOBILE_PAGE_SIZE = 20;
@@ -125,36 +126,56 @@ export default function ArbitrageMobileCards({
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <a
-                        href={row.long_url ?? "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-green-400 border-green-500/30 text-[11px] ${
-                          isLongPinned ? "ring-1 ring-[#FA814D]/60" : ""
-                        }`}
-                      >
-                        <span className="text-[10px] uppercase">Long</span>
-                        <span className="ml-1 inline-flex items-center gap-1">
-                          <ExchangeIcon exchange={row.long_exchange} size={14} />
-                          {formatExchange(row.long_exchange)}
-                        </span>
-                      </a>
-                      <a
-                        href={row.short_url ?? "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-red-400 border-red-500/30 text-[11px] ${
-                          isShortPinned ? "ring-1 ring-[#FA814D]/60" : ""
-                        }`}
-                      >
-                        <span className="text-[10px] uppercase">Short</span>
-                        <span className="ml-1 inline-flex items-center gap-1">
-                          <ExchangeIcon exchange={row.short_exchange} size={14} />
-                          {formatExchange(row.short_exchange)}
-                        </span>
-                      </a>
+                        {isValidUrl(row.long_url) ? (
+                          <a
+                            href={row.long_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(event) => event.stopPropagation()}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-green-400 border-green-500/30 text-[11px] ${
+                              isLongPinned ? "ring-1 ring-[#FA814D]/60" : ""
+                            }`}
+                          >
+                            <span className="text-[10px] uppercase">Long</span>
+                            <span className="ml-1 inline-flex items-center gap-1">
+                              <ExchangeIcon exchange={row.long_exchange} size={14} />
+                              {formatExchange(row.long_exchange)}
+                            </span>
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-green-500/20 text-green-400/60 text-[11px]">
+                            <span className="text-[10px] uppercase">Long</span>
+                            <span className="ml-1 inline-flex items-center gap-1">
+                              <ExchangeIcon exchange={row.long_exchange} size={14} />
+                              {formatExchange(row.long_exchange)}
+                            </span>
+                          </span>
+                        )}
+                        {isValidUrl(row.short_url) ? (
+                          <a
+                            href={row.short_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(event) => event.stopPropagation()}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-red-400 border-red-500/30 text-[11px] ${
+                              isShortPinned ? "ring-1 ring-[#FA814D]/60" : ""
+                            }`}
+                          >
+                            <span className="text-[10px] uppercase">Short</span>
+                            <span className="ml-1 inline-flex items-center gap-1">
+                              <ExchangeIcon exchange={row.short_exchange} size={14} />
+                              {formatExchange(row.short_exchange)}
+                            </span>
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-red-500/20 text-red-400/60 text-[11px]">
+                            <span className="text-[10px] uppercase">Short</span>
+                            <span className="ml-1 inline-flex items-center gap-1">
+                              <ExchangeIcon exchange={row.short_exchange} size={14} />
+                              {formatExchange(row.short_exchange)}
+                            </span>
+                          </span>
+                        )}
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-gray-400">

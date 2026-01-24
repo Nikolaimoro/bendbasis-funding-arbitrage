@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUp, ArrowUpRight, ExternalLink } from "lucide-react";
 import { FundingRow } from "@/lib/types";
 import { formatAPR, formatCompactUSD, formatExchange } from "@/lib/formatters";
+import { isValidUrl } from "@/lib/validation";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 
 const MOBILE_PAGE_SIZE = 20;
@@ -98,7 +99,7 @@ export default function FundingMobileCards({
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    {row.ref_url ? (
+                    {isValidUrl(row.ref_url) ? (
                       <a
                         href={row.ref_url}
                         target="_blank"

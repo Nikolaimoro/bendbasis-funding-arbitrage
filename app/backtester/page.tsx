@@ -12,7 +12,16 @@ const exchangeKeywords = EXCHANGE_SEO_LIST.slice(0, 10);
 export const metadata: Metadata = {
   title: "Crypto Funding Arbitrage Backtester | bendbasis",
   description: "Backtest cryptocurrency funding arbitrage strategies with historical funding rate data across exchanges.",
-  keywords: ["backtester", "arbitrage", "crypto", "funding rates", "strategy testing", ...exchangeKeywords],
+  keywords: [
+    "backtester",
+    "arbitrage",
+    "crypto",
+    "funding rates",
+    "funding rates crypto",
+    "funding history",
+    "strategy testing",
+    ...exchangeKeywords,
+  ],
   alternates: {
     canonical: "/backtester",
   },

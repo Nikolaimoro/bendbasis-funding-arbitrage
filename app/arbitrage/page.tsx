@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import ArbitrageTable from "@/components/ArbitrageTable";
 import PageHeader from "@/components/ui/PageHeader";
 import { EXCHANGE_SEO_LIST } from "@/lib/constants";
+import { fetchArbitrageRows } from "@/lib/data/dashboard";
+import { ArbRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +13,16 @@ const exchangeKeywords = EXCHANGE_SEO_LIST.slice(0, 10);
 export const metadata: Metadata = {
   title: "Crypto Funding Arbitrage Opportunities | bendbasis",
   description: "Top cryptocurrency funding arbitrage opportunities across exchanges, ranked by stability and APR spread.",
-  keywords: ["arbitrage", "crypto", "funding arbitrage", "funding rates", "trading", ...exchangeKeywords],
+  keywords: [
+    "arbitrage",
+    "crypto",
+    "funding arbitrage",
+    "funding rates",
+    "funding rates crypto",
+    "funding history",
+    "trading",
+    ...exchangeKeywords,
+  ],
   alternates: {
     canonical: "/arbitrage",
   },
@@ -22,7 +33,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ArbitragePage() {
+export default async function ArbitragePage() {
+  const initialRows = (await fetchArbitrageRows()) as ArbRow[];
   const exchangeList = EXCHANGE_SEO_LIST.join(", ");
   const structuredData = {
     "@context": "https://schema.org",
@@ -41,7 +53,7 @@ export default function ArbitragePage() {
       <PageHeader
         title="Arbitrage Top Opportunities"
       />
-      <ArbitrageTable />
+      <ArbitrageTable initialRows={initialRows} />
       <section className="sr-only" aria-hidden="true">
         <h2>Funding arbitrage opportunities across exchanges</h2>
         <p>

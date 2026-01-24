@@ -95,3 +95,85 @@ export function calculateMaxArb(
   if (rates.length < 2) return null;
   return Math.max(...rates) - Math.min(...rates);
 }
+
+export function findArbPairPinned(
+  markets: Record<string, FundingMatrixMarket> | null | undefined,
+  timeWindow: TimeWindow,
+  selectedColumnKeys: Set<string>,
+  pinnedKey: string | null
+): ArbPair | null {
+  if (!markets) return null;
+  if (!pinnedKey) return findArbPair(markets, timeWindow, selectedColumnKeys);
+  if (!selectedColumnKeys.has(pinnedKey)) {
+    return findArbPair(markets, timeWindow, selectedColumnKeys);
+  }
+
+  const pinnedMarket = markets[pinnedKey];
+  const pinnedRate = getRate(pinnedMarket, timeWindow);
+  if (!pinnedMarket || pinnedRate === null) {
+    return findArbPair(markets, timeWindow, selectedColumnKeys);
+  }
+
+  const entries: { key: string; market: FundingMatrixMarket; rate: number }[] =
+    [];
+  for (const [columnKey, market] of Object.entries(markets)) {
+    if (!market) continue;
+    if (!selectedColumnKeys.has(columnKey)) continue;
+    if (columnKey === pinnedKey) continue;
+    const rate = getRate(market, timeWindow);
+    if (rate !== null) {
+      entries.push({ key: columnKey, market, rate });
+    }
+  }
+
+  if (entries.length === 0) return null;
+
+  let minEntry = entries[0];
+  let maxEntry = entries[0];
+  for (const entry of entries) {
+    if (entry.rate < minEntry.rate) minEntry = entry;
+    if (entry.rate > maxEntry.rate) maxEntry = entry;
+  }
+
+  const spreadIfPinnedLong = maxEntry.rate - pinnedRate;
+  const spreadIfPinnedShort = pinnedRate - minEntry.rate;
+
+  if (spreadIfPinnedLong >= spreadIfPinnedShort) {
+    if (spreadIfPinnedLong <= 0) return null;
+    return {
+      longKey: pinnedKey,
+      longMarket: pinnedMarket,
+      longRate: pinnedRate,
+      shortKey: maxEntry.key,
+      shortMarket: maxEntry.market,
+      shortRate: maxEntry.rate,
+      spread: spreadIfPinnedLong,
+    };
+  }
+
+  if (spreadIfPinnedShort <= 0) return null;
+  return {
+    longKey: minEntry.key,
+    longMarket: minEntry.market,
+    longRate: minEntry.rate,
+    shortKey: pinnedKey,
+    shortMarket: pinnedMarket,
+    shortRate: pinnedRate,
+    spread: spreadIfPinnedShort,
+  };
+}
+
+export function calculateMaxArbPinned(
+  markets: Record<string, FundingMatrixMarket> | null | undefined,
+  timeWindow: TimeWindow,
+  selectedColumnKeys: Set<string>,
+  pinnedKey: string | null
+): number | null {
+  const pair = findArbPairPinned(
+    markets,
+    timeWindow,
+    selectedColumnKeys,
+    pinnedKey
+  );
+  return pair ? pair.spread : null;
+}

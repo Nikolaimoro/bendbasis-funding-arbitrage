@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, ArrowUpRight, ChevronDown } from "lucide-react";
 import { formatAPR, formatExchange } from "@/lib/formatters";
-import { getRate, findArbPair, ArbPair } from "@/lib/funding";
+import { getRate, findArbPairPinned, ArbPair } from "@/lib/funding";
+import { isValidUrl } from "@/lib/validation";
 import {
   ExchangeColumn,
   FundingMatrixMarket,
@@ -46,72 +47,6 @@ const buildBacktesterUrl = (token: string, arbPair: ArbPair | null) => {
   const exchange2 = `${shortExchange}${String(shortQuote).toLowerCase()}`;
   return `/backtester?token=${encodeURIComponent(token)}&exchange1=${encodeURIComponent(exchange1)}&exchange2=${encodeURIComponent(exchange2)}`;
 };
-
-function findArbPairPinned(
-  markets: Record<string, FundingMatrixMarket> | null | undefined,
-  timeWindow: TimeWindow,
-  selectedColumnKeys: Set<string>,
-  pinnedKey: string | null
-): ArbPair | null {
-  if (!markets) return null;
-  if (!pinnedKey) return findArbPair(markets, timeWindow, selectedColumnKeys);
-  if (!selectedColumnKeys.has(pinnedKey))
-    return findArbPair(markets, timeWindow, selectedColumnKeys);
-
-  const pinnedMarket = markets[pinnedKey];
-  const pinnedRate = getRate(pinnedMarket, timeWindow);
-  if (!pinnedMarket || pinnedRate === null) {
-    return findArbPair(markets, timeWindow, selectedColumnKeys);
-  }
-
-  const entries: { key: string; market: FundingMatrixMarket; rate: number }[] =
-    [];
-  for (const [columnKey, market] of Object.entries(markets)) {
-    if (!market) continue;
-    if (!selectedColumnKeys.has(columnKey)) continue;
-    if (columnKey === pinnedKey) continue;
-    const rate = getRate(market, timeWindow);
-    if (rate !== null) {
-      entries.push({ key: columnKey, market, rate });
-    }
-  }
-
-  if (entries.length === 0) return null;
-
-  let minEntry = entries[0];
-  let maxEntry = entries[0];
-  for (const entry of entries) {
-    if (entry.rate < minEntry.rate) minEntry = entry;
-    if (entry.rate > maxEntry.rate) maxEntry = entry;
-  }
-
-  const spreadIfPinnedLong = maxEntry.rate - pinnedRate;
-  const spreadIfPinnedShort = pinnedRate - minEntry.rate;
-
-  if (spreadIfPinnedLong >= spreadIfPinnedShort) {
-    if (spreadIfPinnedLong <= 0) return null;
-    return {
-      longKey: pinnedKey,
-      longMarket: pinnedMarket,
-      longRate: pinnedRate,
-      shortKey: maxEntry.key,
-      shortMarket: maxEntry.market,
-      shortRate: maxEntry.rate,
-      spread: spreadIfPinnedLong,
-    };
-  }
-
-  if (spreadIfPinnedShort <= 0) return null;
-  return {
-    longKey: minEntry.key,
-    longMarket: minEntry.market,
-    longRate: minEntry.rate,
-    shortKey: pinnedKey,
-    shortMarket: pinnedMarket,
-    shortRate: pinnedRate,
-    spread: spreadIfPinnedShort,
-  };
-}
 
 function ExchangeRateRow({
   label,
@@ -157,7 +92,7 @@ function ExchangeRateRow({
       }`}
     >
       <div className="flex items-center gap-2 min-w-0">
-        {market.ref_url ? (
+        {isValidUrl(market.ref_url) ? (
           <a
             href={market.ref_url}
             target="_blank"
@@ -316,7 +251,10 @@ export default function FundingScreenerMobileCards({
                 const handleOpenChart = () => {
                   if (!historyUrl) return;
                   if (typeof window !== "undefined") {
-                    window.open(historyUrl, "_blank", "noopener,noreferrer");
+                    const win = window.open(historyUrl, "_blank");
+                    if (win) {
+                      win.opener = null;
+                    }
                   }
                 };
 

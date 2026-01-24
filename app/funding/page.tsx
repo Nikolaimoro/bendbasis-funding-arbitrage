@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import FundingScreener from "@/components/FundingScreener";
 import PageHeader from "@/components/ui/PageHeader";
 import { EXCHANGE_SEO_LIST } from "@/lib/constants";
+import { fetchScreenerData } from "@/lib/data/dashboard";
+import { ExchangeColumn, FundingMatrixRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +13,16 @@ const exchangeKeywords = EXCHANGE_SEO_LIST.slice(0, 10);
 export const metadata: Metadata = {
   title: "Funding Rate Arbitrage Screener | bendbasis",
   description: "Screen funding rate arbitrage opportunities across major crypto exchanges with live funding rate comparisons.",
-  keywords: ["funding rates", "crypto", "funding rate arbitrage", "screener", "trading", ...exchangeKeywords],
+  keywords: [
+    "funding rates",
+    "funding rates crypto",
+    "funding history",
+    "crypto",
+    "funding rate arbitrage",
+    "screener",
+    "trading",
+    ...exchangeKeywords,
+  ],
   alternates: {
     canonical: "/funding",
   },
@@ -22,7 +33,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function FundingPage() {
+export default async function FundingPage() {
+  const { columns, rows } = await fetchScreenerData();
+  const initialColumns = columns as ExchangeColumn[];
+  const initialRows = rows as FundingMatrixRow[];
   const exchangeList = EXCHANGE_SEO_LIST.join(", ");
   const structuredData = {
     "@context": "https://schema.org",
@@ -42,7 +56,7 @@ export default function FundingPage() {
         title="Funding Rate Screener"
         description="Compare funding rates across exchanges to find arbitrage opportunities"
       />
-      <FundingScreener />
+      <FundingScreener initialColumns={initialColumns} initialRows={initialRows} />
       <section className="sr-only" aria-hidden="true">
         <h2>Funding rate arbitrage screener across exchanges</h2>
         <p>

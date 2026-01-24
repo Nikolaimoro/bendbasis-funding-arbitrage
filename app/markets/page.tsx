@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import FundingTableClient from "@/components/FundingTableClient";
 import PageHeader from "@/components/ui/PageHeader";
 import { EXCHANGE_SEO_LIST } from "@/lib/constants";
+import { fetchFundingRows } from "@/lib/data/dashboard";
+import { FundingRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +13,16 @@ const exchangeKeywords = EXCHANGE_SEO_LIST.slice(0, 10);
 export const metadata: Metadata = {
   title: "Markets - Funding Rates Dashboard | bendbasis",
   description: "Real-time cryptocurrency funding rates across major exchanges, annualized and sortable by volume.",
-  keywords: ["funding rates", "crypto", "markets", "funding rate dashboard", "trading", ...exchangeKeywords],
+  keywords: [
+    "funding rates",
+    "funding rates crypto",
+    "funding history",
+    "crypto",
+    "markets",
+    "funding rate dashboard",
+    "trading",
+    ...exchangeKeywords,
+  ],
   alternates: {
     canonical: "/markets",
   },
@@ -22,7 +33,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function MarketsPage() {
+export default async function MarketsPage() {
+  const initialRows = (await fetchFundingRows()) as FundingRow[];
   const exchangeList = EXCHANGE_SEO_LIST.join(", ");
   const structuredData = {
     "@context": "https://schema.org",
@@ -42,7 +54,7 @@ export default function MarketsPage() {
         title="Markets"
         description="Funding rates across exchanges, annualized and aggregated"
       />
-      <FundingTableClient />
+      <FundingTableClient initialRows={initialRows} />
       <section className="sr-only" aria-hidden="true">
         <h2>Markets funding rates across exchanges</h2>
         <p>
