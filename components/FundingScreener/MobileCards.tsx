@@ -380,9 +380,6 @@ export default function FundingScreenerMobileCards({
                       {longMarket && longKey ? (
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex flex-col gap-1">
-                            <div className="text-[10px] uppercase text-gray-500">
-                              Long
-                            </div>
                             <ExchangeRateRow
                               label={
                                 columnLabelByKey.get(longKey) ??
@@ -395,9 +392,6 @@ export default function FundingScreenerMobileCards({
                             />
                           </div>
                           <div className="flex flex-col gap-1">
-                            <div className="text-[10px] uppercase text-gray-500">
-                              Short
-                            </div>
                             {shortMarket && shortKey ? (
                               <ExchangeRateRow
                                 label={
