@@ -538,6 +538,12 @@ export default function FundingScreener() {
 
     // Sort
     result.sort((a, b) => {
+      if (pinnedColumnKey) {
+        const aPinned = !!a.markets?.[pinnedColumnKey];
+        const bPinned = !!b.markets?.[pinnedColumnKey];
+        if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      }
+
       const aFav = a.token ? favoriteSet.has(a.token) : false;
       const bFav = b.token ? favoriteSet.has(b.token) : false;
       if (aFav !== bFav) return aFav ? -1 : 1;
@@ -581,8 +587,18 @@ export default function FundingScreener() {
     const columnOptions = filteredColumns.flatMap((col) => {
       const label = formatColumnHeader(col, exchangesWithMultipleQuotes);
       return [
-        { key: col.column_key, dir: "desc" as SortDir, label: `${label} High` },
-        { key: col.column_key, dir: "asc" as SortDir, label: `${label} Low` },
+        {
+          key: col.column_key,
+          dir: "desc" as SortDir,
+          label: `${label} High`,
+          exchange: col.exchange,
+        },
+        {
+          key: col.column_key,
+          dir: "asc" as SortDir,
+          label: `${label} Low`,
+          exchange: col.exchange,
+        },
       ];
     });
     return [...base, ...columnOptions];
@@ -632,25 +648,6 @@ export default function FundingScreener() {
                 options={sortOptions}
                 onSelect={setSort}
               />
-              {/* Time window dropdown */}
-              <div className="relative">
-                <select
-                  className="appearance-none bg-transparent border border-[#343a4e] rounded-lg pl-3 pr-7 py-2 text-sm text-gray-200 focus:outline-none cursor-pointer"
-                  value={timeWindow}
-                  onChange={(e) => {
-                    setTimeWindow(e.target.value as TimeWindow);
-                    resetPage();
-                  }}
-                >
-                  {SCREENER_TIME_WINDOWS.map((tw) => (
-                    <option key={tw} value={tw}>
-                      {SCREENER_TIME_LABELS[tw]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
-              </div>
-
               {/* Filters dropdown with slider */}
               <APRRangeFilter
                 minAPR={minAPR}
@@ -729,26 +726,47 @@ export default function FundingScreener() {
                 }}
               />
 
-              {/* Search */}
-              <div className="relative w-full order-last sm:order-none sm:w-auto">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white w-4 h-4" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search asset"
-                  className={`${TAILWIND.input.default} pl-10 pr-9 bg-transparent border border-[#383d50] focus:bg-transparent focus:border-[#383d50]`}
-                />
-                {search && (
-                  <button
-                    type="button"
-                    onClick={() => handleSearchChange("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-[#383d50] border border-[#343a4e] text-gray-300 text-xs leading-none flex items-center justify-center transition-colors duration-200 hover:border-white hover:text-white"
-                    aria-label="Clear search"
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                {/* Search */}
+                <div className="relative flex-1 min-w-[180px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white w-4 h-4" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="Search asset"
+                    className={`${TAILWIND.input.default} pl-10 pr-9 bg-transparent border border-[#383d50] focus:bg-transparent focus:border-[#383d50] w-full`}
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => handleSearchChange("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-[#383d50] border border-[#343a4e] text-gray-300 text-xs leading-none flex items-center justify-center transition-colors duration-200 hover:border-white hover:text-white"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Time window dropdown */}
+                <div className="relative shrink-0">
+                  <select
+                    className="appearance-none bg-transparent border border-[#343a4e] rounded-lg pl-3 pr-7 py-2 text-sm text-gray-200 focus:outline-none cursor-pointer"
+                    value={timeWindow}
+                    onChange={(e) => {
+                      setTimeWindow(e.target.value as TimeWindow);
+                      resetPage();
+                    }}
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
+                    {SCREENER_TIME_WINDOWS.map((tw) => (
+                      <option key={tw} value={tw}>
+                        {SCREENER_TIME_LABELS[tw]}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                </div>
               </div>
             </div>
           </div>

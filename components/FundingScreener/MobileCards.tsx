@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, ArrowUpRight, ChevronDown, ChevronUp, Pin } from "lucide-react";
+import { ArrowUp, ArrowUpRight, ChevronDown, Pin } from "lucide-react";
 import { formatAPR, formatExchange } from "@/lib/formatters";
 import { getRate, findArbPair, ArbPair } from "@/lib/funding";
 import {
@@ -127,30 +127,38 @@ function ExchangeRateRow({
   pinned: boolean;
   onTogglePinned: () => void;
 }) {
+  const rateClass =
+    rate == null
+      ? "text-gray-400"
+      : rate < 0
+        ? "text-emerald-400"
+        : rate > 0
+          ? "text-red-400"
+          : "text-gray-300";
+
   const exchangeContent = (
-    <span className="inline-flex items-center gap-2 min-w-0">
-      <ExchangeIcon exchange={market.exchange} size={14} />
-      <span className="truncate">{label}</span>
+    <span className="inline-flex items-center gap-3 min-w-0">
+      <ExchangeIcon exchange={market.exchange} size={16} />
+      <span className="truncate text-sm text-gray-100">{label}</span>
     </span>
   );
 
   return (
-    <div className="flex items-center justify-between gap-3 text-xs text-gray-200">
-      {market.ref_url ? (
-        <a
-          href={market.ref_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(event) => event.stopPropagation()}
-          className="min-w-0"
-        >
-          {exchangeContent}
-        </a>
-      ) : (
-        exchangeContent
-      )}
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-white">{formatAPR(rate)}</span>
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2 min-w-0">
+        {market.ref_url ? (
+          <a
+            href={market.ref_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(event) => event.stopPropagation()}
+            className="min-w-0"
+          >
+            {exchangeContent}
+          </a>
+        ) : (
+          exchangeContent
+        )}
         <button
           type="button"
           onClick={(event) => {
@@ -166,6 +174,9 @@ function ExchangeRateRow({
           <Pin size={12} />
         </button>
       </div>
+      <span className={`font-mono text-sm ${rateClass}`}>
+        {formatAPR(rate)}
+      </span>
     </div>
   );
 }
@@ -240,7 +251,7 @@ export default function FundingScreenerMobileCards({
     <>
       <div className="min-[960px]:hidden px-4 pb-4">
         {loading ? (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 6 }).map((_, idx) => (
               <div
                 key={idx}
@@ -254,7 +265,7 @@ export default function FundingScreenerMobileCards({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {visibleRows.map((row, idx) => {
                 const token = row.token ?? `token-${idx}`;
                 const arbPair = findArbPairPinned(
@@ -291,6 +302,8 @@ export default function FundingScreenerMobileCards({
 
                 const remainingCount = remainingMarkets.length;
                 const isExpanded = expanded.has(token);
+                const hasMore = remainingCount > 0;
+                const hasHistory = !!historyUrl;
 
                 const toggleExpanded = () => {
                   setExpanded((prev) => {
@@ -304,36 +317,70 @@ export default function FundingScreenerMobileCards({
                   });
                 };
 
+                const handleOpenChart = () => {
+                  if (!historyUrl) return;
+                  if (typeof window !== "undefined") {
+                    window.open(historyUrl, "_blank", "noopener,noreferrer");
+                  }
+                };
+
+                const cardClickable = !hasMore && hasHistory;
+
                 return (
                   <div
                     key={token}
-                    role="button"
-                    tabIndex={0}
-                    onClick={toggleExpanded}
+                    role={cardClickable ? "button" : "group"}
+                    tabIndex={cardClickable ? 0 : -1}
+                    onClick={cardClickable ? handleOpenChart : undefined}
                     onKeyDown={(event) => {
+                      if (!cardClickable) return;
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        toggleExpanded();
+                        handleOpenChart();
                       }
                     }}
                     className="rounded-2xl border border-[#343a4e] bg-[#1c202f] p-4 text-xs text-gray-200 flex flex-col gap-4"
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div
+                      className={`relative flex items-start justify-between gap-4 ${
+                        hasMore && hasHistory ? "cursor-pointer" : ""
+                      }`}
+                      onClick={
+                        hasMore && hasHistory ? handleOpenChart : undefined
+                      }
+                    >
                       <span className="text-base font-mono text-white">
                         {row.token ?? "–"}
                       </span>
-                      <span
-                        className={`text-base font-mono ${
-                          maxArb != null && maxArb > 0
-                            ? "text-emerald-400"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {formatAPR(maxArb)}
-                      </span>
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase text-gray-500 mr-1">
+                          APR
+                        </span>
+                        <span className="text-base font-mono text-white">
+                          {formatAPR(maxArb)}
+                        </span>
+                      </div>
+                      {hasHistory && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenChart();
+                          }}
+                          className="absolute left-1/2 top-0 -translate-x-1/2 text-[10px] text-gray-500 inline-flex items-center gap-1"
+                        >
+                          View Chart
+                          <ArrowUpRight size={10} />
+                        </button>
+                      )}
                     </div>
 
-                    <div className="flex flex-col gap-2">
+                    <div
+                      className={`flex flex-col gap-3 ${
+                        hasMore ? "cursor-pointer" : ""
+                      }`}
+                      onClick={hasMore ? toggleExpanded : undefined}
+                    >
                       {longMarket && longKey ? (
                         <ExchangeRateRow
                           label={
@@ -370,57 +417,67 @@ export default function FundingScreenerMobileCards({
                       )}
                     </div>
 
-                    {historyUrl && (
-                      <a
-                        href={historyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[11px] text-gray-500 self-end"
-                      >
-                        View Chart
-                        <ArrowUpRight size={10} />
-                      </a>
-                    )}
-
-                    <div className="rounded-xl border border-[#343a4e] bg-[#23283a] px-3 py-2">
-                      <div className="flex items-center justify-between text-xs text-gray-400">
-                        <span>
-                          {remainingCount} more exchanges
-                        </span>
-                        {isExpanded ? (
-                          <ChevronUp size={14} />
-                        ) : (
-                          <ChevronDown size={14} />
-                        )}
-                      </div>
-                    </div>
-
-                    {isExpanded && remainingMarkets.length > 0 && (
+                    {hasMore && (
                       <div className="flex flex-col gap-2">
-                        {remainingMarkets.map(({ col, market }) => {
-                          if (!market) return null;
-                          const rate = getRate(market, timeWindow);
-                          return (
-                            <ExchangeRateRow
-                              key={col.column_key}
-                              label={formatColumnHeader(
-                                col,
-                                exchangesWithMultipleQuotes
-                              )}
-                              market={market}
-                              rate={rate}
-                              pinned={pinnedColumnKey === col.column_key}
-                              onTogglePinned={() =>
-                                onTogglePinned(
-                                  pinnedColumnKey === col.column_key
-                                    ? null
-                                    : col.column_key
-                                )
-                              }
-                            />
-                          );
-                        })}
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ${
+                            isExpanded
+                              ? "max-h-96 opacity-100"
+                              : "max-h-0 opacity-0"
+                          }`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (isExpanded) {
+                              toggleExpanded();
+                            }
+                          }}
+                        >
+                          <div className="flex flex-col gap-3 pb-2">
+                            {remainingMarkets.map(({ col, market }) => {
+                              if (!market) return null;
+                              const rate = getRate(market, timeWindow);
+                              return (
+                                <ExchangeRateRow
+                                  key={col.column_key}
+                                  label={formatColumnHeader(
+                                    col,
+                                    exchangesWithMultipleQuotes
+                                  )}
+                                  market={market}
+                                  rate={rate}
+                                  pinned={pinnedColumnKey === col.column_key}
+                                  onTogglePinned={() =>
+                                    onTogglePinned(
+                                      pinnedColumnKey === col.column_key
+                                        ? null
+                                        : col.column_key
+                                    )
+                                  }
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-between text-xs text-gray-400"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleExpanded();
+                          }}
+                        >
+                          <span>
+                            {isExpanded
+                              ? "Less exchanges"
+                              : `${remainingCount} more exchanges`}
+                          </span>
+                          <ChevronDown
+                            size={14}
+                            className={`transition-transform duration-300 ${
+                              isExpanded ? "rotate-180 translate-y-1" : ""
+                            }`}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -429,7 +486,7 @@ export default function FundingScreenerMobileCards({
             </div>
 
             {fetchingMore && (
-              <div className="grid grid-cols-1 gap-3 mt-3">
+              <div className="grid grid-cols-2 gap-3 mt-3">
                 {Array.from({ length: 3 }).map((_, idx) => (
                   <div
                     key={idx}

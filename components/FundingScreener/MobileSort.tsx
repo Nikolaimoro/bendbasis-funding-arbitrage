@@ -3,11 +3,13 @@
 import { ChevronDown } from "lucide-react";
 import { SortDir } from "@/lib/types";
 import { TAILWIND } from "@/lib/theme";
+import ExchangeIcon from "@/components/ui/ExchangeIcon";
 
 type SortOption = {
   key: string;
   dir: SortDir;
   label: string;
+  exchange?: string;
 };
 
 type Props = {
@@ -67,13 +69,16 @@ export default function FundingScreenerMobileSort({
                       onOpenChange(false);
                     }}
                     className={[
-                      "w-full text-left rounded-md px-3 py-2 text-sm transition",
+                      "w-full text-left rounded-md px-3 py-2 text-sm transition flex items-center gap-2",
                       isActive
                         ? "bg-[#353b52] text-white"
                         : "text-gray-200 hover:bg-[#353b52]",
                     ].join(" ")}
                   >
-                    {option.label}
+                    {option.exchange && (
+                      <ExchangeIcon exchange={option.exchange} size={16} />
+                    )}
+                    <span>{option.label}</span>
                   </button>
                 );
               })}
