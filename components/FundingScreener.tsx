@@ -19,6 +19,8 @@ import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import APRRangeFilter from "@/components/Table/APRRangeFilter";
 import RateCell from "@/components/FundingScreener/RateCell";
 import APRCell from "@/components/FundingScreener/APRCell";
+import FundingScreenerMobileCards from "@/components/FundingScreener/MobileCards";
+import FundingScreenerMobileSort from "@/components/FundingScreener/MobileSort";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import SortableHeader from "@/components/ui/SortableHeader";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
@@ -173,6 +175,7 @@ export default function FundingScreener() {
   const [pinnedColumnKey, setPinnedColumnKey] = useState<string | null>(null);
   const [pinnedInitialized, setPinnedInitialized] = useState(false);
   const [pinnedDirty, setPinnedDirty] = useState(false);
+  const [mobileSortOpen, setMobileSortOpen] = useState(false);
 
   const [sortKey, setSortKey] = useState<SortKey>("max_arb");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -455,6 +458,7 @@ export default function FundingScreener() {
   /* ---------- handlers ---------- */
   const resetPage = () => setPage(0);
 
+
   const handleSearchChange = (value: string) => {
     setSearch(value);
     resetPage();
@@ -486,6 +490,12 @@ export default function FundingScreener() {
       setSortKey(key);
       setSortDir("desc");
     }
+    resetPage();
+  };
+
+  const setSort = (key: SortKey, dir: SortDir) => {
+    setSortKey(key);
+    setSortDir(dir);
     resetPage();
   };
 
@@ -524,6 +534,12 @@ export default function FundingScreener() {
 
     // Sort
     result.sort((a, b) => {
+      if (pinnedColumnKey) {
+        const aPinned = !!a.markets?.[pinnedColumnKey];
+        const bPinned = !!b.markets?.[pinnedColumnKey];
+        if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      }
+
       const aFav = a.token ? favoriteSet.has(a.token) : false;
       const bFav = b.token ? favoriteSet.has(b.token) : false;
       if (aFav !== bFav) return aFav ? -1 : 1;
@@ -556,6 +572,33 @@ export default function FundingScreener() {
   const totalPages = limit === -1 ? 1 : Math.ceil(filtered.length / limit);
   const paginatedRows =
     limit === -1 ? filtered : filtered.slice(page * limit, page * limit + limit);
+
+  const sortOptions = useMemo(() => {
+    const base = [
+      { key: "max_arb", dir: "desc" as SortDir, label: "APR High" },
+      { key: "max_arb", dir: "asc" as SortDir, label: "APR Low" },
+      { key: "token", dir: "asc" as SortDir, label: "Asset A-Z" },
+      { key: "token", dir: "desc" as SortDir, label: "Asset Z-A" },
+    ];
+    const columnOptions = filteredColumns.flatMap((col) => {
+      const label = formatColumnHeader(col, exchangesWithMultipleQuotes);
+      return [
+        {
+          key: col.column_key,
+          dir: "desc" as SortDir,
+          label: `${label} High`,
+          exchange: col.exchange,
+        },
+        {
+          key: col.column_key,
+          dir: "asc" as SortDir,
+          label: `${label} Low`,
+          exchange: col.exchange,
+        },
+      ];
+    });
+    return [...base, ...columnOptions];
+  }, [filteredColumns, exchangesWithMultipleQuotes]);
 
   /* ---------- render ---------- */
   if (error) {
@@ -593,8 +636,16 @@ export default function FundingScreener() {
             <h2 className="text-base font-roboto text-white">Screener</h2>
 
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:ml-auto">
+              <FundingScreenerMobileSort
+                open={mobileSortOpen}
+                onOpenChange={setMobileSortOpen}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                options={sortOptions}
+                onSelect={setSort}
+              />
               {/* Time window dropdown */}
-              <div className="relative">
+              <div className="relative min-[960px]:block hidden">
                 <select
                   className="appearance-none bg-transparent border border-[#343a4e] rounded-lg pl-3 pr-7 py-2 text-sm text-gray-200 focus:outline-none cursor-pointer"
                   value={timeWindow}
@@ -611,7 +662,6 @@ export default function FundingScreener() {
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
               </div>
-
               {/* Filters dropdown with slider */}
               <APRRangeFilter
                 minAPR={minAPR}
@@ -690,15 +740,54 @@ export default function FundingScreener() {
                 }}
               />
 
-              {/* Search */}
-              <div className="relative w-full order-last sm:order-none sm:w-auto">
+              <div className="flex items-center gap-3 w-full min-[960px]:hidden">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white w-4 h-4" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="Search asset"
+                    className={`${TAILWIND.input.default} pl-10 pr-9 bg-transparent border border-[#383d50] focus:bg-transparent focus:border-[#383d50] w-full`}
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => handleSearchChange("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-[#383d50] border border-[#343a4e] text-gray-300 text-xs leading-none flex items-center justify-center transition-colors duration-200 hover:border-white hover:text-white"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                <div className="relative shrink-0">
+                  <select
+                    className="appearance-none bg-transparent border border-[#343a4e] rounded-lg pl-3 pr-7 py-2 text-sm text-gray-200 focus:outline-none cursor-pointer"
+                    value={timeWindow}
+                    onChange={(e) => {
+                      setTimeWindow(e.target.value as TimeWindow);
+                      resetPage();
+                    }}
+                  >
+                    {SCREENER_TIME_WINDOWS.map((tw) => (
+                      <option key={tw} value={tw}>
+                        {SCREENER_TIME_LABELS[tw]}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+
+              <div className="relative w-full order-last sm:order-none sm:w-auto hidden min-[960px]:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white w-4 h-4" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search asset"
-                  className={`${TAILWIND.input.default} pl-10 pr-9 bg-transparent border border-[#383d50] focus:bg-transparent focus:border-[#383d50]`}
+                  className={`${TAILWIND.input.default} pl-10 pr-9 bg-transparent border border-[#383d50] focus:bg-transparent focus:border-[#383d50] w-full`}
                 />
                 {search && (
                   <button
@@ -711,11 +800,22 @@ export default function FundingScreener() {
                   </button>
                 )}
               </div>
+
             </div>
           </div>
 
+          <FundingScreenerMobileCards
+            rows={filtered}
+            loading={loading}
+            timeWindow={timeWindow}
+            filteredColumns={filteredColumns}
+            filteredColumnKeys={filteredColumnKeys}
+            pinnedColumnKey={pinnedColumnKey}
+            exchangesWithMultipleQuotes={exchangesWithMultipleQuotes}
+          />
+
           {/* ---------- table ---------- */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-[960px]:block hidden">
             <table className="table-fixed w-max border-collapse text-xs whitespace-nowrap">
               <colgroup>
                 <col className="w-[48px]" />
@@ -882,7 +982,7 @@ export default function FundingScreener() {
 
           {/* ---------- bottom pagination ---------- */}
           {paginatedRows.length > 0 && (
-            <div className="px-4 py-3 border-t border-[#343a4e]">
+            <div className="px-4 py-3 border-t border-[#343a4e] hidden min-[960px]:block">
               <Pagination
                 currentPage={page}
                 totalPages={totalPages}
