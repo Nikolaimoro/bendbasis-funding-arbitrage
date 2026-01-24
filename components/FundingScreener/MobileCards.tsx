@@ -118,11 +118,13 @@ function ExchangeRateRow({
   market,
   rate,
   pinned,
+  role,
 }: {
   label: string;
   market: FundingMatrixMarket;
   rate: number | null;
   pinned: boolean;
+  role?: "long" | "short";
 }) {
   const rateClass =
     rate == null
@@ -133,10 +135,18 @@ function ExchangeRateRow({
           ? "text-red-400"
           : "text-gray-300";
 
+  const roleIndicator =
+    role === "long" ? (
+      <span className="inline-block w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-l-transparent border-r-transparent border-b-emerald-400" />
+    ) : role === "short" ? (
+      <span className="inline-block w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-400" />
+    ) : null;
+
   const exchangeContent = (
     <span className="inline-flex items-center gap-2 min-w-0">
       <ExchangeIcon exchange={market.exchange} size={16} />
       <span className="truncate text-sm text-gray-100">{label}</span>
+      {roleIndicator}
     </span>
   );
 
@@ -381,6 +391,7 @@ export default function FundingScreenerMobileCards({
                               market={longMarket}
                               rate={longRate}
                               pinned={pinnedColumnKey === longKey}
+                              role="long"
                             />
                           </div>
                           <div className="flex flex-col gap-1">
@@ -396,6 +407,7 @@ export default function FundingScreenerMobileCards({
                                 market={shortMarket}
                                 rate={shortRate}
                                 pinned={pinnedColumnKey === shortKey}
+                                role="short"
                               />
                             ) : (
                               <div className="text-xs text-gray-500">
@@ -445,20 +457,20 @@ export default function FundingScreenerMobileCards({
                         </div>
 
                         <div
-                          className="flex items-center justify-between text-xs text-gray-400"
+                          className="relative flex items-center justify-center text-xs text-gray-400"
                           onClick={(event) => {
                             event.stopPropagation();
                             toggleExpanded();
                           }}
                         >
-                          <span>
+                          <span className="text-center">
                             {isExpanded
                               ? "Less exchanges"
                               : `${remainingCount} more exchanges`}
                           </span>
                           <ChevronDown
                             size={14}
-                            className={`transition-transform duration-300 ${
+                            className={`absolute right-0 transition-transform duration-300 ${
                               isExpanded ? "rotate-180 translate-y-1" : ""
                             }`}
                           />
