@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, ChevronDown, Search, X, Pin } from "lucide-react";
+import { RefreshCw, ChevronDown, Search, X, Pin, ExternalLink } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { normalizeToken, formatAPR, formatExchange } from "@/lib/formatters";
 import {
@@ -9,6 +9,7 @@ import {
   findArbPair,
   findArbPairPinned,
   calculateMaxArbPinned,
+  buildBacktesterUrl,
   ArbPair,
 } from "@/lib/funding";
 import {
@@ -27,9 +28,11 @@ import APRCell from "@/components/FundingScreener/APRCell";
 import FundingScreenerMobileCards from "@/components/FundingScreener/MobileCards";
 import FundingScreenerMobileSort from "@/components/FundingScreener/MobileSort";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import { Modal } from "@/components/ui/Modal";
 import SortableHeader from "@/components/ui/SortableHeader";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import { TAILWIND } from "@/lib/theme";
+import { isValidUrl } from "@/lib/validation";
 
 /* ================= TYPES ================= */
 
@@ -114,6 +117,12 @@ export default function FundingScreener({
   const [pinnedInitialized, setPinnedInitialized] = useState(false);
   const [pinnedDirty, setPinnedDirty] = useState(false);
   const [mobileSortOpen, setMobileSortOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<{
+    token: string;
+    arbPair: ArbPair;
+    maxArb: number | null;
+  } | null>(null);
 
   const [sortKey, setSortKey] = useState<SortKey>("max_arb");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -416,6 +425,19 @@ export default function FundingScreener({
   }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey]);
 
   const getMaxArb = (row: FundingMatrixRow) => maxArbByRow.get(row) ?? null;
+
+  const columnLabelByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const col of filteredColumns) {
+      map.set(col.column_key, formatColumnHeader(col, exchangesWithMultipleQuotes));
+    }
+    return map;
+  }, [filteredColumns, exchangesWithMultipleQuotes]);
+
+  const modalBacktesterUrl =
+    modalData && modalData.token
+      ? buildBacktesterUrl(modalData.token, modalData.arbPair)
+      : null;
 
   /* ---------- handlers ---------- */
   const resetPage = () => setPage(0);
@@ -774,6 +796,7 @@ export default function FundingScreener({
             filteredColumnKeys={filteredColumnKeys}
             pinnedColumnKey={pinnedColumnKey}
             exchangesWithMultipleQuotes={exchangesWithMultipleQuotes}
+            onOpenModal={openModal}
           />
 
           {/* ---------- table ---------- */}
@@ -905,7 +928,12 @@ export default function FundingScreener({
                         <td
                           className={`px-4 py-2 text-right font-mono tabular-nums md:sticky md:left-[138px] md:z-10 bg-[#292e40] group-hover:bg-[#353b52] transition-colors`}
                         >
-                          <APRCell maxArb={maxArb} arbPair={arbPair} token={row.token} />
+                          <APRCell
+                            maxArb={maxArb}
+                            arbPair={arbPair}
+                            token={row.token}
+                            onOpenModal={openModal}
+                          />
                         </td>
 
                         {/* Exchange columns */}
@@ -960,6 +988,82 @@ export default function FundingScreener({
           )}
         </div>
       </section>
+
+      {modalData && (
+        <Modal
+          open={modalOpen}
+          onClose={closeModal}
+          title={`Funding APR · ${modalData.token}`}
+          height="320px"
+        >
+          <div className="flex h-full flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm text-gray-400">
+                <span>APR spread</span>
+                <span className="text-base font-mono text-white">
+                  {formatAPR(modalData.maxArb)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {isValidUrl(modalData.arbPair.longMarket.ref_url) && (
+                  <a
+                    href={modalData.arbPair.longMarket.ref_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-green-500/40 px-3 py-2 text-xs text-green-400 hover:border-green-500/70 transition"
+                  >
+                    <ExternalLink size={12} />
+                    Long{" "}
+                    {columnLabelByKey.get(modalData.arbPair.longKey) ??
+                      formatExchange(modalData.arbPair.longMarket.exchange)}
+                  </a>
+                )}
+                {isValidUrl(modalData.arbPair.shortMarket.ref_url) && (
+                  <a
+                    href={modalData.arbPair.shortMarket.ref_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-red-500/40 px-3 py-2 text-xs text-red-400 hover:border-red-500/70 transition"
+                  >
+                    <ExternalLink size={12} />
+                    Short{" "}
+                    {columnLabelByKey.get(modalData.arbPair.shortKey) ??
+                      formatExchange(modalData.arbPair.shortMarket.exchange)}
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {modalBacktesterUrl && (
+              <button
+                type="button"
+                onClick={() => {
+                  const win = window.open(modalBacktesterUrl, "_blank");
+                  if (win) {
+                    win.opener = null;
+                  }
+                }}
+                className="inline-flex w-full items-center justify-center rounded-lg border border-[#343a4e] px-3 py-2 text-xs text-gray-200 hover:border-white transition"
+              >
+                Open Backtester
+              </button>
+            )}
+          </div>
+        </Modal>
+      )}
     </ErrorBoundary>
   );
 }
+  const openModal = (payload: {
+    token: string;
+    arbPair: ArbPair;
+    maxArb: number | null;
+  }) => {
+    setModalData(payload);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalData(null);
+  };

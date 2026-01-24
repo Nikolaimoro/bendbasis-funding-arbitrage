@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, ArrowUpRight, ChevronDown } from "lucide-react";
 import { formatAPR, formatExchange } from "@/lib/formatters";
-import { getRate, findArbPairPinned, ArbPair } from "@/lib/funding";
+import { getRate, findArbPairPinned, buildBacktesterUrl, ArbPair } from "@/lib/funding";
 import { isValidUrl } from "@/lib/validation";
 import {
   ExchangeColumn,
@@ -23,6 +23,11 @@ type Props = {
   filteredColumnKeys: Set<string>;
   pinnedColumnKey: string | null;
   exchangesWithMultipleQuotes: Set<string>;
+  onOpenModal?: (payload: {
+    token: string;
+    arbPair: ArbPair;
+    maxArb: number | null;
+  }) => void;
 };
 
 const formatColumnHeader = (
@@ -34,18 +39,6 @@ const formatColumnHeader = (
     return `${name} (${col.quote_asset})`;
   }
   return name;
-};
-
-const buildBacktesterUrl = (token: string, arbPair: ArbPair | null) => {
-  if (!arbPair) return null;
-  const longExchange = arbPair.longMarket.exchange;
-  const shortExchange = arbPair.shortMarket.exchange;
-  const longQuote = arbPair.longMarket.quote;
-  const shortQuote = arbPair.shortMarket.quote;
-  if (!longExchange || !shortExchange || !longQuote || !shortQuote) return null;
-  const exchange1 = `${longExchange}${String(longQuote).toLowerCase()}`;
-  const exchange2 = `${shortExchange}${String(shortQuote).toLowerCase()}`;
-  return `/backtester?token=${encodeURIComponent(token)}&exchange1=${encodeURIComponent(exchange1)}&exchange2=${encodeURIComponent(exchange2)}`;
 };
 
 function ExchangeRateRow({
@@ -121,6 +114,7 @@ export default function FundingScreenerMobileCards({
   filteredColumnKeys,
   pinnedColumnKey,
   exchangesWithMultipleQuotes,
+  onOpenModal,
 }: Props) {
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [fetchingMore, setFetchingMore] = useState(false);
@@ -235,6 +229,8 @@ export default function FundingScreenerMobileCards({
                 const isExpanded = expanded.has(token);
                 const hasMore = remainingCount > 0;
                 const hasHistory = !!historyUrl;
+                const canOpenModal =
+                  !!onOpenModal && !!arbPair && !!row.token;
 
                 const toggleExpanded = () => {
                   setExpanded((prev) => {
@@ -248,39 +244,38 @@ export default function FundingScreenerMobileCards({
                   });
                 };
 
-                const handleOpenChart = () => {
-                  if (!historyUrl) return;
-                  if (typeof window !== "undefined") {
-                    const win = window.open(historyUrl, "_blank");
-                    if (win) {
-                      win.opener = null;
-                    }
-                  }
+                const handleOpenModal = () => {
+                  if (!canOpenModal) return;
+                  onOpenModal({
+                    token: row.token!,
+                    arbPair,
+                    maxArb,
+                  });
                 };
 
-                const cardClickable = !hasMore && hasHistory;
+                const cardClickable = !hasMore && canOpenModal;
 
                 return (
                   <div
                     key={token}
                     role={cardClickable ? "button" : "group"}
                     tabIndex={cardClickable ? 0 : -1}
-                    onClick={cardClickable ? handleOpenChart : undefined}
+                    onClick={cardClickable ? handleOpenModal : undefined}
                     onKeyDown={(event) => {
                       if (!cardClickable) return;
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        handleOpenChart();
+                        handleOpenModal();
                       }
                     }}
                     className="rounded-2xl border border-[#343a4e] bg-[#1c202f] p-3 text-xs text-gray-200 flex flex-col gap-3"
                   >
                     <div
                       className={`relative flex items-start justify-between gap-4 ${
-                        hasMore && hasHistory ? "cursor-pointer" : ""
+                        hasMore && canOpenModal ? "cursor-pointer" : ""
                       }`}
                       onClick={
-                        hasMore && hasHistory ? handleOpenChart : undefined
+                        hasMore && canOpenModal ? handleOpenModal : undefined
                       }
                     >
                       <span className="text-base font-mono text-white">
@@ -294,12 +289,12 @@ export default function FundingScreenerMobileCards({
                           {formatAPR(maxArb)}
                         </span>
                       </div>
-                      {hasHistory && (
+                      {canOpenModal && (
                         <button
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            handleOpenChart();
+                            handleOpenModal();
                           }}
                           className="absolute left-1/2 top-0 -translate-x-1/2 text-[10px] text-gray-500 inline-flex items-center gap-1"
                         >
