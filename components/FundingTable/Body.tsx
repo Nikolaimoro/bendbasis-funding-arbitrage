@@ -2,6 +2,7 @@
 
 import { ExternalLink } from "lucide-react";
 import { formatExchange, formatAPR, formatCompactUSD } from "@/lib/formatters";
+import { isValidUrl } from "@/lib/validation";
 import { TAILWIND } from "@/lib/theme";
 import SortableHeader from "@/components/ui/SortableHeader";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
@@ -159,7 +160,7 @@ export default function FundingTableBody({
                 </span>
               </td>
               <td className="px-4 py-4 text-left font-mono font-semibold text-white">
-                {r.ref_url ? (
+                {isValidUrl(r.ref_url) ? (
                   <a
                     href={r.ref_url}
                     target="_blank"

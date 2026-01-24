@@ -1,17 +1,27 @@
 import { Metadata } from "next";
-import FundingTableClient from "@/components/FundingTableClient";
+import { Suspense } from "react";
+import FundingTableServer from "@/components/FundingTableServer";
 import PageHeader from "@/components/ui/PageHeader";
+import { TableLoadingState } from "@/components/ui/TableStates";
 import { EXCHANGE_SEO_LIST } from "@/lib/constants";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 const exchangeKeywords = EXCHANGE_SEO_LIST.slice(0, 10);
 
 export const metadata: Metadata = {
   title: "Markets - Funding Rates Dashboard | bendbasis",
   description: "Real-time cryptocurrency funding rates across major exchanges, annualized and sortable by volume.",
-  keywords: ["funding rates", "crypto", "markets", "funding rate dashboard", "trading", ...exchangeKeywords],
+  keywords: [
+    "funding rates",
+    "funding rates crypto",
+    "funding history",
+    "crypto",
+    "markets",
+    "funding rate dashboard",
+    "trading",
+    ...exchangeKeywords,
+  ],
   alternates: {
     canonical: "/markets",
   },
@@ -42,7 +52,18 @@ export default function MarketsPage() {
         title="Markets"
         description="Funding rates across exchanges, annualized and aggregated"
       />
-      <FundingTableClient />
+      <Suspense
+        fallback={
+          <div className="rounded-2xl border border-[#343a4e] bg-[#292e40]">
+            <div className="flex flex-wrap items-center gap-4 px-4 py-4">
+              <h2 className="text-base font-roboto text-white">Markets</h2>
+            </div>
+            <TableLoadingState message="Loading funding rates…" />
+          </div>
+        }
+      >
+        <FundingTableServer />
+      </Suspense>
       <section className="sr-only" aria-hidden="true">
         <h2>Markets funding rates across exchanges</h2>
         <p>

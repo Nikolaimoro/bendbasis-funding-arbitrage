@@ -1,17 +1,27 @@
 import { Metadata } from "next";
-import FundingScreener from "@/components/FundingScreener";
+import { Suspense } from "react";
+import FundingScreenerServer from "@/components/FundingScreenerServer";
 import PageHeader from "@/components/ui/PageHeader";
+import { TableLoadingState } from "@/components/ui/TableStates";
 import { EXCHANGE_SEO_LIST } from "@/lib/constants";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 const exchangeKeywords = EXCHANGE_SEO_LIST.slice(0, 10);
 
 export const metadata: Metadata = {
   title: "Funding Rate Arbitrage Screener | bendbasis",
   description: "Screen funding rate arbitrage opportunities across major crypto exchanges with live funding rate comparisons.",
-  keywords: ["funding rates", "crypto", "funding rate arbitrage", "screener", "trading", ...exchangeKeywords],
+  keywords: [
+    "funding rates",
+    "funding rates crypto",
+    "funding history",
+    "crypto",
+    "funding rate arbitrage",
+    "screener",
+    "trading",
+    ...exchangeKeywords,
+  ],
   alternates: {
     canonical: "/funding",
   },
@@ -42,7 +52,18 @@ export default function FundingPage() {
         title="Funding Rate Screener"
         description="Compare funding rates across exchanges to find arbitrage opportunities"
       />
-      <FundingScreener />
+      <Suspense
+        fallback={
+          <div className="rounded-2xl border border-[#343a4e] bg-[#292e40]">
+            <div className="flex flex-wrap items-center gap-4 px-4 py-4">
+              <h2 className="text-base font-roboto text-white">Screener</h2>
+            </div>
+            <TableLoadingState message="Loading funding screener…" />
+          </div>
+        }
+      >
+        <FundingScreenerServer />
+      </Suspense>
       <section className="sr-only" aria-hidden="true">
         <h2>Funding rate arbitrage screener across exchanges</h2>
         <p>

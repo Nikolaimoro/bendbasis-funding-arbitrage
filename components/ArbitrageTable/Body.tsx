@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { ExternalLink, Info, Pin } from "lucide-react";
 import { formatCompactUSD, formatAPR, formatExchange } from "@/lib/formatters";
+import { isValidUrl } from "@/lib/validation";
 import { TAILWIND } from "@/lib/theme";
 import { ArbRow, SortDir } from "@/lib/types";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
@@ -343,7 +344,7 @@ interface LongButtonProps {
 }
 
 function LongButton({ href, label, exchange, pinned, onTogglePin, showPin }: LongButtonProps) {
-  if (!href) return <span className="text-gray-600">–</span>;
+  if (!isValidUrl(href)) return <span className="text-gray-600">–</span>;
 
   return (
     <div className="inline-flex items-center gap-1">
@@ -395,7 +396,7 @@ interface ShortButtonProps {
 }
 
 function ShortButton({ href, label, exchange, pinned, onTogglePin, showPin }: ShortButtonProps) {
-  if (!href) return <span className="text-gray-600">–</span>;
+  if (!isValidUrl(href)) return <span className="text-gray-600">–</span>;
 
   return (
     <div className="inline-flex items-center gap-1">

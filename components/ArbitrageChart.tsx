@@ -22,6 +22,7 @@ import {
 import "chartjs-adapter-date-fns";
 import { Chart } from "react-chartjs-2";
 import zoomPlugin from "chartjs-plugin-zoom";
+import { isValidUrl } from "@/lib/validation";
 
 /* ---------- register ---------- */
 ChartJS.register(
@@ -380,11 +381,11 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
             />
           )}
         </div>
-        {(longUrl || shortUrl || backtesterUrl) && (
+        {(isValidUrl(longUrl) || isValidUrl(shortUrl) || isValidUrl(backtesterUrl)) && (
           <div className="mt-3 flex flex-col items-center gap-2">
             <div className="w-full max-w-[360px]">
               <div className="grid grid-cols-2 gap-2">
-                {longUrl && (
+                {isValidUrl(longUrl) && (
                   <a
                     href={longUrl}
                     target="_blank"
@@ -395,7 +396,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
                     Long {longLabel}
                   </a>
                 )}
-                {shortUrl && (
+                {isValidUrl(shortUrl) && (
                   <a
                     href={shortUrl}
                     target="_blank"
@@ -407,7 +408,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
                   </a>
                 )}
               </div>
-              {backtesterUrl && (
+              {isValidUrl(backtesterUrl) && (
                 <a
                   href={backtesterUrl}
                   target="_blank"

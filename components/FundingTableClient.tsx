@@ -21,9 +21,14 @@ const fetchFundingRows = async (): Promise<FundingRow[]> => {
   return json.rows ?? [];
 };
 
-export default function FundingTableClient() {
-  const [rows, setRows] = useState<FundingRow[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function FundingTableClient({
+  initialRows = [],
+}: {
+  initialRows?: FundingRow[];
+}) {
+  const initialHasRows = initialRows.length > 0;
+  const [rows, setRows] = useState<FundingRow[]>(initialRows);
+  const [loading, setLoading] = useState(!initialHasRows);
   const [error, setError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
 
@@ -33,15 +38,20 @@ export default function FundingTableClient() {
     let attemptId = 0;
     const cached = getLocalCache<FundingRow[]>(CACHE_KEY, CACHE_TTL_MS);
     const hasCache = !!cached && cached.length > 0;
+    const hasInitial = initialRows.length > 0;
 
     if (hasCache) {
       setRows(cached!);
       setLoading(false);
       setError(null);
+    } else if (hasInitial) {
+      setRows(initialRows);
+      setLoading(false);
+      setError(null);
     }
 
     const load = async () => {
-      setLoading(!hasCache);
+      setLoading(!(hasCache || hasInitial));
       setError(null);
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
@@ -61,7 +71,7 @@ export default function FundingTableClient() {
             return;
           }
 
-          if (hasCache) {
+          if (hasCache || hasInitial) {
             setLoading(false);
             return;
           }
@@ -90,7 +100,7 @@ export default function FundingTableClient() {
       cancelled = true;
       attemptId += 1;
     };
-  }, [retryToken]);
+  }, [retryToken, initialRows]);
 
   const handleRetry = () => {
     setRetryToken((t) => t + 1);

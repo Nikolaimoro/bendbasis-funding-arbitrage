@@ -2,12 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, ChevronDown, Search, X, Pin } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { normalizeToken, formatAPR, formatExchange } from "@/lib/formatters";
-import { getRate, calculateMaxArb, findArbPair, ArbPair } from "@/lib/funding";
+import { normalizeToken, formatExchange } from "@/lib/formatters";
+import {
+  getRate,
+  findArbPair,
+  findArbPairPinned,
+  calculateMaxArbPinned,
+  buildBacktesterUrl,
+  ArbPair,
+} from "@/lib/funding";
 import {
   ExchangeColumn,
-  FundingMatrixMarket,
   FundingMatrixRow,
   TimeWindow,
   SortDir,
@@ -25,6 +32,10 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import SortableHeader from "@/components/ui/SortableHeader";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import { TAILWIND } from "@/lib/theme";
+
+const ArbitrageChart = dynamic(() => import("@/components/ArbitrageChart"), {
+  ssr: false,
+});
 
 /* ================= TYPES ================= */
 
@@ -77,89 +88,22 @@ function normalizePinnedParam(value: string) {
   return value.trim().toLowerCase();
 }
 
-function findArbPairPinned(
-  markets: Record<string, FundingMatrixMarket> | null | undefined,
-  timeWindow: TimeWindow,
-  selectedColumnKeys: Set<string>,
-  pinnedKey: string | null
-): ArbPair | null {
-  if (!markets) return null;
-  if (!pinnedKey) return findArbPair(markets, timeWindow, selectedColumnKeys);
-  if (!selectedColumnKeys.has(pinnedKey)) return findArbPair(markets, timeWindow, selectedColumnKeys);
-
-  const pinnedMarket = markets[pinnedKey];
-  const pinnedRate = getRate(pinnedMarket, timeWindow);
-  if (!pinnedMarket || pinnedRate === null) {
-    return findArbPair(markets, timeWindow, selectedColumnKeys);
-  }
-
-  const entries: { key: string; market: FundingMatrixMarket; rate: number }[] = [];
-  for (const [columnKey, market] of Object.entries(markets)) {
-    if (!market) continue;
-    if (!selectedColumnKeys.has(columnKey)) continue;
-    if (columnKey === pinnedKey) continue;
-    const rate = getRate(market, timeWindow);
-    if (rate !== null) {
-      entries.push({ key: columnKey, market, rate });
-    }
-  }
-
-  if (entries.length === 0) return null;
-
-  let minEntry = entries[0];
-  let maxEntry = entries[0];
-  for (const entry of entries) {
-    if (entry.rate < minEntry.rate) minEntry = entry;
-    if (entry.rate > maxEntry.rate) maxEntry = entry;
-  }
-
-  const spreadIfPinnedLong = maxEntry.rate - pinnedRate;
-  const spreadIfPinnedShort = pinnedRate - minEntry.rate;
-
-  if (spreadIfPinnedLong >= spreadIfPinnedShort) {
-    if (spreadIfPinnedLong <= 0) return null;
-    return {
-      longKey: pinnedKey,
-      longMarket: pinnedMarket,
-      longRate: pinnedRate,
-      shortKey: maxEntry.key,
-      shortMarket: maxEntry.market,
-      shortRate: maxEntry.rate,
-      spread: spreadIfPinnedLong,
-    };
-  }
-
-  if (spreadIfPinnedShort <= 0) return null;
-  return {
-    longKey: minEntry.key,
-    longMarket: minEntry.market,
-    longRate: minEntry.rate,
-    shortKey: pinnedKey,
-    shortMarket: pinnedMarket,
-    shortRate: pinnedRate,
-    spread: spreadIfPinnedShort,
-  };
-}
-
-function calculateMaxArbPinned(
-  markets: Record<string, FundingMatrixMarket> | null | undefined,
-  timeWindow: TimeWindow,
-  selectedColumnKeys: Set<string>,
-  pinnedKey: string | null
-): number | null {
-  const pair = findArbPairPinned(markets, timeWindow, selectedColumnKeys, pinnedKey);
-  return pair ? pair.spread : null;
-}
-
 /* ================= COMPONENT ================= */
 
-export default function FundingScreener() {
+export default function FundingScreener({
+  initialColumns = [],
+  initialRows = [],
+}: {
+  initialColumns?: ExchangeColumn[];
+  initialRows?: FundingMatrixRow[];
+}) {
   /* ---------- state ---------- */
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [rows, setRows] = useState<FundingMatrixRow[]>([]);
-  const [exchangeColumns, setExchangeColumns] = useState<ExchangeColumn[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialHasData = initialColumns.length > 0 && initialRows.length > 0;
+  const [rows, setRows] = useState<FundingMatrixRow[]>(initialRows);
+  const [exchangeColumns, setExchangeColumns] = useState<ExchangeColumn[]>(initialColumns);
+  const [loading, setLoading] = useState(!initialHasData);
   const [error, setError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
 
@@ -176,9 +120,29 @@ export default function FundingScreener() {
   const [pinnedInitialized, setPinnedInitialized] = useState(false);
   const [pinnedDirty, setPinnedDirty] = useState(false);
   const [mobileSortOpen, setMobileSortOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<{
+    token: string;
+    arbPair: ArbPair;
+    maxArb: number | null;
+  } | null>(null);
 
   const [sortKey, setSortKey] = useState<SortKey>("max_arb");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const openModal = (payload: {
+    token: string;
+    arbPair: ArbPair;
+    maxArb: number | null;
+  }) => {
+    setModalData(payload);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalData(null);
+  };
 
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(0);
@@ -193,9 +157,15 @@ export default function FundingScreener() {
       CACHE_TTL_MS
     );
     const hasCache = !!cached && cached.rows.length > 0 && cached.columns.length > 0;
+    const hasInitial = initialColumns.length > 0 && initialRows.length > 0;
     if (hasCache) {
       setExchangeColumns(cached!.columns);
       setRows(cached!.rows);
+      setLoading(false);
+      setError(null);
+    } else if (hasInitial) {
+      setExchangeColumns(initialColumns);
+      setRows(initialRows);
       setLoading(false);
       setError(null);
     }
@@ -216,7 +186,7 @@ export default function FundingScreener() {
     };
 
     const load = async () => {
-      setLoading(!hasCache);
+      setLoading(!(hasCache || hasInitial));
       setError(null);
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -237,7 +207,7 @@ export default function FundingScreener() {
         } catch (err) {
           if (cancelled || currentAttempt !== attemptId) return;
 
-          if (hasCache) {
+          if (hasCache || hasInitial) {
             setLoading(false);
             return;
           }
@@ -255,7 +225,7 @@ export default function FundingScreener() {
 
     load();
     return () => { cancelled = true; };
-  }, [retryToken]);
+  }, [retryToken, initialColumns, initialRows]);
 
   /* ---------- derived data ---------- */
   const exchanges = useMemo(
@@ -449,11 +419,50 @@ export default function FundingScreener() {
   const maxAPRValue = useMemo(() => {
     let max = 0;
     for (const row of rows) {
-      const arb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
+      const arb = calculateMaxArbPinned(
+        row.markets,
+        timeWindow,
+        filteredColumnKeys,
+        pinnedColumnKey
+      );
       if (arb !== null && arb > max) max = arb;
     }
     return Math.ceil(max);
   }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey]);
+
+  const maxArbByRow = useMemo(() => {
+    const map = new Map<FundingMatrixRow, number | null>();
+    for (const row of rows) {
+      map.set(
+        row,
+        calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey)
+      );
+    }
+    return map;
+  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey]);
+
+  const getMaxArb = (row: FundingMatrixRow) => maxArbByRow.get(row) ?? null;
+
+  const columnLabelByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const col of filteredColumns) {
+      map.set(col.column_key, formatColumnHeader(col, exchangesWithMultipleQuotes));
+    }
+    return map;
+  }, [filteredColumns, exchangesWithMultipleQuotes]);
+
+  const modalBacktesterUrl =
+    modalData && modalData.token
+      ? buildBacktesterUrl(modalData.token, modalData.arbPair)
+      : null;
+  const modalLongLabel = modalData
+    ? columnLabelByKey.get(modalData.arbPair.longKey) ??
+      formatExchange(modalData.arbPair.longMarket.exchange)
+    : "";
+  const modalShortLabel = modalData
+    ? columnLabelByKey.get(modalData.arbPair.shortKey) ??
+      formatExchange(modalData.arbPair.shortMarket.exchange)
+    : "";
 
   /* ---------- handlers ---------- */
   const resetPage = () => setPage(0);
@@ -519,7 +528,7 @@ export default function FundingScreener() {
     // Filter by min APR (using filtered exchanges)
     if (typeof minAPR === "number" && minAPR > 0) {
       result = result.filter((row) => {
-        const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
+        const maxArb = getMaxArb(row);
         return maxArb !== null && maxArb >= minAPR;
       });
     }
@@ -527,7 +536,7 @@ export default function FundingScreener() {
     // Filter by max APR (using filtered exchanges)
     if (typeof maxAPRFilter === "number") {
       result = result.filter((row) => {
-        const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
+        const maxArb = getMaxArb(row);
         return maxArb === null || maxArb <= maxAPRFilter;
       });
     }
@@ -552,8 +561,8 @@ export default function FundingScreener() {
       }
 
       if (sortKey === "max_arb") {
-        const aArb = calculateMaxArbPinned(a.markets, timeWindow, filteredColumnKeys, pinnedColumnKey) ?? -Infinity;
-        const bArb = calculateMaxArbPinned(b.markets, timeWindow, filteredColumnKeys, pinnedColumnKey) ?? -Infinity;
+        const aArb = getMaxArb(a) ?? -Infinity;
+        const bArb = getMaxArb(b) ?? -Infinity;
         const cmp = aArb - bArb;
         return sortDir === "asc" ? cmp : -cmp;
       }
@@ -566,7 +575,7 @@ export default function FundingScreener() {
     });
 
     return result;
-  }, [rows, search, sortKey, sortDir, timeWindow, minAPR, maxAPRFilter, favoriteSet, filteredColumnKeys, pinnedColumnKey]);
+  }, [rows, search, sortKey, sortDir, timeWindow, minAPR, maxAPRFilter, favoriteSet, filteredColumnKeys, pinnedColumnKey, maxArbByRow]);
 
   /* ---------- pagination ---------- */
   const totalPages = limit === -1 ? 1 : Math.ceil(filtered.length / limit);
@@ -812,6 +821,7 @@ export default function FundingScreener() {
             filteredColumnKeys={filteredColumnKeys}
             pinnedColumnKey={pinnedColumnKey}
             exchangesWithMultipleQuotes={exchangesWithMultipleQuotes}
+            onOpenModal={openModal}
           />
 
           {/* ---------- table ---------- */}
@@ -943,7 +953,12 @@ export default function FundingScreener() {
                         <td
                           className={`px-4 py-2 text-right font-mono tabular-nums md:sticky md:left-[138px] md:z-10 bg-[#292e40] group-hover:bg-[#353b52] transition-colors`}
                         >
-                          <APRCell maxArb={maxArb} arbPair={arbPair} token={row.token} />
+                          <APRCell
+                            maxArb={maxArb}
+                            arbPair={arbPair}
+                            token={row.token}
+                            onOpenModal={openModal}
+                          />
                         </td>
 
                         {/* Exchange columns */}
@@ -998,6 +1013,21 @@ export default function FundingScreener() {
           )}
         </div>
       </section>
+
+      {modalData && (
+        <ArbitrageChart
+          open={modalOpen}
+          onClose={closeModal}
+          baseAsset={modalData.token}
+          longMarketId={modalData.arbPair.longMarket.market_id}
+          shortMarketId={modalData.arbPair.shortMarket.market_id}
+          longLabel={modalLongLabel}
+          shortLabel={modalShortLabel}
+          longUrl={modalData.arbPair.longMarket.ref_url}
+          shortUrl={modalData.arbPair.shortMarket.ref_url}
+          backtesterUrl={modalBacktesterUrl}
+        />
+      )}
     </ErrorBoundary>
   );
 }

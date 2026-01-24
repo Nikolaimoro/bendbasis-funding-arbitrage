@@ -27,7 +27,16 @@ export const metadata: Metadata = {
     template: "%s | bendbasis",
   },
   description: "Find funding arbitrage opportunities across crypto exchanges. Compare funding rates, analyze arbitrage spreads, and backtest strategies.",
-  keywords: ["funding rates", "crypto", "arbitrage", "trading", "perpetual futures", "funding arbitrage"],
+  keywords: [
+    "funding rates",
+    "funding rates crypto",
+    "funding history",
+    "crypto",
+    "arbitrage",
+    "trading",
+    "perpetual futures",
+    "funding arbitrage",
+  ],
   authors: [{ name: "bendbasis" }],
   icons: {
     icon: "/favicon.ico?v=2",

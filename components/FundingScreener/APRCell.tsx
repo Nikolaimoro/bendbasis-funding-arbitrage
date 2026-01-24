@@ -10,9 +10,19 @@ interface APRCellProps {
   maxArb: number | null;
   arbPair: ArbPair | null;
   token?: string | null;
+  onOpenModal?: (payload: {
+    token: string;
+    arbPair: ArbPair;
+    maxArb: number | null;
+  }) => void;
 }
 
-export default function APRCell({ maxArb, arbPair, token }: APRCellProps) {
+export default function APRCell({
+  maxArb,
+  arbPair,
+  token,
+  onOpenModal,
+}: APRCellProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -30,17 +40,7 @@ export default function APRCell({ maxArb, arbPair, token }: APRCellProps) {
     setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8 });
   };
 
-  const historyUrl = (() => {
-    if (!arbPair || !token) return null;
-    const longExchange = arbPair.longMarket.exchange;
-    const shortExchange = arbPair.shortMarket.exchange;
-    const longQuote = arbPair.longMarket.quote;
-    const shortQuote = arbPair.shortMarket.quote;
-    if (!longExchange || !shortExchange || !longQuote || !shortQuote) return null;
-    const exchange1 = `${longExchange}${String(longQuote).toLowerCase()}`;
-    const exchange2 = `${shortExchange}${String(shortQuote).toLowerCase()}`;
-    return `/backtester?token=${encodeURIComponent(token)}&exchange1=${encodeURIComponent(exchange1)}&exchange2=${encodeURIComponent(exchange2)}`;
-  })();
+  const canOpenModal = !!arbPair && !!token && !!onOpenModal;
 
   const tooltip =
     showTooltip && tooltipPos && arbPair && typeof document !== "undefined"
@@ -84,12 +84,22 @@ export default function APRCell({ maxArb, arbPair, token }: APRCellProps) {
     </span>
   );
 
-  if (historyUrl) {
+  if (canOpenModal) {
     return (
       <>
-        <a href={historyUrl} target="_blank" rel="noopener noreferrer">
+        <button
+          type="button"
+          onClick={() => {
+            onOpenModal({
+              token: token!,
+              arbPair: arbPair!,
+              maxArb,
+            });
+          }}
+          className="inline-flex items-center"
+        >
           {content}
-        </a>
+        </button>
         {tooltip}
       </>
     );

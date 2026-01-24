@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, Pin } from "lucide-react";
-import ArbitrageChart from "@/components/ArbitrageChart";
+import dynamic from "next/dynamic";
 import { formatExchange, normalizeToken } from "@/lib/formatters";
 import { ArbRow, SortDir } from "@/lib/types";
 import Pagination from "@/components/Table/Pagination";
@@ -16,6 +16,9 @@ import { TableEmptyState, TableLoadingState } from "@/components/ui/TableStates"
 import { TAILWIND } from "@/lib/theme";
 import { getLocalCache, setLocalCache, withTimeout } from "@/lib/async";
 
+const ArbitrageChart = dynamic(() => import("@/components/ArbitrageChart"), {
+  ssr: false,
+});
 /* ================= TYPES ================= */
 
 type SortKey = "apr_spread" | "stability";
@@ -27,10 +30,15 @@ const EXCHANGES_KEY = "arbitrage-exchanges";
 const PINNED_EXCHANGES_KEY = "arbitrage-pinned-exchanges";
 /* ================= COMPONENT ================= */
 
-export default function ArbitrageTable() {
+export default function ArbitrageTable({
+  initialRows = [],
+}: {
+  initialRows?: ArbRow[];
+}) {
   /* ---------- state ---------- */
-  const [rows, setRows] = useState<ArbRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialHasRows = initialRows.length > 0;
+  const [rows, setRows] = useState<ArbRow[]>(initialRows);
+  const [loading, setLoading] = useState(!initialHasRows);
   const [error, setError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
 
@@ -126,8 +134,13 @@ export default function ArbitrageTable() {
 
     const cached = getLocalCache<ArbRow[]>(CACHE_KEY, CACHE_TTL_MS);
     const hasCache = !!cached && cached.length > 0;
+    const hasInitial = initialRows.length > 0;
     if (hasCache) {
       setRows(cached!);
+      setLoading(false);
+      setError(null);
+    } else if (hasInitial) {
+      setRows(initialRows);
       setLoading(false);
       setError(null);
     }
@@ -144,7 +157,7 @@ export default function ArbitrageTable() {
     };
 
     const load = async () => {
-      setLoading(!hasCache);
+      setLoading(!(hasCache || hasInitial));
       setError(null);
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
@@ -163,7 +176,7 @@ export default function ArbitrageTable() {
             return;
           }
 
-          if (hasCache) {
+          if (hasCache || hasInitial) {
             setLoading(false);
             return;
           }
@@ -190,7 +203,7 @@ export default function ArbitrageTable() {
       cancelled = true;
       attemptId += 1;
     };
-  }, [retryToken]);
+  }, [retryToken, initialRows]);
 
   const handleRetry = () => {
     setRetryToken((t) => t + 1);

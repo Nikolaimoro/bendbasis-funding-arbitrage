@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { formatExchange } from "@/lib/formatters";
+import { isValidUrl } from "@/lib/validation";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import { COLORS, CHART_CONFIG } from "@/lib/theme";
 import { ArbChartRow } from "@/lib/types";
@@ -354,7 +355,7 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
           {/* Exchange Buttons */}
           {!loading && rows.length > 0 && (
             <div className="flex gap-3 justify-center">
-              {chartData.longRefUrl && (
+              {isValidUrl(chartData.longRefUrl) && (
                 <a
                   href={chartData.longRefUrl}
                   target="_blank"
@@ -368,7 +369,7 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
                 </a>
               )}
 
-              {chartData.shortRefUrl && (
+              {isValidUrl(chartData.shortRefUrl) && (
                 <a
                   href={chartData.shortRefUrl}
                   target="_blank"

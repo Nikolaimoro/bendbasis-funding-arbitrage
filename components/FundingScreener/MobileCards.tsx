@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, ArrowUpRight, ChevronDown } from "lucide-react";
 import { formatAPR, formatExchange } from "@/lib/formatters";
-import { getRate, findArbPair, ArbPair } from "@/lib/funding";
+import { getRate, findArbPairPinned, buildBacktesterUrl, ArbPair } from "@/lib/funding";
+import { isValidUrl } from "@/lib/validation";
 import {
   ExchangeColumn,
   FundingMatrixMarket,
@@ -22,6 +23,11 @@ type Props = {
   filteredColumnKeys: Set<string>;
   pinnedColumnKey: string | null;
   exchangesWithMultipleQuotes: Set<string>;
+  onOpenModal?: (payload: {
+    token: string;
+    arbPair: ArbPair;
+    maxArb: number | null;
+  }) => void;
 };
 
 const formatColumnHeader = (
@@ -34,84 +40,6 @@ const formatColumnHeader = (
   }
   return name;
 };
-
-const buildBacktesterUrl = (token: string, arbPair: ArbPair | null) => {
-  if (!arbPair) return null;
-  const longExchange = arbPair.longMarket.exchange;
-  const shortExchange = arbPair.shortMarket.exchange;
-  const longQuote = arbPair.longMarket.quote;
-  const shortQuote = arbPair.shortMarket.quote;
-  if (!longExchange || !shortExchange || !longQuote || !shortQuote) return null;
-  const exchange1 = `${longExchange}${String(longQuote).toLowerCase()}`;
-  const exchange2 = `${shortExchange}${String(shortQuote).toLowerCase()}`;
-  return `/backtester?token=${encodeURIComponent(token)}&exchange1=${encodeURIComponent(exchange1)}&exchange2=${encodeURIComponent(exchange2)}`;
-};
-
-function findArbPairPinned(
-  markets: Record<string, FundingMatrixMarket> | null | undefined,
-  timeWindow: TimeWindow,
-  selectedColumnKeys: Set<string>,
-  pinnedKey: string | null
-): ArbPair | null {
-  if (!markets) return null;
-  if (!pinnedKey) return findArbPair(markets, timeWindow, selectedColumnKeys);
-  if (!selectedColumnKeys.has(pinnedKey))
-    return findArbPair(markets, timeWindow, selectedColumnKeys);
-
-  const pinnedMarket = markets[pinnedKey];
-  const pinnedRate = getRate(pinnedMarket, timeWindow);
-  if (!pinnedMarket || pinnedRate === null) {
-    return findArbPair(markets, timeWindow, selectedColumnKeys);
-  }
-
-  const entries: { key: string; market: FundingMatrixMarket; rate: number }[] =
-    [];
-  for (const [columnKey, market] of Object.entries(markets)) {
-    if (!market) continue;
-    if (!selectedColumnKeys.has(columnKey)) continue;
-    if (columnKey === pinnedKey) continue;
-    const rate = getRate(market, timeWindow);
-    if (rate !== null) {
-      entries.push({ key: columnKey, market, rate });
-    }
-  }
-
-  if (entries.length === 0) return null;
-
-  let minEntry = entries[0];
-  let maxEntry = entries[0];
-  for (const entry of entries) {
-    if (entry.rate < minEntry.rate) minEntry = entry;
-    if (entry.rate > maxEntry.rate) maxEntry = entry;
-  }
-
-  const spreadIfPinnedLong = maxEntry.rate - pinnedRate;
-  const spreadIfPinnedShort = pinnedRate - minEntry.rate;
-
-  if (spreadIfPinnedLong >= spreadIfPinnedShort) {
-    if (spreadIfPinnedLong <= 0) return null;
-    return {
-      longKey: pinnedKey,
-      longMarket: pinnedMarket,
-      longRate: pinnedRate,
-      shortKey: maxEntry.key,
-      shortMarket: maxEntry.market,
-      shortRate: maxEntry.rate,
-      spread: spreadIfPinnedLong,
-    };
-  }
-
-  if (spreadIfPinnedShort <= 0) return null;
-  return {
-    longKey: minEntry.key,
-    longMarket: minEntry.market,
-    longRate: minEntry.rate,
-    shortKey: pinnedKey,
-    shortMarket: pinnedMarket,
-    shortRate: pinnedRate,
-    spread: spreadIfPinnedShort,
-  };
-}
 
 function ExchangeRateRow({
   label,
@@ -157,7 +85,7 @@ function ExchangeRateRow({
       }`}
     >
       <div className="flex items-center gap-2 min-w-0">
-        {market.ref_url ? (
+        {isValidUrl(market.ref_url) ? (
           <a
             href={market.ref_url}
             target="_blank"
@@ -186,6 +114,7 @@ export default function FundingScreenerMobileCards({
   filteredColumnKeys,
   pinnedColumnKey,
   exchangesWithMultipleQuotes,
+  onOpenModal,
 }: Props) {
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [fetchingMore, setFetchingMore] = useState(false);
@@ -300,6 +229,8 @@ export default function FundingScreenerMobileCards({
                 const isExpanded = expanded.has(token);
                 const hasMore = remainingCount > 0;
                 const hasHistory = !!historyUrl;
+                const canOpenModal =
+                  !!onOpenModal && !!arbPair && !!row.token;
 
                 const toggleExpanded = () => {
                   setExpanded((prev) => {
@@ -313,36 +244,38 @@ export default function FundingScreenerMobileCards({
                   });
                 };
 
-                const handleOpenChart = () => {
-                  if (!historyUrl) return;
-                  if (typeof window !== "undefined") {
-                    window.open(historyUrl, "_blank", "noopener,noreferrer");
-                  }
+                const handleOpenModal = () => {
+                  if (!canOpenModal) return;
+                  onOpenModal({
+                    token: row.token!,
+                    arbPair,
+                    maxArb,
+                  });
                 };
 
-                const cardClickable = !hasMore && hasHistory;
+                const cardClickable = !hasMore && canOpenModal;
 
                 return (
                   <div
                     key={token}
                     role={cardClickable ? "button" : "group"}
                     tabIndex={cardClickable ? 0 : -1}
-                    onClick={cardClickable ? handleOpenChart : undefined}
+                    onClick={cardClickable ? handleOpenModal : undefined}
                     onKeyDown={(event) => {
                       if (!cardClickable) return;
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        handleOpenChart();
+                        handleOpenModal();
                       }
                     }}
                     className="rounded-2xl border border-[#343a4e] bg-[#1c202f] p-3 text-xs text-gray-200 flex flex-col gap-3"
                   >
                     <div
                       className={`relative flex items-start justify-between gap-4 ${
-                        hasMore && hasHistory ? "cursor-pointer" : ""
+                        hasMore && canOpenModal ? "cursor-pointer" : ""
                       }`}
                       onClick={
-                        hasMore && hasHistory ? handleOpenChart : undefined
+                        hasMore && canOpenModal ? handleOpenModal : undefined
                       }
                     >
                       <span className="text-base font-mono text-white">
@@ -356,12 +289,12 @@ export default function FundingScreenerMobileCards({
                           {formatAPR(maxArb)}
                         </span>
                       </div>
-                      {hasHistory && (
+                      {canOpenModal && (
                         <button
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            handleOpenChart();
+                            handleOpenModal();
                           }}
                           className="absolute left-1/2 top-0 -translate-x-1/2 text-[10px] text-gray-500 inline-flex items-center gap-1"
                         >
