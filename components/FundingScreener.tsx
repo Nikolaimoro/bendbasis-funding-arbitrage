@@ -482,7 +482,7 @@ export default function FundingScreener({
 
     for (const row of rows) {
       if (!row.token) continue;
-      const options = gmxColumns
+      let options = gmxColumns
         .map((col) => {
           const market = row.markets?.[col.column_key];
           if (!market) return null;
@@ -502,14 +502,32 @@ export default function FundingScreener({
         rate: number | null;
       }[];
 
+      if (options.length === 0 && row.markets) {
+        options = Object.entries(row.markets)
+          .filter(([, market]) => market?.exchange?.toLowerCase() === GMX_EXCHANGE)
+          .map(([key, market]) => ({
+            columnKey: key,
+            quote: market.quote ?? "",
+            side: parseSide(key, market),
+            market,
+            rate: getRate(market, timeWindow),
+          }));
+      }
+
       map.set(row.token, options);
     }
     return map;
   }, [rows, gmxColumns, timeWindow]);
 
   const gmxColumnKeySet = useMemo(() => {
-    return new Set(gmxColumns.map((col) => col.column_key));
-  }, [gmxColumns]);
+    const set = new Set(gmxColumns.map((col) => col.column_key));
+    for (const options of gmxOptionsByToken.values()) {
+      for (const option of options) {
+        set.add(option.columnKey);
+      }
+    }
+    return set;
+  }, [gmxColumns, gmxOptionsByToken]);
 
   const gmxDefaultKeyByToken = useMemo(() => {
     const map = new Map<string, string>();

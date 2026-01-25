@@ -78,21 +78,24 @@ export default function GmxRateCell({
       ? "text-red-400"
       : "text-gray-400";
 
-  const hasOppositeSide =
-    !!selected.side &&
-    options.some(
-      (opt) => opt.quote === selected.quote && opt.side && opt.side !== selected.side
+  const getOppositeOption = () => {
+    if (!selected.side) return null;
+    const sameQuote = options.filter((opt) => opt.quote === selected.quote);
+    const sameQuoteOpposite = sameQuote.find(
+      (opt) => opt.side && opt.side !== selected.side
     );
+    if (sameQuoteOpposite) return sameQuoteOpposite;
+    return options.find((opt) => opt.side && opt.side !== selected.side) ?? null;
+  };
 
-  const toggleSide = hasOppositeSide ? (
+  const oppositeOption = getOppositeOption();
+
+  const toggleSide = oppositeOption ? (
     <button
       type="button"
       onClick={(event) => {
         event.stopPropagation();
-        const next = options.find(
-          (opt) => opt.quote === selected.quote && opt.side && opt.side !== selected.side
-        );
-        if (next) onSelectKey(next.columnKey);
+        onSelectKey(oppositeOption.columnKey);
       }}
       className="relative inline-flex h-4 w-8 items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[9px] font-medium text-gray-400"
       title={selected.side === "long" ? "Long rates" : "Short rates"}
