@@ -26,7 +26,7 @@ export const EXCHANGE_ICONS: Record<string, { file: string; bg?: string; scale?:
   apex: { file: "apex.svg", bg: "#1a1a2e", scale: 0.6 },
   pacifica: { file: "pacifica.svg", bg: "#1a1a2e" },
   reya: { file: "reya.svg", bg: "#1a1a2e", scale: 0.55 },
-  gmx: { file: "gmx.svg", bg: "#1a1a2e", scale: 0.6 },
+  gmx: { file: "gmx.svg", bg: "#1a1a2e" },
 };
 
 interface ExchangeIconProps {

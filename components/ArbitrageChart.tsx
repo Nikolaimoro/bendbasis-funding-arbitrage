@@ -393,7 +393,7 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
         </div>
         {hasLinks && (
           <div className="mt-3 flex flex-col items-center gap-2">
-            <div className="w-full max-w-[440px]">
+            <div className="w-full max-w-[520px]">
               <div className={`grid gap-2 ${hasBacktester ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
                 {hasLong && (
                   <a
