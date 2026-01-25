@@ -457,27 +457,29 @@ export default function FundingScreener({
   const maxAPRValue = useMemo(() => {
     let max = 0;
     for (const row of rows) {
+      const pinnedKey = getPinnedKeyForRow(row);
       const arb = calculateMaxArbPinned(
         row.markets,
         timeWindow,
         filteredColumnKeys,
-        pinnedColumnKey
+        pinnedKey
       );
       if (arb !== null && arb > max) max = arb;
     }
     return Math.ceil(max);
-  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey]);
+  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey, gmxColumnKeySet, gmxOptionsByToken, gmxSelectionByToken, gmxDefaultKeyByToken]);
 
   const maxArbByRow = useMemo(() => {
     const map = new Map<FundingMatrixRow, number | null>();
     for (const row of rows) {
+      const pinnedKey = getPinnedKeyForRow(row);
       map.set(
         row,
-        calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey)
+        calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedKey)
       );
     }
     return map;
-  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey]);
+  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey, gmxColumnKeySet, gmxOptionsByToken, gmxSelectionByToken, gmxDefaultKeyByToken]);
 
   const getMaxArb = (row: FundingMatrixRow) => maxArbByRow.get(row) ?? null;
 
@@ -563,6 +565,10 @@ export default function FundingScreener({
     return map;
   }, [rows, gmxColumns, timeWindow]);
 
+  const gmxColumnKeySet = useMemo(() => {
+    return new Set(gmxColumns.map((col) => col.column_key));
+  }, [gmxColumns]);
+
   const gmxDefaultKeyByToken = useMemo(() => {
     const map = new Map<string, string>();
     for (const [token, options] of gmxOptionsByToken.entries()) {
@@ -597,6 +603,13 @@ export default function FundingScreener({
   const setGmxSelectedKey = (token: string | null | undefined, key: string) => {
     if (!token) return;
     setGmxSelectionByToken((prev) => ({ ...prev, [token]: key }));
+  };
+
+  const getPinnedKeyForRow = (row: FundingMatrixRow) => {
+    if (!pinnedColumnKey) return null;
+    if (!gmxColumnKeySet.has(pinnedColumnKey)) return pinnedColumnKey;
+    const options = gmxOptionsByToken.get(row.token ?? "") ?? [];
+    return getGmxSelectedKey(row.token, options) ?? pinnedColumnKey;
   };
 
   const handleSearchChange = (value: string) => {
@@ -675,8 +688,10 @@ export default function FundingScreener({
     // Sort
     result.sort((a, b) => {
       if (pinnedColumnKey) {
-        const aPinned = !!a.markets?.[pinnedColumnKey];
-        const bPinned = !!b.markets?.[pinnedColumnKey];
+        const aKey = getPinnedKeyForRow(a);
+        const bKey = getPinnedKeyForRow(b);
+        const aPinned = aKey ? !!a.markets?.[aKey] : false;
+        const bPinned = bKey ? !!b.markets?.[bKey] : false;
         if (aPinned !== bPinned) return aPinned ? -1 : 1;
       }
 
@@ -1065,8 +1080,9 @@ export default function FundingScreener({
                   </tr>
                 ) : (
                   paginatedRows.map((row, idx) => {
-                    const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
-                    const arbPair = findArbPairPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
+                    const pinnedKey = getPinnedKeyForRow(row);
+                    const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedKey);
+                    const arbPair = findArbPairPinned(row.markets, timeWindow, filteredColumnKeys, pinnedKey);
 
                     return (
                       <tr
@@ -1131,6 +1147,7 @@ export default function FundingScreener({
                                     options={options}
                                     selectedKey={selectedOption.columnKey}
                                     onSelectKey={(key) => setGmxSelectedKey(row.token, key)}
+                                    token={row.token}
                                     role={role}
                                   />
                                 ) : (

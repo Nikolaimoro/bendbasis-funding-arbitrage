@@ -19,6 +19,7 @@ interface GmxRateCellProps {
   options: GmxOption[];
   selectedKey: string;
   onSelectKey: (key: string) => void;
+  token?: string | null;
   role?: "long" | "short";
 }
 
@@ -53,6 +54,7 @@ export default function GmxRateCell({
   options,
   selectedKey,
   onSelectKey,
+  token,
   role,
 }: GmxRateCellProps) {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -124,11 +126,11 @@ export default function GmxRateCell({
             <div className="flex items-center gap-2 text-white font-medium mb-2">
               <ExchangeIcon exchange={selected.market.exchange} size={14} />
               {formatExchange(selected.market.exchange)}
-              <span className="text-gray-400">· GMX</span>
+              {token ? <span className="text-gray-400">· {token}</span> : null}
             </div>
 
             <div className="text-[10px] uppercase text-gray-500 mb-2">
-              Other quotes
+              Other markets
             </div>
             <div className="space-y-1">
               {options.map((opt) => {
@@ -138,10 +140,8 @@ export default function GmxRateCell({
                     key={opt.columnKey}
                     type="button"
                     onClick={() => onSelectKey(opt.columnKey)}
-                    className={`w-full rounded-lg border px-2 py-1 text-left transition ${
-                      isActive
-                        ? "border-[#FA814D]/70 bg-[#1f2434]"
-                        : "border-transparent hover:border-[#343a4e]"
+                    className={`w-full rounded-lg px-2 py-1 text-left transition-colors duration-200 ${
+                      isActive ? "bg-[#1f2434]" : "hover:bg-[#23283a]"
                     }`}
                   >
                     <div className="flex items-center justify-between text-gray-300">
