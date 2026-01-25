@@ -20,12 +20,21 @@ type SortKey =
   | "15d"
   | "30d";
 
+type GmxSide = "long" | "short";
+
+type FundingRowWithGmx = FundingRow & {
+  gmxBase?: string;
+  gmxSide?: GmxSide;
+  gmxHasOther?: boolean;
+};
+
 interface FundingTableBodyProps {
-  rows: FundingRow[];
+  rows: FundingRowWithGmx[];
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
   onRowClick: (row: FundingRow) => void;
+  onToggleGmxSide: (key: string) => void;
 }
 
 /**
@@ -38,6 +47,7 @@ export default function FundingTableBody({
   sortDir,
   onSort,
   onRowClick,
+  onToggleGmxSide,
 }: FundingTableBodyProps) {
   const formatCompactUSDNode = (v: number | null) => {
     const text = formatCompactUSD(v);
@@ -147,16 +157,64 @@ export default function FundingTableBody({
         </thead>
 
         <tbody>
-          {rows.map(r => (
+          {rows.map(r => {
+            const gmxToggleKey = r.gmxBase;
+            const showGmxToggle =
+              r.exchange.toLowerCase() === "gmx" &&
+              r.gmxHasOther &&
+              gmxToggleKey &&
+              r.gmxSide;
+            return (
             <tr
               key={`${r.exchange}:${r.market}`}
               onClick={() => onRowClick(r)}
               className={`${TAILWIND.table.row} ${TAILWIND.bg.hover} cursor-pointer transition-colors`}
             >
               <td className="px-4 py-4 text-left text-white font-mono">
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-2">
                   <ExchangeIcon exchange={r.exchange} size={16} />
                   {formatExchange(r.exchange)}
+                  {showGmxToggle && (
+                    <span
+                      className="inline-flex items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[10px] font-medium"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={r.gmxSide === "long"}
+                        onClick={() => {
+                          if (r.gmxSide !== "long" && gmxToggleKey) {
+                            onToggleGmxSide(gmxToggleKey);
+                          }
+                        }}
+                        className={`px-2 py-0.5 rounded-full transition ${
+                          r.gmxSide === "long"
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : "text-gray-400 hover:text-gray-200"
+                        }`}
+                        title="Show long rates"
+                      >
+                        L
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={r.gmxSide === "short"}
+                        onClick={() => {
+                          if (r.gmxSide !== "short" && gmxToggleKey) {
+                            onToggleGmxSide(gmxToggleKey);
+                          }
+                        }}
+                        className={`px-2 py-0.5 rounded-full transition ${
+                          r.gmxSide === "short"
+                            ? "bg-red-500/20 text-red-300"
+                            : "text-gray-400 hover:text-gray-200"
+                        }`}
+                        title="Show short rates"
+                      >
+                        S
+                      </button>
+                    </span>
+                  )}
                 </span>
               </td>
               <td className="px-4 py-4 text-left font-mono font-semibold text-white">
@@ -200,7 +258,8 @@ export default function FundingTableBody({
                 )}
               </td>
             </tr>
-          ))}
+          );
+          })}
         </tbody>
       </table>
     </div>

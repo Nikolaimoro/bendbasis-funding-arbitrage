@@ -10,9 +10,18 @@ import ExchangeIcon from "@/components/ui/ExchangeIcon";
 const MOBILE_PAGE_SIZE = 20;
 
 type Props = {
-  rows: FundingRow[];
+  rows: FundingRowWithGmx[];
   loading: boolean;
   onOpenChart: (row: FundingRow) => void;
+  onToggleGmxSide: (key: string) => void;
+};
+
+type GmxSide = "long" | "short";
+
+type FundingRowWithGmx = FundingRow & {
+  gmxBase?: string;
+  gmxSide?: GmxSide;
+  gmxHasOther?: boolean;
 };
 
 const formatAPRText = (value: number | null) => formatAPR(value);
@@ -21,6 +30,7 @@ export default function FundingMobileCards({
   rows,
   loading,
   onOpenChart,
+  onToggleGmxSide,
 }: Props) {
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [fetchingMore, setFetchingMore] = useState(false);
@@ -83,7 +93,14 @@ export default function FundingMobileCards({
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3">
-            {rows.slice(0, visibleCount).map((row) => (
+            {rows.slice(0, visibleCount).map((row) => {
+              const gmxToggleKey = row.gmxBase;
+              const showGmxToggle =
+                row.exchange.toLowerCase() === "gmx" &&
+                row.gmxHasOther &&
+                gmxToggleKey &&
+                row.gmxSide;
+              return (
               <div
                 key={`${row.exchange}:${row.market}`}
                 role="button"
@@ -117,10 +134,53 @@ export default function FundingMobileCards({
                       </span>
                     )}
                   </div>
-                  <span className="text-sm font-semibold text-white inline-flex items-center gap-1.5">
-                    <ExchangeIcon exchange={row.exchange} size={16} />
-                    {formatExchange(row.exchange)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white inline-flex items-center gap-1.5">
+                      <ExchangeIcon exchange={row.exchange} size={16} />
+                      {formatExchange(row.exchange)}
+                    </span>
+                    {showGmxToggle && (
+                      <span
+                        className="inline-flex items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[10px] font-medium"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          aria-pressed={row.gmxSide === "long"}
+                          onClick={() => {
+                            if (row.gmxSide !== "long" && gmxToggleKey) {
+                              onToggleGmxSide(gmxToggleKey);
+                            }
+                          }}
+                          className={`px-2 py-0.5 rounded-full transition ${
+                            row.gmxSide === "long"
+                              ? "bg-emerald-500/20 text-emerald-300"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                          title="Show long rates"
+                        >
+                          L
+                        </button>
+                        <button
+                          type="button"
+                          aria-pressed={row.gmxSide === "short"}
+                          onClick={() => {
+                            if (row.gmxSide !== "short" && gmxToggleKey) {
+                              onToggleGmxSide(gmxToggleKey);
+                            }
+                          }}
+                          className={`px-2 py-0.5 rounded-full transition ${
+                            row.gmxSide === "short"
+                              ? "bg-red-500/20 text-red-300"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                          title="Show short rates"
+                        >
+                          S
+                        </button>
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-x-4 gap-y-2">
@@ -180,7 +240,8 @@ export default function FundingMobileCards({
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {fetchingMore && (
