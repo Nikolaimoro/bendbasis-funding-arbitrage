@@ -184,12 +184,12 @@ export default function FundingTableBody({
                           onToggleGmxSide(gmxToggleKey);
                         }
                       }}
-                      className="relative inline-flex h-5 w-12 items-center rounded-full border border-[#343a4e] bg-[#23283a] px-1 text-[10px] font-medium text-gray-400 transition-colors"
+                      className="relative inline-flex h-5 w-12 items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[10px] font-medium text-gray-400 transition-colors"
                       title={r.gmxSide === "long" ? "Long rates" : "Short rates"}
                     >
-                      <span className="relative z-10 flex w-full items-center justify-between px-1">
+                      <span className="relative z-10 grid w-full grid-cols-2">
                         <span
-                          className={`text-[10px] transition-colors ${
+                          className={`text-center text-[10px] transition-colors ${
                             r.gmxSide === "long"
                               ? "text-emerald-200"
                               : "text-gray-400"
@@ -198,7 +198,7 @@ export default function FundingTableBody({
                           L
                         </span>
                         <span
-                          className={`text-[10px] transition-colors ${
+                          className={`text-center text-[10px] transition-colors ${
                             r.gmxSide === "short"
                               ? "text-red-200"
                               : "text-gray-400"
@@ -208,10 +208,10 @@ export default function FundingTableBody({
                         </span>
                       </span>
                       <span
-                        className={`absolute left-1 top-1/2 h-4 w-5 -translate-y-1/2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        className={`absolute left-0.5 top-0.5 h-4 w-[calc(50%-2px)] rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                           r.gmxSide === "long"
                             ? "translate-x-0 bg-emerald-500/25"
-                            : "translate-x-5 bg-red-500/25"
+                            : "translate-x-full bg-red-500/25"
                         }`}
                       />
                     </button>
