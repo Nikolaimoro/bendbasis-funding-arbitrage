@@ -10,9 +10,18 @@ import ExchangeIcon from "@/components/ui/ExchangeIcon";
 const MOBILE_PAGE_SIZE = 20;
 
 type Props = {
-  rows: FundingRow[];
+  rows: FundingRowWithGmx[];
   loading: boolean;
   onOpenChart: (row: FundingRow) => void;
+  onToggleGmxSide: (key: string) => void;
+};
+
+type GmxSide = "long" | "short";
+
+type FundingRowWithGmx = FundingRow & {
+  gmxBase?: string;
+  gmxSide?: GmxSide;
+  gmxHasOther?: boolean;
 };
 
 const formatAPRText = (value: number | null) => formatAPR(value);
@@ -21,6 +30,7 @@ export default function FundingMobileCards({
   rows,
   loading,
   onOpenChart,
+  onToggleGmxSide,
 }: Props) {
   const [visibleCount, setVisibleCount] = useState(MOBILE_PAGE_SIZE);
   const [fetchingMore, setFetchingMore] = useState(false);
@@ -83,7 +93,14 @@ export default function FundingMobileCards({
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3">
-            {rows.slice(0, visibleCount).map((row) => (
+            {rows.slice(0, visibleCount).map((row) => {
+              const gmxToggleKey = row.gmxBase;
+              const showGmxToggle =
+                row.exchange.toLowerCase() === "gmx" &&
+                row.gmxHasOther &&
+                gmxToggleKey &&
+                row.gmxSide;
+              return (
               <div
                 key={`${row.exchange}:${row.market}`}
                 role="button"
@@ -117,10 +134,54 @@ export default function FundingMobileCards({
                       </span>
                     )}
                   </div>
-                  <span className="text-sm font-semibold text-white inline-flex items-center gap-1.5">
-                    <ExchangeIcon exchange={row.exchange} size={16} />
-                    {formatExchange(row.exchange)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white inline-flex items-center gap-1.5">
+                      <ExchangeIcon exchange={row.exchange} size={16} />
+                      {formatExchange(row.exchange)}
+                    </span>
+                    {showGmxToggle && (
+                      <button
+                        type="button"
+                        aria-pressed={row.gmxSide === "long"}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (gmxToggleKey) {
+                            onToggleGmxSide(gmxToggleKey);
+                          }
+                        }}
+                        className="relative inline-flex h-5 w-12 items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[10px] font-medium text-gray-400 transition-colors"
+                        title={row.gmxSide === "long" ? "Long rates" : "Short rates"}
+                      >
+                        <span className="relative z-10 grid w-full grid-cols-2">
+                          <span
+                            className={`text-center text-[10px] transition-colors ${
+                              row.gmxSide === "long"
+                                ? "text-emerald-200"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            L
+                          </span>
+                          <span
+                            className={`text-center text-[10px] transition-colors ${
+                              row.gmxSide === "short"
+                                ? "text-red-200"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            S
+                          </span>
+                        </span>
+                        <span
+                          className={`absolute left-0.5 top-1/2 h-4 w-[calc(50%-2px)] -translate-y-1/2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                            row.gmxSide === "long"
+                              ? "translate-x-0 bg-emerald-500/25"
+                              : "translate-x-full bg-red-500/25"
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-x-4 gap-y-2">
@@ -180,7 +241,8 @@ export default function FundingMobileCards({
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {fetchingMore && (

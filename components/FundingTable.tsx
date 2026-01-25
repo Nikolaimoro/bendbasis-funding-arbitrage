@@ -38,6 +38,24 @@ type SortKey =
   | "15d"
   | "30d";
 
+type GmxSide = "long" | "short";
+
+type FundingRowWithGmx = FundingRow & {
+  gmxBase?: string;
+  gmxSide?: GmxSide;
+  gmxHasOther?: boolean;
+};
+
+const GMX_EXCHANGE = "gmx";
+
+const parseGmxMarket = (market: string) => {
+  const match = market.match(/\s+(LONG|SHORT)\s*$/i);
+  if (!match) return null;
+  const side = match[1].toLowerCase() as GmxSide;
+  const baseMarket = market.replace(/\s+(LONG|SHORT)\s*$/i, "").trim();
+  return { side, baseMarket };
+};
+
 /* ================= COMPONENT ================= */
 
 export default function FundingTable({
@@ -67,10 +85,15 @@ export default function FundingTable({
 
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(0);
+  const [gmxSideByMarket, setGmxSideByMarket] = useState<Record<string, GmxSide>>({});
 
   /* ---------- chart ---------- */
   const [chartOpen, setChartOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<FundingRow | null>(null);
+  const exchanges = useMemo(
+    () => Array.from(new Set(rows.map(r => r.exchange))).sort(),
+    [rows]
+  );
 
   function openChart(r: FundingRow) {
     if (r.market_id) {
@@ -95,20 +118,6 @@ export default function FundingTable({
     setMinVolume(value);
     resetPage();
   };
-
-  /* ---------- exchanges ---------- */
-  const exchanges = useMemo(
-    () => Array.from(new Set(rows.map(r => r.exchange))).sort(),
-    [rows]
-  );
-  const maxOI = useMemo(
-    () => rows.reduce((max, row) => Math.max(max, row.open_interest ?? 0), 0),
-    [rows]
-  );
-  const maxVolume = useMemo(
-    () => rows.reduce((max, row) => Math.max(max, row.volume_24h ?? 0), 0),
-    [rows]
-  );
 
   const toggleExchange = (ex: string) => {
     setSelectedExchanges(prev =>
@@ -191,8 +200,88 @@ export default function FundingTable({
    * 
    * Dependencies: [rows, search, selectedExchanges, sortKey, sortDir, minOI, minVolume]
    */
+  const gmxGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      { baseMarket: string; longRow?: FundingRow; shortRow?: FundingRow }
+    >();
+    for (const row of rows) {
+      if (row.exchange.toLowerCase() !== GMX_EXCHANGE) continue;
+      const parsed = parseGmxMarket(row.market);
+      if (!parsed) continue;
+      const key = parsed.baseMarket.toLowerCase();
+      const current = groups.get(key) ?? { baseMarket: parsed.baseMarket };
+      if (parsed.side === "long") current.longRow = row;
+      if (parsed.side === "short") current.shortRow = row;
+      groups.set(key, current);
+    }
+    return groups;
+  }, [rows]);
+
+  useEffect(() => {
+    setGmxSideByMarket((prev) => {
+      if (gmxGroups.size === 0) {
+        return {};
+      }
+      const next: Record<string, GmxSide> = {};
+      for (const [key, group] of gmxGroups.entries()) {
+        const existing = prev[key];
+        if (existing) {
+          next[key] = existing;
+        } else if (group.longRow) {
+          next[key] = "long";
+        } else {
+          next[key] = "short";
+        }
+      }
+      return next;
+    });
+  }, [gmxGroups]);
+
+  const displayRows = useMemo(() => {
+    const merged: FundingRowWithGmx[] = [];
+
+    for (const row of rows) {
+      if (row.exchange.toLowerCase() !== GMX_EXCHANGE) {
+        merged.push(row);
+        continue;
+      }
+      const parsed = parseGmxMarket(row.market);
+      if (!parsed) {
+        merged.push(row);
+      }
+    }
+
+    for (const [key, group] of gmxGroups.entries()) {
+      const selectedSide = gmxSideByMarket[key] ?? (group.longRow ? "long" : "short");
+      const selectedRow =
+        selectedSide === "long" ? group.longRow ?? group.shortRow : group.shortRow ?? group.longRow;
+      if (!selectedRow) continue;
+      merged.push({
+        ...selectedRow,
+        market: group.baseMarket,
+        gmxBase: key,
+        gmxSide: selectedSide,
+        gmxHasOther: !!(group.longRow && group.shortRow),
+      });
+    }
+
+    return merged;
+  }, [rows, gmxGroups, gmxSideByMarket]);
+
+  const maxOI = useMemo(
+    () =>
+      displayRows.reduce((max, row) => Math.max(max, row.open_interest ?? 0), 0),
+    [displayRows]
+  );
+  const maxVolume = useMemo(
+    () =>
+      displayRows.reduce((max, row) => Math.max(max, row.volume_24h ?? 0), 0),
+    [displayRows]
+  );
+
   const sortedAll = useMemo(() => {
-    let data = rows;
+    let data = displayRows;
 
     const qRaw = search.trim();
     if (qRaw) {
@@ -246,7 +335,7 @@ export default function FundingTable({
 
       return av < bv ? -dir : av > bv ? dir : 0;
     });
-  }, [rows, search, selectedExchanges, sortKey, sortDir, minOI, minVolume]);
+  }, [displayRows, search, selectedExchanges, sortKey, sortDir, minOI, minVolume]);
 
   /**
    * Pagination: Calculate total pages and slice visible rows
@@ -332,6 +421,12 @@ export default function FundingTable({
           rows={sortedAll}
           loading={loading}
           onOpenChart={openChart}
+          onToggleGmxSide={(key) =>
+            setGmxSideByMarket((prev) => ({
+              ...prev,
+              [key]: prev[key] === "long" ? "short" : "long",
+            }))
+          }
         />
 
         {loading && (
@@ -357,6 +452,12 @@ export default function FundingTable({
                 sortDir={sortDir}
                 onSort={onSort}
                 onRowClick={openChart}
+                onToggleGmxSide={(key) =>
+                  setGmxSideByMarket((prev) => ({
+                    ...prev,
+                    [key]: prev[key] === "long" ? "short" : "long",
+                  }))
+                }
               />
             </ErrorBoundary>
           )}

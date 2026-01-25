@@ -16,6 +16,7 @@ import {
 import {
   ExchangeColumn,
   FundingMatrixRow,
+  FundingMatrixMarket,
   TimeWindow,
   SortDir,
 } from "@/lib/types";
@@ -28,6 +29,7 @@ import RateCell from "@/components/FundingScreener/RateCell";
 import APRCell from "@/components/FundingScreener/APRCell";
 import FundingScreenerMobileCards from "@/components/FundingScreener/MobileCards";
 import FundingScreenerMobileSort from "@/components/FundingScreener/MobileSort";
+import GmxRateCell from "@/components/FundingScreener/GmxRateCell";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import SortableHeader from "@/components/ui/SortableHeader";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
@@ -49,10 +51,18 @@ const PINNED_KEY = "funding-screener-pinned";
 const PINNED_QUERY_KEY = "pinned";
 const CACHE_KEY = "cache-funding-screener-data";
 const CACHE_TTL_MS = 3 * 60 * 1000;
+const GMX_EXCHANGE = "gmx";
+
+type DisplayColumn = ExchangeColumn & {
+  isGmxGroup?: boolean;
+};
 
 /* ================= HELPERS ================= */
 function formatColumnHeader(col: ExchangeColumn, exchangesWithMultipleQuotes: Set<string>): string {
   const name = formatExchange(col.exchange);
+  if (col.exchange.toLowerCase() === GMX_EXCHANGE) {
+    return name;
+  }
   if (exchangesWithMultipleQuotes.has(col.exchange)) {
     return `${name} (${col.quote_asset})`;
   }
@@ -121,6 +131,7 @@ export default function FundingScreener({
   const [pinnedDirty, setPinnedDirty] = useState(false);
   const [mobileSortOpen, setMobileSortOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [gmxSelectionByToken, setGmxSelectionByToken] = useState<Record<string, string>>({});
   const [modalData, setModalData] = useState<{
     token: string;
     arbPair: ArbPair;
@@ -300,7 +311,10 @@ export default function FundingScreener({
     for (const col of exchangeColumns) {
       counts[col.exchange] = (counts[col.exchange] || 0) + 1;
     }
-    return new Set(Object.entries(counts).filter(([, c]) => c > 1).map(([e]) => e));
+    const multi = Object.entries(counts)
+      .filter(([, c]) => c > 1)
+      .map(([e]) => e);
+    return new Set(multi.filter((e) => e.toLowerCase() !== GMX_EXCHANGE));
   }, [exchangeColumns]);
 
   const columnKeysByExchange = useMemo(() => {
@@ -337,17 +351,41 @@ export default function FundingScreener({
     return map;
   }, [exchangeColumns, exchangesWithMultipleQuotes]);
 
-  const filteredColumns = useMemo(() => {
+  const filteredColumnsAll = useMemo(() => {
     if (selectedExchanges.length === 0) return [];
     return exchangeColumns.filter((col) =>
       selectedExchanges.includes(col.exchange)
     );
   }, [exchangeColumns, selectedExchanges]);
 
+  const gmxColumns = useMemo(
+    () =>
+      filteredColumnsAll.filter(
+        (col) => col.exchange.toLowerCase() === GMX_EXCHANGE
+      ),
+    [filteredColumnsAll]
+  );
+
+  const displayColumns = useMemo(() => {
+    const columns: DisplayColumn[] = [];
+    let gmxInserted = false;
+    for (const col of filteredColumnsAll) {
+      if (col.exchange.toLowerCase() === GMX_EXCHANGE) {
+        if (!gmxInserted) {
+          columns.push({ ...col, isGmxGroup: true });
+          gmxInserted = true;
+        }
+        continue;
+      }
+      columns.push(col);
+    }
+    return columns;
+  }, [filteredColumnsAll]);
+
   // Set of column keys from filtered exchanges for max arb calculation
   const filteredColumnKeys = useMemo(() => {
-    return new Set(filteredColumns.map((col) => col.column_key));
-  }, [filteredColumns]);
+    return new Set(filteredColumnsAll.map((col) => col.column_key));
+  }, [filteredColumnsAll]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -415,41 +453,148 @@ export default function FundingScreener({
     }
   }, [pinnedColumnKey, filteredColumnKeys, pinnedInitialized]);
 
+  const gmxDisplayColumnKey = useMemo(
+    () => displayColumns.find((col) => col.isGmxGroup)?.column_key ?? null,
+    [displayColumns]
+  );
+
+  const gmxOptionsByToken = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        columnKey: string;
+        quote: string;
+        side: "long" | "short" | null;
+        market: FundingMatrixMarket;
+        rate: number | null;
+      }[]
+    >();
+    if (gmxColumns.length === 0) return map;
+
+    const parseSide = (columnKey: string, market: FundingMatrixMarket) => {
+      const marketLabel =
+        ((market as unknown as { market?: string; symbol?: string }).market ??
+          (market as unknown as { market?: string; symbol?: string }).symbol ??
+          "")
+          .toString();
+      const marketMatch = marketLabel.match(/\s+(LONG|SHORT)\s*$/i);
+      if (marketMatch) {
+        return marketMatch[1].toLowerCase() as "long" | "short";
+      }
+      const lower = columnKey.toLowerCase();
+      if (lower.endsWith("long")) return "long" as const;
+      if (lower.endsWith("short")) return "short" as const;
+      return null;
+    };
+
+    for (const row of rows) {
+      if (!row.token) continue;
+      const options = gmxColumns
+        .map((col) => {
+          const market = row.markets?.[col.column_key];
+          if (!market) return null;
+          return {
+            columnKey: col.column_key,
+            quote: col.quote_asset,
+            side: parseSide(col.column_key, market),
+            market,
+            rate: getRate(market, timeWindow),
+          };
+        })
+        .filter(Boolean) as {
+        columnKey: string;
+        quote: string;
+        side: "long" | "short" | null;
+        market: FundingMatrixMarket;
+        rate: number | null;
+      }[];
+
+      map.set(row.token, options);
+    }
+    return map;
+  }, [rows, gmxColumns, timeWindow]);
+
+  const gmxColumnKeySet = useMemo(() => {
+    return new Set(gmxColumns.map((col) => col.column_key));
+  }, [gmxColumns]);
+
+  const gmxDefaultKeyByToken = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const [token, options] of gmxOptionsByToken.entries()) {
+      if (options.length === 0) continue;
+      let best = options[0];
+      for (const option of options) {
+        const oi = option.market?.open_interest ?? -Infinity;
+        const bestOi = best.market?.open_interest ?? -Infinity;
+        if (oi > bestOi) best = option;
+      }
+      map.set(token, best.columnKey);
+    }
+    return map;
+  }, [gmxOptionsByToken]);
+
+  const getGmxSelectedKey = (
+    token: string | null | undefined,
+    options: { columnKey: string }[]
+  ) => {
+    if (!token) return null;
+    return (
+      gmxSelectionByToken[token] ??
+      gmxDefaultKeyByToken.get(token) ??
+      options[0]?.columnKey ??
+      null
+    );
+  };
+
+  const setGmxSelectedKey = (token: string | null | undefined, key: string) => {
+    if (!token) return;
+    setGmxSelectionByToken((prev) => ({ ...prev, [token]: key }));
+  };
+
+  const getPinnedKeyForRow = (row: FundingMatrixRow) => {
+    if (!pinnedColumnKey) return null;
+    if (!gmxColumnKeySet.has(pinnedColumnKey)) return pinnedColumnKey;
+    const options = gmxOptionsByToken.get(row.token ?? "") ?? [];
+    return getGmxSelectedKey(row.token, options) ?? pinnedColumnKey;
+  };
+
   /* ---------- max APR for slider ---------- */
   const maxAPRValue = useMemo(() => {
     let max = 0;
     for (const row of rows) {
+      const pinnedKey = getPinnedKeyForRow(row);
       const arb = calculateMaxArbPinned(
         row.markets,
         timeWindow,
         filteredColumnKeys,
-        pinnedColumnKey
+        pinnedKey
       );
       if (arb !== null && arb > max) max = arb;
     }
     return Math.ceil(max);
-  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey]);
+  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey, gmxColumnKeySet, gmxOptionsByToken, gmxSelectionByToken, gmxDefaultKeyByToken]);
 
   const maxArbByRow = useMemo(() => {
     const map = new Map<FundingMatrixRow, number | null>();
     for (const row of rows) {
+      const pinnedKey = getPinnedKeyForRow(row);
       map.set(
         row,
-        calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey)
+        calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedKey)
       );
     }
     return map;
-  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey]);
+  }, [rows, timeWindow, filteredColumnKeys, pinnedColumnKey, gmxColumnKeySet, gmxOptionsByToken, gmxSelectionByToken, gmxDefaultKeyByToken]);
 
   const getMaxArb = (row: FundingMatrixRow) => maxArbByRow.get(row) ?? null;
 
   const columnLabelByKey = useMemo(() => {
     const map = new Map<string, string>();
-    for (const col of filteredColumns) {
+    for (const col of filteredColumnsAll) {
       map.set(col.column_key, formatColumnHeader(col, exchangesWithMultipleQuotes));
     }
     return map;
-  }, [filteredColumns, exchangesWithMultipleQuotes]);
+  }, [filteredColumnsAll, exchangesWithMultipleQuotes]);
 
   const modalBacktesterUrl =
     modalData && modalData.token
@@ -466,7 +611,6 @@ export default function FundingScreener({
 
   /* ---------- handlers ---------- */
   const resetPage = () => setPage(0);
-
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -544,8 +688,10 @@ export default function FundingScreener({
     // Sort
     result.sort((a, b) => {
       if (pinnedColumnKey) {
-        const aPinned = !!a.markets?.[pinnedColumnKey];
-        const bPinned = !!b.markets?.[pinnedColumnKey];
+        const aKey = getPinnedKeyForRow(a);
+        const bKey = getPinnedKeyForRow(b);
+        const aPinned = aKey ? !!a.markets?.[aKey] : false;
+        const bPinned = bKey ? !!b.markets?.[bKey] : false;
         if (aPinned !== bPinned) return aPinned ? -1 : 1;
       }
 
@@ -568,6 +714,19 @@ export default function FundingScreener({
       }
 
       // Sort by exchange column
+      if (gmxDisplayColumnKey && sortKey === gmxDisplayColumnKey) {
+        const aOptions = gmxOptionsByToken.get(a.token ?? "") ?? [];
+        const bOptions = gmxOptionsByToken.get(b.token ?? "") ?? [];
+        const aKey = getGmxSelectedKey(a.token, aOptions);
+        const bKey = getGmxSelectedKey(b.token, bOptions);
+        const aRate =
+          aOptions.find((opt) => opt.columnKey === aKey)?.rate ?? -Infinity;
+        const bRate =
+          bOptions.find((opt) => opt.columnKey === bKey)?.rate ?? -Infinity;
+        const cmp = aRate - bRate;
+        return sortDir === "asc" ? cmp : -cmp;
+      }
+
       const aRate = getRate(a.markets?.[sortKey], timeWindow) ?? -Infinity;
       const bRate = getRate(b.markets?.[sortKey], timeWindow) ?? -Infinity;
       const cmp = aRate - bRate;
@@ -575,7 +734,7 @@ export default function FundingScreener({
     });
 
     return result;
-  }, [rows, search, sortKey, sortDir, timeWindow, minAPR, maxAPRFilter, favoriteSet, filteredColumnKeys, pinnedColumnKey, maxArbByRow]);
+  }, [rows, search, sortKey, sortDir, timeWindow, minAPR, maxAPRFilter, favoriteSet, filteredColumnKeys, pinnedColumnKey, maxArbByRow, gmxDisplayColumnKey, gmxOptionsByToken, gmxSelectionByToken, gmxDefaultKeyByToken]);
 
   /* ---------- pagination ---------- */
   const totalPages = limit === -1 ? 1 : Math.ceil(filtered.length / limit);
@@ -589,7 +748,7 @@ export default function FundingScreener({
       { key: "token", dir: "asc" as SortDir, label: "Asset A-Z" },
       { key: "token", dir: "desc" as SortDir, label: "Asset Z-A" },
     ];
-    const columnOptions = filteredColumns.flatMap((col) => {
+    const columnOptions = displayColumns.flatMap((col) => {
       const label = formatColumnHeader(col, exchangesWithMultipleQuotes);
       return [
         {
@@ -607,7 +766,7 @@ export default function FundingScreener({
       ];
     });
     return [...base, ...columnOptions];
-  }, [filteredColumns, exchangesWithMultipleQuotes]);
+  }, [displayColumns, exchangesWithMultipleQuotes]);
 
   /* ---------- render ---------- */
   if (error) {
@@ -817,7 +976,8 @@ export default function FundingScreener({
             rows={filtered}
             loading={loading}
             timeWindow={timeWindow}
-            filteredColumns={filteredColumns}
+            filteredColumns={displayColumns}
+            gmxColumns={gmxColumns}
             filteredColumnKeys={filteredColumnKeys}
             pinnedColumnKey={pinnedColumnKey}
             exchangesWithMultipleQuotes={exchangesWithMultipleQuotes}
@@ -831,7 +991,7 @@ export default function FundingScreener({
                 <col className="w-[48px]" />
                 <col className="w-[90px]" />
                 <col className="w-[80px]" />
-                {filteredColumns.map((col) => (
+                {displayColumns.map((col) => (
                   <col key={col.column_key} className="w-[75px]" />
                 ))}
               </colgroup>
@@ -859,7 +1019,7 @@ export default function FundingScreener({
                       onClick={() => toggleSort("max_arb")}
                     />
                   </th>
-                  {filteredColumns.map((col) => {
+                  {displayColumns.map((col) => {
                     const isPinned = pinnedColumnKey === col.column_key;
                     return (
                       <th
@@ -901,7 +1061,7 @@ export default function FundingScreener({
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={3 + filteredColumns.length}
+                      colSpan={3 + displayColumns.length}
                       className="px-4 py-8 text-center"
                     >
                       <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
@@ -913,7 +1073,7 @@ export default function FundingScreener({
                 ) : paginatedRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={3 + filteredColumns.length}
+                      colSpan={3 + displayColumns.length}
                       className="px-4 py-8 text-center text-gray-500 text-sm"
                     >
                       No tokens found
@@ -921,8 +1081,9 @@ export default function FundingScreener({
                   </tr>
                 ) : (
                   paginatedRows.map((row, idx) => {
-                    const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
-                    const arbPair = findArbPairPinned(row.markets, timeWindow, filteredColumnKeys, pinnedColumnKey);
+                    const pinnedKey = getPinnedKeyForRow(row);
+                    const maxArb = calculateMaxArbPinned(row.markets, timeWindow, filteredColumnKeys, pinnedKey);
+                    const arbPair = findArbPairPinned(row.markets, timeWindow, filteredColumnKeys, pinnedKey);
 
                     return (
                       <tr
@@ -962,7 +1123,41 @@ export default function FundingScreener({
                         </td>
 
                         {/* Exchange columns */}
-                        {filteredColumns.map((col) => {
+                        {displayColumns.map((col) => {
+                          if (col.isGmxGroup) {
+                            const options = gmxOptionsByToken.get(row.token ?? "") ?? [];
+                            const selectedKey = getGmxSelectedKey(row.token, options);
+                            const selectedOption =
+                              options.find((opt) => opt.columnKey === selectedKey) ??
+                              options[0];
+                            const role = arbPair && selectedOption
+                              ? selectedOption.columnKey === arbPair.longKey
+                                ? "long"
+                                : selectedOption.columnKey === arbPair.shortKey
+                                ? "short"
+                                : undefined
+                              : undefined;
+
+                            return (
+                              <td
+                                key={col.column_key}
+                                className="px-2 py-2 text-right font-mono tabular-nums"
+                              >
+                                {selectedOption ? (
+                                  <GmxRateCell
+                                    options={options}
+                                    selectedKey={selectedOption.columnKey}
+                                    onSelectKey={(key) => setGmxSelectedKey(row.token, key)}
+                                    token={row.token}
+                                    role={role}
+                                  />
+                                ) : (
+                                  <span className="text-gray-600 block text-center">–</span>
+                                )}
+                              </td>
+                            );
+                          }
+
                           const market = row.markets?.[col.column_key];
                           const rate = getRate(market, timeWindow);
                           // Determine if this column is used for APR calculation

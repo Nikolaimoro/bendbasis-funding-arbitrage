@@ -20,12 +20,21 @@ type SortKey =
   | "15d"
   | "30d";
 
+type GmxSide = "long" | "short";
+
+type FundingRowWithGmx = FundingRow & {
+  gmxBase?: string;
+  gmxSide?: GmxSide;
+  gmxHasOther?: boolean;
+};
+
 interface FundingTableBodyProps {
-  rows: FundingRow[];
+  rows: FundingRowWithGmx[];
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
   onRowClick: (row: FundingRow) => void;
+  onToggleGmxSide: (key: string) => void;
 }
 
 /**
@@ -38,6 +47,7 @@ export default function FundingTableBody({
   sortDir,
   onSort,
   onRowClick,
+  onToggleGmxSide,
 }: FundingTableBodyProps) {
   const formatCompactUSDNode = (v: number | null) => {
     const text = formatCompactUSD(v);
@@ -147,16 +157,65 @@ export default function FundingTableBody({
         </thead>
 
         <tbody>
-          {rows.map(r => (
+          {rows.map(r => {
+            const gmxToggleKey = r.gmxBase;
+            const showGmxToggle =
+              r.exchange.toLowerCase() === "gmx" &&
+              r.gmxHasOther &&
+              gmxToggleKey &&
+              r.gmxSide;
+            return (
             <tr
               key={`${r.exchange}:${r.market}`}
               onClick={() => onRowClick(r)}
               className={`${TAILWIND.table.row} ${TAILWIND.bg.hover} cursor-pointer transition-colors`}
             >
               <td className="px-4 py-4 text-left text-white font-mono">
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-2">
                   <ExchangeIcon exchange={r.exchange} size={16} />
                   {formatExchange(r.exchange)}
+                  {showGmxToggle && (
+                    <button
+                      type="button"
+                      aria-pressed={r.gmxSide === "long"}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (gmxToggleKey) {
+                          onToggleGmxSide(gmxToggleKey);
+                        }
+                      }}
+                      className="relative inline-flex h-5 w-12 items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[10px] font-medium text-gray-400 transition-colors"
+                      title={r.gmxSide === "long" ? "Long rates" : "Short rates"}
+                    >
+                      <span className="relative z-10 grid w-full grid-cols-2">
+                        <span
+                          className={`text-center text-[10px] transition-colors ${
+                            r.gmxSide === "long"
+                              ? "text-emerald-200"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          L
+                        </span>
+                        <span
+                          className={`text-center text-[10px] transition-colors ${
+                            r.gmxSide === "short"
+                              ? "text-red-200"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          S
+                        </span>
+                      </span>
+                      <span
+                        className={`absolute left-0.5 top-1/2 h-4 w-[calc(50%-2px)] -translate-y-1/2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                          r.gmxSide === "long"
+                            ? "translate-x-0 bg-emerald-500/25"
+                            : "translate-x-full bg-red-500/25"
+                        }`}
+                      />
+                    </button>
+                  )}
                 </span>
               </td>
               <td className="px-4 py-4 text-left font-mono font-semibold text-white">
@@ -200,7 +259,8 @@ export default function FundingTableBody({
                 )}
               </td>
             </tr>
-          ))}
+          );
+          })}
         </tbody>
       </table>
     </div>
