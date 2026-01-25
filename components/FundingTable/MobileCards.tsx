@@ -140,45 +140,30 @@ export default function FundingMobileCards({
                       {formatExchange(row.exchange)}
                     </span>
                     {showGmxToggle && (
-                      <span
-                        className="inline-flex items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[10px] font-medium"
-                        onClick={(event) => event.stopPropagation()}
+                      <button
+                        type="button"
+                        aria-pressed={row.gmxSide === "long"}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (gmxToggleKey) {
+                            onToggleGmxSide(gmxToggleKey);
+                          }
+                        }}
+                        className="relative inline-flex h-5 w-12 items-center rounded-full border border-[#343a4e] bg-[#23283a] px-1 text-[10px] font-medium text-gray-400 transition-colors"
+                        title={row.gmxSide === "long" ? "Long rates" : "Short rates"}
                       >
-                        <button
-                          type="button"
-                          aria-pressed={row.gmxSide === "long"}
-                          onClick={() => {
-                            if (row.gmxSide !== "long" && gmxToggleKey) {
-                              onToggleGmxSide(gmxToggleKey);
-                            }
-                          }}
-                          className={`px-2 py-0.5 rounded-full transition ${
+                        <span className="flex w-full items-center justify-between px-1">
+                          <span className="text-[10px]">L</span>
+                          <span className="text-[10px]">S</span>
+                        </span>
+                        <span
+                          className={`absolute left-1 top-1/2 h-4 w-5 -translate-y-1/2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                             row.gmxSide === "long"
-                              ? "bg-emerald-500/20 text-emerald-300"
-                              : "text-gray-400 hover:text-gray-200"
+                              ? "translate-x-0 bg-emerald-500/25"
+                              : "translate-x-5 bg-red-500/25"
                           }`}
-                          title="Show long rates"
-                        >
-                          L
-                        </button>
-                        <button
-                          type="button"
-                          aria-pressed={row.gmxSide === "short"}
-                          onClick={() => {
-                            if (row.gmxSide !== "short" && gmxToggleKey) {
-                              onToggleGmxSide(gmxToggleKey);
-                            }
-                          }}
-                          className={`px-2 py-0.5 rounded-full transition ${
-                            row.gmxSide === "short"
-                              ? "bg-red-500/20 text-red-300"
-                              : "text-gray-400 hover:text-gray-200"
-                          }`}
-                          title="Show short rates"
-                        >
-                          S
-                        </button>
-                      </span>
+                        />
+                      </button>
                     )}
                   </div>
                 </div>
