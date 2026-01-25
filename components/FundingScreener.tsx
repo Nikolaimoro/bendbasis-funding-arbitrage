@@ -477,9 +477,6 @@ export default function FundingScreener({
       if (marketMatch) {
         return marketMatch[1].toLowerCase() as "long" | "short";
       }
-      const lower = columnKey.toLowerCase();
-      if (lower.endsWith("long")) return "long" as const;
-      if (lower.endsWith("short")) return "short" as const;
       return null;
     };
 
