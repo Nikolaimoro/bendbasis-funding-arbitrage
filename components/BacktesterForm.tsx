@@ -11,11 +11,11 @@ import type { BacktesterChartData } from "@/lib/types/backtester";
 
 const BacktesterChart = dynamic(() => import("@/components/BacktesterChart"), { ssr: false });
 
-type Quote = { asset: string; marketId: number; refUrl: string | null; volume24h: number | null; openInterest: number | null };
+type Quote = { asset: string; side: "long" | "short" | null; market: string | null; marketId: number; refUrl: string | null; volume24h: number | null; openInterest: number | null };
 
 interface BacktesterFormProps {
   tokens: string[];
-  exchanges: { exchange: string; baseAssets: { asset: string; quotes: { asset: string; marketId: number; refUrl: string | null; volume24h: number | null; openInterest: number | null }[] }[] }[];
+  exchanges: { exchange: string; baseAssets: { asset: string; quotes: Quote[] }[] }[];
   initialToken?: string;
   initialLongEx?: string;
   initialShortEx?: string;
@@ -52,6 +52,12 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
   const [runToken, setRunToken] = useState(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const filterQuotesForSide = (quotes: Quote[], exchange: string, side: "long" | "short") => {
+    if (exchange.toLowerCase() !== "gmx") return quotes;
+    const filtered = quotes.filter((q) => q.side === side);
+    return filtered.length > 0 ? filtered : quotes;
+  };
 
   // Filtered tokens - normalized
   const filteredTokens = useMemo(() => {
@@ -148,8 +154,9 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       const normalizedToken = normalizeToken(selectedToken);
       const baseAsset = ex?.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
       if (!baseAsset?.quotes?.length) return;
-      const preferred = baseAsset.quotes.find(q => q.asset === "USDT") ?? baseAsset.quotes[0];
-      const currentValid = baseAsset.quotes.some(q => q.asset === selectedLongQuote);
+      const filteredQuotes = filterQuotesForSide(baseAsset.quotes, selectedLongEx, "long");
+      const preferred = filteredQuotes.find(q => q.asset === "USDT") ?? filteredQuotes[0];
+      const currentValid = filteredQuotes.some(q => q.asset === selectedLongQuote);
       if (!selectedLongQuote || !currentValid) {
         setSelectedLongQuote(preferred.asset);
         setSelectedLongMarketId(preferred.marketId);
@@ -166,8 +173,9 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       const normalizedToken = normalizeToken(selectedToken);
       const baseAsset = ex?.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
       if (!baseAsset?.quotes?.length) return;
-      const preferred = baseAsset.quotes.find(q => q.asset === "USDT") ?? baseAsset.quotes[0];
-      const currentValid = baseAsset.quotes.some(q => q.asset === selectedShortQuote);
+      const filteredQuotes = filterQuotesForSide(baseAsset.quotes, selectedShortEx, "short");
+      const preferred = filteredQuotes.find(q => q.asset === "USDT") ?? filteredQuotes[0];
+      const currentValid = filteredQuotes.some(q => q.asset === selectedShortQuote);
       if (!selectedShortQuote || !currentValid) {
         setSelectedShortQuote(preferred.asset);
         setSelectedShortMarketId(preferred.marketId);
@@ -184,7 +192,8 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       const ex = exchanges.find(e => e.exchange === initialLongEx);
       const normalizedToken = normalizeToken(initialToken);
       const baseAsset = ex?.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
-      const quote = baseAsset?.quotes.find(q => q.asset === initialLongQuote);
+      const quote = baseAsset?.quotes.find(q => q.asset === initialLongQuote && q.side === "long") ??
+        baseAsset?.quotes.find(q => q.asset === initialLongQuote);
       if (quote) {
         setSelectedLongMarketId(quote.marketId);
         setSelectedLongRefUrl(quote.refUrl);
@@ -196,7 +205,8 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       const ex = exchanges.find(e => e.exchange === initialShortEx);
       const normalizedToken = normalizeToken(initialToken);
       const baseAsset = ex?.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
-      const quote = baseAsset?.quotes.find(q => q.asset === initialShortQuote);
+      const quote = baseAsset?.quotes.find(q => q.asset === initialShortQuote && q.side === "short") ??
+        baseAsset?.quotes.find(q => q.asset === initialShortQuote);
       if (quote) {
         setSelectedShortMarketId(quote.marketId);
         setSelectedShortRefUrl(quote.refUrl);
@@ -479,9 +489,9 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                       
                       return (
                         <div key={ex.exchange} className="border-b border-[#343a4e] last:border-b-0">
-                          {baseAsset.quotes.map((quote: Quote) => (
+                          {filterQuotesForSide(baseAsset.quotes, ex.exchange, "long").map((quote: Quote) => (
                             <button
-                              key={`${ex.exchange}-${quote.asset}`}
+                              key={`${ex.exchange}-${quote.asset}-${quote.side ?? "any"}`}
                               onClick={() => {
                                 setSelectedLongEx(ex.exchange);
                                 setSelectedLongQuote(quote.asset);
@@ -495,7 +505,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                               className="w-full px-3 py-2 text-left text-sm hover:bg-[#353b52] transition flex items-center gap-2"
                             >
                               <ExchangeIcon exchange={ex.exchange} size={16} />
-                              {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{baseAsset.quotes.length > 1 ? ` (${quote.asset})` : ""}
+                              {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{filterQuotesForSide(baseAsset.quotes, ex.exchange, "long").length > 1 ? ` (${quote.asset})` : ""}
                             </button>
                           ))}
                         </div>
@@ -558,9 +568,9 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                       
                       return (
                         <div key={ex.exchange} className="border-b border-[#343a4e] last:border-b-0">
-                          {baseAsset.quotes.map((quote: Quote) => (
+                          {filterQuotesForSide(baseAsset.quotes, ex.exchange, "short").map((quote: Quote) => (
                             <button
-                              key={`${ex.exchange}-${quote.asset}`}
+                              key={`${ex.exchange}-${quote.asset}-${quote.side ?? "any"}`}
                               onClick={() => {
                                 setSelectedShortEx(ex.exchange);
                                 setSelectedShortQuote(quote.asset);
@@ -574,7 +584,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
                               className="w-full px-3 py-2 text-left text-sm hover:bg-[#353b52] transition flex items-center gap-2"
                             >
                               <ExchangeIcon exchange={ex.exchange} size={16} />
-                              {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{baseAsset.quotes.length > 1 ? ` (${quote.asset})` : ""}
+                              {EXCHANGE_LABEL[ex.exchange] || ex.exchange}{filterQuotesForSide(baseAsset.quotes, ex.exchange, "short").length > 1 ? ` (${quote.asset})` : ""}
                             </button>
                           ))}
                         </div>

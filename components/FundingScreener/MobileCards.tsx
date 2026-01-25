@@ -21,6 +21,22 @@ type Props = {
   timeWindow: TimeWindow;
   filteredColumns: (ExchangeColumn & { isGmxGroup?: boolean })[];
   gmxColumns: ExchangeColumn[];
+  gmxOptionsByToken: Map<
+    string,
+    {
+      columnKey: string;
+      quote: string;
+      side: "long" | "short" | null;
+      market: FundingMatrixMarket;
+      rate: number | null;
+    }[]
+  >;
+  gmxColumnKeySet: Set<string>;
+  getGmxSelectedKey: (
+    token: string | null | undefined,
+    options: { columnKey: string }[]
+  ) => string | null;
+  onSelectGmxKey: (token: string | null | undefined, key: string) => void;
   filteredColumnKeys: Set<string>;
   pinnedColumnKey: string | null;
   exchangesWithMultipleQuotes: Set<string>;
@@ -36,6 +52,9 @@ const formatColumnHeader = (
   exchangesWithMultipleQuotes: Set<string>
 ) => {
   const name = formatExchange(col.exchange);
+  if (col.exchange.toLowerCase() === "gmx") {
+    return `${name} (${col.quote_asset})`;
+  }
   if (exchangesWithMultipleQuotes.has(col.exchange)) {
     return `${name} (${col.quote_asset})`;
   }
@@ -48,12 +67,14 @@ function ExchangeRateRow({
   rate,
   pinned,
   role,
+  toggle,
 }: {
   label: string;
   market: FundingMatrixMarket;
   rate: number | null;
   pinned: boolean;
   role?: "long" | "short";
+  toggle?: React.ReactNode;
 }) {
   const rateClass =
     rate == null
@@ -76,6 +97,7 @@ function ExchangeRateRow({
       <ExchangeIcon exchange={market.exchange} size={16} />
       <span className="truncate text-sm text-gray-100">{label}</span>
       {roleIndicator}
+      {toggle}
     </span>
   );
 
@@ -107,12 +129,21 @@ function ExchangeRateRow({
   );
 }
 
+const formatGmxLabel = (market: FundingMatrixMarket, fallback: string) => {
+  if (market.exchange.toLowerCase() !== "gmx") return fallback;
+  return `${formatExchange(market.exchange)} (${market.quote})`;
+};
+
 export default function FundingScreenerMobileCards({
   rows,
   loading,
   timeWindow,
   filteredColumns,
   gmxColumns,
+  gmxOptionsByToken,
+  gmxColumnKeySet,
+  getGmxSelectedKey,
+  onSelectGmxKey,
   filteredColumnKeys,
   pinnedColumnKey,
   exchangesWithMultipleQuotes,
@@ -179,21 +210,14 @@ export default function FundingScreenerMobileCards({
     if (gmxColumns.length === 0) return map;
     for (const row of rows) {
       if (!row.token) continue;
-      let best: FundingMatrixMarket | null = null;
-      let bestOi = -Infinity;
-      for (const col of gmxColumns) {
-        const market = row.markets?.[col.column_key];
-        if (!market) continue;
-        const oi = market.open_interest ?? -Infinity;
-        if (oi > bestOi) {
-          bestOi = oi;
-          best = market;
-        }
-      }
-      map.set(row.token, best);
+      const options = gmxOptionsByToken.get(row.token) ?? [];
+      const selectedKey = getGmxSelectedKey(row.token, options);
+      const selected =
+        options.find((opt) => opt.columnKey === selectedKey) ?? options[0];
+      map.set(row.token, selected?.market ?? null);
     }
     return map;
-  }, [rows, gmxColumns]);
+  }, [rows, gmxColumns, gmxOptionsByToken, getGmxSelectedKey]);
 
   const gmxOtherByToken = useMemo(() => {
     const map = new Map<
@@ -207,48 +231,43 @@ export default function FundingScreenerMobileCards({
     >();
     if (gmxColumns.length === 0) return map;
 
-    const getSideSuffix = (market: FundingMatrixMarket) => {
-      const raw =
-        ((market as unknown as { market?: string }).market ?? "").toString();
-      const match = raw.match(/\s+(LONG|SHORT)\s*$/i);
-      return match ? ` ${match[1].toUpperCase()}` : "";
-    };
-
     for (const row of rows) {
       if (!row.token) continue;
-      let bestKey: string | null = null;
-      let bestOi = -Infinity;
-      for (const col of gmxColumns) {
-        const market = row.markets?.[col.column_key];
-        if (!market) continue;
-        const oi = market.open_interest ?? -Infinity;
-        if (oi > bestOi) {
-          bestOi = oi;
-          bestKey = col.column_key;
-        }
-      }
-      const others = gmxColumns
-        .map((col) => {
-          if (col.column_key === bestKey) return null;
-          const market = row.markets?.[col.column_key];
-          if (!market) return null;
-          return {
-            market,
-            columnKey: col.column_key,
-            label: `GMX (${col.quote_asset})${getSideSuffix(market)}`,
-            rate: getRate(market, timeWindow),
-          };
-        })
-        .filter(Boolean) as {
-        market: FundingMatrixMarket;
-        columnKey: string;
-        label: string;
-        rate: number | null;
-      }[];
+      const options = gmxOptionsByToken.get(row.token) ?? [];
+      const selectedKey = getGmxSelectedKey(row.token, options);
+      const others = options
+        .filter((opt) => opt.columnKey !== selectedKey)
+        .map((opt) => ({
+          market: opt.market,
+          columnKey: opt.columnKey,
+          label: `GMX (${opt.quote})${opt.side ? ` ${opt.side.toUpperCase()}` : ""}`,
+          rate: opt.rate,
+        }));
       map.set(row.token, others);
     }
     return map;
-  }, [rows, gmxColumns, timeWindow]);
+  }, [rows, gmxColumns, gmxOptionsByToken, getGmxSelectedKey]);
+
+  const getPinnedKeyForRow = (row: FundingMatrixRow) => {
+    if (!pinnedColumnKey) return null;
+    if (!gmxColumnKeySet.has(pinnedColumnKey)) return pinnedColumnKey;
+    const options = gmxOptionsByToken.get(row.token ?? "") ?? [];
+    return getGmxSelectedKey(row.token, options) ?? pinnedColumnKey;
+  };
+
+  const getColumnKeysForRow = (row: FundingMatrixRow) => {
+    if (gmxColumnKeySet.size === 0) return filteredColumnKeys;
+    const next = new Set(filteredColumnKeys);
+    for (const key of gmxColumnKeySet) {
+      next.delete(key);
+    }
+    const options = gmxOptionsByToken.get(row.token ?? "") ?? [];
+    const selectedKey = getGmxSelectedKey(row.token, options);
+    if (selectedKey) {
+      next.add(selectedKey);
+    }
+    return next;
+  };
 
   return (
     <>
@@ -271,11 +290,13 @@ export default function FundingScreenerMobileCards({
             <div className="grid grid-cols-1 gap-3">
               {visibleRows.map((row, idx) => {
                 const token = row.token ?? `token-${idx}`;
+                const pinnedKey = getPinnedKeyForRow(row);
+                const columnKeys = getColumnKeysForRow(row);
                 const arbPair = findArbPairPinned(
                   row.markets,
                   timeWindow,
-                  filteredColumnKeys,
-                  pinnedColumnKey
+                  columnKeys,
+                  pinnedKey
                 );
                 const maxArb = arbPair ? arbPair.spread : null;
                 const historyUrl = row.token
@@ -400,11 +421,12 @@ export default function FundingScreenerMobileCards({
                       {longMarket && longKey ? (
                         <div className="grid grid-cols-1 gap-2">
                           <div className="flex flex-col gap-1">
-                            <ExchangeRateRow
-                              label={
+                              <ExchangeRateRow
+                              label={formatGmxLabel(
+                                longMarket,
                                 columnLabelByKey.get(longKey) ??
-                                formatExchange(longMarket.exchange)
-                              }
+                                  formatExchange(longMarket.exchange)
+                              )}
                               market={longMarket}
                               rate={longRate}
                               pinned={pinnedColumnKey === longKey}
@@ -415,8 +437,11 @@ export default function FundingScreenerMobileCards({
                             {shortMarket && shortKey ? (
                               <ExchangeRateRow
                                 label={
-                                  columnLabelByKey.get(shortKey) ??
-                                  formatExchange(shortMarket.exchange)
+                                  formatGmxLabel(
+                                    shortMarket,
+                                    columnLabelByKey.get(shortKey) ??
+                                      formatExchange(shortMarket.exchange)
+                                  )
                                 }
                                 market={shortMarket}
                                 rate={shortRate}
@@ -440,7 +465,7 @@ export default function FundingScreenerMobileCards({
                         <div
                           className={`overflow-hidden rounded-lg transition-[max-height,opacity,transform] duration-500 ease-in-out ${
                             isExpanded
-                              ? "max-h-96 opacity-100 translate-y-0"
+                              ? "max-h-[1200px] opacity-100 translate-y-0"
                               : "max-h-0 opacity-0 translate-y-2"
                           }`}
                           onClick={(event) => {
@@ -454,16 +479,82 @@ export default function FundingScreenerMobileCards({
                             {remainingMarkets.map(({ col, market }) => {
                               if (!market) return null;
                               const rate = getRate(market, timeWindow);
+                              const isGmx = market.exchange.toLowerCase() === "gmx";
+                              const gmxOptions = isGmx && row.token
+                                ? gmxOptionsByToken.get(row.token) ?? []
+                                : [];
+                              const selectedKey = isGmx
+                                ? getGmxSelectedKey(row.token, gmxOptions)
+                                : null;
+                              const selectedOption = isGmx
+                                ? gmxOptions.find((opt) => opt.columnKey === selectedKey) ?? gmxOptions[0]
+                                : null;
+                              const hasOpposite = !!selectedOption?.side && gmxOptions.some(
+                                (opt) => opt.quote === selectedOption.quote && opt.side && opt.side !== selectedOption.side
+                              );
+                              const toggle = isGmx && hasOpposite ? (
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    const next = gmxOptions.find(
+                                      (opt) =>
+                                        opt.quote === selectedOption?.quote &&
+                                        opt.side &&
+                                        opt.side !== selectedOption?.side
+                                    );
+                                    if (next) {
+                                      onSelectGmxKey(row.token, next.columnKey);
+                                    }
+                                  }}
+                                  className="relative inline-flex h-4 w-8 items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[9px] font-medium text-gray-400"
+                                  title={selectedOption?.side === "long" ? "Long rates" : "Short rates"}
+                                >
+                                  <span className="relative z-10 grid w-full grid-cols-2">
+                                    <span
+                                      className={`text-center transition-colors ${
+                                        selectedOption?.side === "long"
+                                          ? "text-emerald-200"
+                                          : "text-gray-400"
+                                      }`}
+                                    >
+                                      L
+                                    </span>
+                                    <span
+                                      className={`text-center transition-colors ${
+                                        selectedOption?.side === "short"
+                                          ? "text-red-200"
+                                          : "text-gray-400"
+                                      }`}
+                                    >
+                                      S
+                                    </span>
+                                  </span>
+                                  <span
+                                    className={`absolute left-0.5 top-1/2 h-3 w-[calc(50%-2px)] -translate-y-1/2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                      selectedOption?.side === "long"
+                                        ? "translate-x-0 bg-emerald-500/25"
+                                        : "translate-x-full bg-red-500/25"
+                                    }`}
+                                  />
+                                </button>
+                              ) : undefined;
+
+                              const label = isGmx && selectedOption
+                                ? `GMX (${selectedOption.quote})`
+                                : formatColumnHeader(col, exchangesWithMultipleQuotes);
+                              const pinnedKey = getPinnedKeyForRow(row);
+                              const pinned = isGmx
+                                ? pinnedKey === selectedOption?.columnKey
+                                : pinnedColumnKey === col.column_key;
                               return (
                                 <ExchangeRateRow
                                   key={col.column_key}
-                                  label={formatColumnHeader(
-                                    col,
-                                    exchangesWithMultipleQuotes
-                                  )}
+                                  label={label}
                                   market={market}
                                   rate={rate}
-                                  pinned={pinnedColumnKey === col.column_key}
+                                  pinned={pinned}
+                                  toggle={toggle}
                                 />
                               );
                             })}
@@ -473,7 +564,7 @@ export default function FundingScreenerMobileCards({
                                 label={entry.label}
                                 market={entry.market}
                                 rate={entry.rate}
-                                pinned={pinnedColumnKey === entry.columnKey}
+                                pinned={false}
                               />
                             ))}
                           </div>
