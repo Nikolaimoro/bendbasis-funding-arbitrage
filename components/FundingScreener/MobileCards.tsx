@@ -97,7 +97,6 @@ function ExchangeRateRow({
       <ExchangeIcon exchange={market.exchange} size={16} />
       <span className="truncate text-sm text-gray-100">{label}</span>
       {roleIndicator}
-      {toggle}
     </span>
   );
 
@@ -122,9 +121,12 @@ function ExchangeRateRow({
           exchangeContent
         )}
       </div>
-      <span className={`font-mono text-sm ${rateClass}`}>
-        {formatAPR(rate)}
-      </span>
+      <div className="inline-flex items-center gap-2">
+        {toggle}
+        <span className={`font-mono text-sm ${rateClass}`}>
+          {formatAPR(rate)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -240,7 +242,7 @@ export default function FundingScreenerMobileCards({
         .map((opt) => ({
           market: opt.market,
           columnKey: opt.columnKey,
-          label: `GMX (${opt.quote})${opt.side ? ` ${opt.side.toUpperCase()}` : ""}`,
+          label: `GMX (${opt.quote})`,
           rate: opt.rate,
         }));
       map.set(row.token, others);

@@ -231,7 +231,7 @@ export default function GmxRateCell({
   return (
     <div
       ref={triggerRef}
-      className="inline-flex items-center gap-1.5"
+      className="inline-flex flex-col items-end gap-1"
       onMouseEnter={openTooltip}
       onMouseLeave={scheduleClose}
     >
