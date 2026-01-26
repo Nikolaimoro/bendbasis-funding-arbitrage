@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import LandingHeader from "@/components/LandingHeader";
+import LandingFaq from "@/components/LandingFaq";
 
 const exchangeCards = [
   { key: "binance", label: "Binance" },
@@ -100,6 +101,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <LandingFaq />
     </main>
   );
 }
