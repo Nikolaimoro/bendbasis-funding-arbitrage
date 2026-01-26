@@ -1227,7 +1227,7 @@ export default function FundingScreener({
 
           {/* ---------- table ---------- */}
           <div className="min-[960px]:block hidden">
-            <div className="max-h-[calc(100vh-260px)] overflow-auto overscroll-contain">
+            <div className="max-h-[calc(100vh-220px)] overflow-auto overscroll-contain">
               <table className="table-fixed w-max border-separate border-spacing-0 text-xs whitespace-nowrap">
                 <colgroup>
                   <col className="w-[48px]" />
