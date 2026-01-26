@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
+import LandingHeader from "@/components/LandingHeader";
 
 const exchangeCards = [
   { key: "binance", label: "Binance" },
@@ -35,6 +36,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main className="relative -mx-6 -my-4 min-h-screen bg-white px-6 py-4 text-[#201D1D]">
+      <LandingHeader />
       <div className="fixed inset-0 z-0 bg-white" />
       <div className="pointer-events-none absolute left-1/2 top-[-420px] z-0 h-[1260px] w-[1720px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.16),_rgba(250,129,77,0.12),_transparent_65%)] blur-3xl opacity-70" />
 
@@ -61,12 +63,12 @@ export default function Home() {
       <section className="relative z-10 pb-20">
         <div className="mx-auto max-w-[1200px]">
           <div className="relative">
-            <div className="pointer-events-none absolute -left-20 top-1/2 h-44 w-44 -translate-y-1/2 rounded-full bg-white/95 blur-[70px]" />
-            <div className="pointer-events-none absolute -right-20 top-1/2 h-44 w-44 -translate-y-1/2 rounded-full bg-white/95 blur-[70px]" />
+            <div className="pointer-events-none absolute -left-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />
+            <div className="pointer-events-none absolute -right-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />
             <div className="space-y-4">
               {[0, 1, 2].map((row) => {
                 const rowItems = exchangeCards.slice(row * 6, row * 6 + 6);
-                const leftPad = row === 1 ? "pl-16" : "pl-0";
+                const leftPad = row === 1 ? "pl-24" : "pl-0";
                 return (
                   <div
                     key={`row-${row}`}

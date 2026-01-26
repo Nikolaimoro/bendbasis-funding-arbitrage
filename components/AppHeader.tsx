@@ -36,6 +36,9 @@ function BurgerIcon({ open, color = "white", onClick }: BurgerIconProps) {
 export default function AppHeader() {
   const path = usePathname();
   const isHome = path === "/";
+  if (isHome) {
+    return null;
+  }
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -159,7 +162,7 @@ export default function AppHeader() {
           aria-label="Funding Dashboard Home"
         >
           <img
-            src="/brand/logo.svg"
+            src="/brand/logo_full.svg"
             alt="Funding Dashboard"
             className={logoClassName}
           />
