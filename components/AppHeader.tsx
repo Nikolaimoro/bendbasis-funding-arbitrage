@@ -223,19 +223,14 @@ export default function AppHeader() {
         </nav>
         <div className="mt-auto w-full px-10 pb-8">
           <div className={`border-t pt-5 ${isHome ? "border-[#E7E2E0]" : "border-[#343a4e]"}`}>
-            <p className={`text-xs uppercase tracking-[0.2em] mb-3 ${isHome ? "text-[#8B847E]" : "text-gray-500"}`}>
-              Social
-            </p>
             <div className="flex items-center gap-3">
               <a
                 href="https://x.com/bendbasis"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Bendbasis on X"
-                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${
-                  isHome
-                    ? "border-[#E7E2E0] bg-white text-[#201D1D] hover:border-[#201D1D]"
-                    : "border-[#343a4e] bg-[#23283a] text-gray-200 hover:border-white"
+                className={`inline-flex h-10 w-10 items-center justify-center transition ${
+                  isHome ? "text-[#201D1D]" : "text-gray-200"
                 }`}
               >
                 <svg
@@ -251,10 +246,8 @@ export default function AppHeader() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Bendbasis on Telegram"
-                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${
-                  isHome
-                    ? "border-[#E7E2E0] bg-white text-[#201D1D] hover:border-[#201D1D]"
-                    : "border-[#343a4e] bg-[#23283a] text-gray-200 hover:border-white"
+                className={`inline-flex h-10 w-10 items-center justify-center transition ${
+                  isHome ? "text-[#201D1D]" : "text-gray-200"
                 }`}
               >
                 <span

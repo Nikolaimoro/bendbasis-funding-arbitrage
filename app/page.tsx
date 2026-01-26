@@ -36,7 +36,7 @@ export default function Home() {
   return (
     <main className="relative -mx-6 -my-4 min-h-screen bg-white px-6 py-4 text-[#201D1D]">
       <div className="fixed inset-0 z-0 bg-white" />
-      <div className="pointer-events-none absolute left-1/2 top-[140px] z-0 h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.18),_rgba(250,129,77,0.14),_transparent_65%)] blur-3xl opacity-70" />
+      <div className="pointer-events-none absolute left-1/2 top-[120px] z-0 h-[600px] w-[820px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.2),_rgba(250,129,77,0.16),_transparent_65%)] blur-3xl opacity-70" />
 
       <section className="relative z-10 pt-28 pb-12">
         <div className="mx-auto flex max-w-[860px] flex-col items-center text-center">
@@ -61,13 +61,14 @@ export default function Home() {
       <section className="relative z-10 pb-20">
         <div className="mx-auto max-w-[1200px]">
           <div className="relative">
-            <div className="pointer-events-none absolute -left-8 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-white/90 blur-2xl" />
-            <div className="pointer-events-none absolute -right-8 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-white/90 blur-2xl" />
+            <div className="pointer-events-none absolute -left-10 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-white/90 blur-2xl" />
+            <div className="pointer-events-none absolute -right-10 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-white/90 blur-2xl" />
             <div className="flex flex-wrap justify-center gap-x-5 gap-y-4">
-              {exchangeCards.map((exchange) => (
+              {exchangeCards.map((exchange, index) => (
                 <div
                   key={exchange.key}
-                  className="flex min-w-[190px] items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-[transform,background-color,border-color] duration-500 ease-out hover:-translate-y-0.5 hover:border-[#DAD4CF] hover:bg-[#FBFAF8]"
+                  className="flex min-w-[190px] items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-700 ease-out hover:-translate-y-1.5"
+                  style={{ marginTop: index % 3 === 1 ? 12 : index % 3 === 2 ? 24 : 0 }}
                 >
                   <ExchangeIcon
                     exchange={exchange.key}
