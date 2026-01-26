@@ -1,7 +1,7 @@
 import PageHeader from "@/components/ui/PageHeader";
 import { TableLoadingState } from "@/components/ui/TableStates";
 
-export default function FundingLoading() {
+export default function Loading() {
   return (
     <main className="min-h-screen text-gray-200">
       <PageHeader
@@ -13,6 +13,10 @@ export default function FundingLoading() {
           <h2 className="text-base font-roboto text-white">Screener</h2>
         </div>
         <TableLoadingState message="Loading funding screener…" />
+        <div className="px-4 pb-6">
+          <div className="h-10 w-full rounded-lg bg-[#2f3446] animate-pulse" />
+          <div className="mt-4 h-64 w-full rounded-xl bg-[#2a3042] animate-pulse" />
+        </div>
       </div>
     </main>
   );

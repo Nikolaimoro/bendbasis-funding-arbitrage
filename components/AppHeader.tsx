@@ -35,8 +35,13 @@ function BurgerIcon({ open, color = "white", onClick }: BurgerIconProps) {
 
 export default function AppHeader() {
   const path = usePathname();
+  const isHome = path === "/";
+  if (isHome) {
+    return null;
+  }
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Close mobile menu on route change
@@ -59,6 +64,7 @@ export default function AppHeader() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      setIsScrolled(currentScrollY > 8);
       
       // After 50px scroll, start hide/show behavior
       if (currentScrollY > 50) {
@@ -82,21 +88,13 @@ export default function AppHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  const logoToneByPath: Record<string, "light" | "dark"> = {
-    "/markets": "light",
-    "/funding": "light",
-    "/arbitrage": "light",
-    "/backtester": "light",
-  };
-  const logoTone =
-    Object.entries(logoToneByPath).find(([route]) => path.startsWith(route))
-      ?.[1] ?? "light";
+  const logoTone = isHome ? "dark" : "light";
   const logoClassName =
     logoTone === "light"
       ? "h-[18px] w-auto invert"
       : "h-[18px] w-auto invert-0";
 
-  const burgerColor = logoTone === "light" ? "white" : "black";
+  const burgerColor = isHome ? "black" : "white";
 
   const navLink = (href: string, label: string, isFirst = false) => {
     const active = path.startsWith(href);
@@ -104,9 +102,9 @@ export default function AppHeader() {
       <Link
         href={href}
         className={[
-          "group relative text-base text-white font-roboto font-normal",
+          "group relative text-base font-roboto font-normal",
+          isHome ? "text-[#201D1D] hover:bg-[#F2EFEC]" : "text-white hover:bg-[#383d50]",
           "px-2 py-2 rounded-lg transition-colors duration-200",
-          "hover:bg-[#383d50]",
           isFirst ? "ml-6" : "",
           // For non-active links, change origin on hover for left-to-right disappear
           !active ? "[&:not(:hover)>span]:origin-right [&:hover>span]:origin-left" : "",
@@ -130,7 +128,9 @@ export default function AppHeader() {
       <Link
         href={href}
         onClick={() => setMobileMenuOpen(false)}
-        className="block w-full text-lg font-roboto font-normal py-3 text-left text-white"
+        className={`block w-full text-lg font-roboto font-normal py-3 text-left ${
+          isHome ? "text-[#201D1D]" : "text-white"
+        }`}
       >
         {label}
       </Link>
@@ -145,9 +145,14 @@ export default function AppHeader() {
       <div
         className={[
           "fixed top-0 left-0 right-0 z-50",
-          "flex gap-2 border-b border-[#343a4e] py-2 items-center bg-[#1c202f]",
-          "max-w-[1600px] mx-auto px-6",
-          "transition-transform duration-300",
+          "flex gap-2 border-b py-2 items-center",
+          isHome
+            ? isScrolled
+              ? "border-[#E7E2E0] bg-white/90 backdrop-blur"
+              : "border-transparent bg-transparent"
+            : "border-[#343a4e] bg-[#1c202f]",
+          isHome ? "max-w-[1100px] px-8" : "max-w-[1600px] px-6",
+          "mx-auto transition-transform duration-300",
           !isVisible && !mobileMenuOpen ? "-translate-y-full" : "translate-y-0",
         ].join(" ")}
       >
@@ -157,7 +162,7 @@ export default function AppHeader() {
           aria-label="Funding Dashboard Home"
         >
           <img
-            src="/brand/logo.svg"
+            src="/brand/logo_full.svg"
             alt="Funding Dashboard"
             className={logoClassName}
           />
@@ -165,11 +170,26 @@ export default function AppHeader() {
 
         {/* Desktop navigation */}
         <div className="hidden md:flex items-center gap-3">
-          {navLink("/funding", "Funding", true)}
-          {navLink("/markets", "Markets")}
-          {navLink("/arbitrage", "Arbitrage")}
-          {navLink("/backtester", "Backtester")}
+          {!isHome && (
+            <>
+              {navLink("/funding", "Funding", true)}
+              {navLink("/markets", "Markets")}
+              {navLink("/arbitrage", "Arbitrage")}
+              {navLink("/backtester", "Backtester")}
+            </>
+          )}
         </div>
+
+        {isHome && (
+          <div className="hidden md:flex ml-auto">
+            <Link
+              href="/funding"
+              className="inline-flex items-center justify-center rounded-full bg-[#201D1D] text-white text-sm font-medium px-6 py-2.5 hover:opacity-90 transition-opacity"
+            >
+              Open App
+            </Link>
+          </div>
+        )}
 
         {/* Mobile burger */}
         <div className="md:hidden ml-auto">
@@ -184,7 +204,8 @@ export default function AppHeader() {
       {/* Mobile full-screen menu */}
       <div
         className={[
-          "fixed inset-0 z-40 bg-[#1c202f] pt-[52px]",
+          "fixed inset-0 z-40 pt-[52px]",
+          isHome ? "bg-white" : "bg-[#1c202f]",
           "flex flex-col",
           "transition-all duration-300 ease-out md:hidden",
           mobileMenuOpen
@@ -197,7 +218,64 @@ export default function AppHeader() {
           {mobileNavLink("/markets", "Markets")}
           {mobileNavLink("/arbitrage", "Arbitrage")}
           {mobileNavLink("/backtester", "Backtester")}
+          {isHome && (
+            <Link
+              href="/funding"
+              onClick={() => setMobileMenuOpen(false)}
+              className="mt-6 w-full inline-flex items-center justify-center rounded-2xl bg-[#201D1D] text-white text-base font-medium py-3"
+            >
+              Open App
+            </Link>
+          )}
         </nav>
+        <div className="mt-auto w-full px-10 pb-8">
+          <div className={`border-t pt-5 ${isHome ? "border-[#E7E2E0]" : "border-[#343a4e]"}`}>
+            <div className="flex items-center gap-3">
+              <a
+                href="https://x.com/bendbasis"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Bendbasis on X"
+                className={`inline-flex h-10 w-10 items-center justify-center transition ${
+                  isHome ? "text-[#201D1D]" : "text-gray-200"
+                }`}
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 fill-current"
+                >
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.504 11.24h-6.662l-5.213-6.818-5.967 6.818H1.68l7.73-8.844L1.25 2.25h6.83l4.713 6.231L18.244 2.25zm-1.161 17.52h1.833L7.08 4.126H5.114l11.97 15.644z" />
+                </svg>
+              </a>
+              <a
+                href="https://t.me/bendbasis"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Bendbasis on Telegram"
+                className={`inline-flex h-10 w-10 items-center justify-center transition ${
+                  isHome ? "text-[#201D1D]" : "text-gray-200"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-4 w-4 inline-block"
+                  style={{
+                    backgroundColor: "currentColor",
+                    WebkitMaskImage: "url(/icons/social/telegram.svg)",
+                    maskImage: "url(/icons/social/telegram.svg)",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                  }}
+                />
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );

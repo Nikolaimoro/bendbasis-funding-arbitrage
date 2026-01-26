@@ -23,7 +23,6 @@ import {
 } from "@/lib/types";
 import { SCREENER_TIME_WINDOWS, SCREENER_TIME_LABELS } from "@/lib/constants";
 import { getLocalCache, setLocalCache, withTimeout } from "@/lib/async";
-import Pagination from "@/components/Table/Pagination";
 import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import APRRangeFilter from "@/components/Table/APRRangeFilter";
 import RateCell from "@/components/FundingScreener/RateCell";
@@ -53,6 +52,11 @@ const PINNED_QUERY_KEY = "pinned";
 const CACHE_KEY = "cache-funding-screener-data";
 const CACHE_TTL_MS = 3 * 60 * 1000;
 const GMX_EXCHANGE = "gmx";
+const TABLE_ROW_HEIGHT = 36;
+const TABLE_HEADER_HEIGHT = 38;
+const MAX_ROWS_IN_VIEW = 100;
+const PAGE_SIZE = 20;
+const INITIAL_PAGES = 2;
 
 type DisplayColumn = ExchangeColumn & {
   isGmxGroup?: boolean;
@@ -266,8 +270,9 @@ export default function FundingScreener({
     setModalData(null);
   };
 
-  const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(0);
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const limit = PAGE_SIZE;
 
   /* ---------- fetch data ---------- */
   useEffect(() => {
@@ -754,6 +759,7 @@ export default function FundingScreener({
     });
   }, [gmxOptionsByToken, gmxDefaultKeyByToken, gmxPreferredSide, gmxSideLocked]);
 
+
   const getPinnedKeyForRow = (row: FundingMatrixRow) => {
     if (!pinnedColumnKey) return null;
     if (!gmxColumnKeySet.has(pinnedColumnKey)) return pinnedColumnKey;
@@ -846,7 +852,11 @@ export default function FundingScreener({
     : "";
 
   /* ---------- handlers ---------- */
-  const resetPage = () => setPage(0);
+  const resetPage = () => {
+    setPage(0);
+    const container = tableScrollRef.current;
+    if (container) container.scrollTop = 0;
+  };
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -973,9 +983,29 @@ export default function FundingScreener({
   }, [rows, search, sortKey, sortDir, timeWindow, minAPR, maxAPRFilter, favoriteSet, filteredColumnKeys, pinnedColumnKey, maxArbByRow, gmxDisplayColumnKey, gmxOptionsByToken, gmxSelectionByToken, gmxDefaultKeyByToken]);
 
   /* ---------- pagination ---------- */
-  const totalPages = limit === -1 ? 1 : Math.ceil(filtered.length / limit);
-  const paginatedRows =
-    limit === -1 ? filtered : filtered.slice(page * limit, page * limit + limit);
+  const paginatedRows = useMemo(
+    () => filtered.slice(0, (page + INITIAL_PAGES) * limit),
+    [filtered, page, limit]
+  );
+  const rowsForHeight = Math.min(limit, MAX_ROWS_IN_VIEW);
+  const tableHeight = TABLE_HEADER_HEIGHT + rowsForHeight * TABLE_ROW_HEIGHT;
+
+  useEffect(() => {
+    const container = tableScrollRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      if (container.scrollTop + container.clientHeight < container.scrollHeight - 120) return;
+      setPage((prev) => {
+        const next = prev + 1;
+        const maxPage = Math.max(0, Math.ceil(filtered.length / limit) - INITIAL_PAGES);
+        return prev >= maxPage ? prev : next;
+      });
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [filtered.length, limit]);
 
   const sortOptions = useMemo(() => {
     const base = [
@@ -1225,139 +1255,143 @@ export default function FundingScreener({
           />
 
           {/* ---------- table ---------- */}
-          <div className="overflow-x-auto min-[960px]:block hidden">
-            <table className="table-fixed w-max border-collapse text-xs whitespace-nowrap">
-              <colgroup>
-                <col className="w-[48px]" />
-                <col className="w-[90px]" />
-                <col className="w-[80px]" />
-                {displayColumns.map((col) => (
-                  <col
-                    key={col.column_key}
-                    className={col.isGmxGroup ? "w-[110px]" : "w-[75px]"}
-                  />
-                ))}
-              </colgroup>
-
-              <thead>
-                <tr className="border-b border-[#343a4e] bg-[#292e40]">
-                  <th className={`${TAILWIND.table.header} text-center md:sticky md:left-0 md:z-10 bg-[#292e40]`}>
-                    <span className="inline-flex w-full justify-center">
-                      <GradientStar filled size={14} />
-                    </span>
-                  </th>
-                  <th className={`${TAILWIND.table.header} md:sticky md:left-[48px] md:z-10 bg-[#292e40]`}>
-                    <SortableHeader
-                      label="Asset"
-                      active={sortKey === "token"}
-                      dir={sortDir}
-                      onClick={() => toggleSort("token")}
+          <div className="min-[960px]:block hidden">
+            <div
+              ref={tableScrollRef}
+              className="overflow-auto overscroll-contain"
+              style={{ height: `${tableHeight}px` }}
+            >
+              <table className="table-fixed w-max border-separate border-spacing-0 text-xs whitespace-nowrap">
+                <colgroup>
+                  <col className="w-[48px]" />
+                  <col className="w-[90px]" />
+                  <col className="w-[80px]" />
+                  {displayColumns.map((col) => (
+                    <col
+                      key={col.column_key}
+                      className={col.isGmxGroup ? "w-[110px]" : "w-[75px]"}
                     />
-                  </th>
-                  <th className={`${TAILWIND.table.header} text-right md:sticky md:left-[138px] md:z-10 bg-[#292e40]`}>
-                    <SortableHeader
-                      label="APR"
-                      active={sortKey === "max_arb"}
-                      dir={sortDir}
-                      onClick={() => toggleSort("max_arb")}
-                    />
-                  </th>
-                  {displayColumns.map((col) => {
-                    const isPinned = pinnedColumnKey === col.column_key;
-                    const isGmxGroup = !!col.isGmxGroup;
-                    return (
-                      <th
-                        key={col.column_key}
-                        className={`${TAILWIND.table.header} text-center whitespace-nowrap ${isPinned ? "bg-[#353b52]/60" : ""}`}
-                      >
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="flex items-center gap-1">
-                            <ExchangeIcon exchange={col.exchange} size={22} />
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPinnedDirty(true);
-                                setPinnedColumnKey((prev) => (prev === col.column_key ? null : col.column_key));
-                              }}
-                              className={`p-0.5 rounded ${isPinned ? "text-[#FA814D]" : "text-gray-500 hover:text-gray-300"}`}
-                              aria-label={isPinned ? "Unpin exchange" : "Pin exchange"}
-                              title={isPinned ? "Unpin" : "Pin"}
-                            >
-                              <Pin size={12} />
-                            </button>
-                          </div>
-                          {isGmxGroup ? (
-                            <div className="flex items-center justify-center gap-1">
+                  ))}
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-[#343a4e] bg-[#292e40]">
+                    <th className={`${TAILWIND.table.header} sticky top-0 z-30 text-center md:sticky md:left-0 md:z-40 bg-[#292e40]`}>
+                      <span className="inline-flex w-full justify-center">
+                        <GradientStar filled size={14} />
+                      </span>
+                    </th>
+                    <th className={`${TAILWIND.table.header} sticky top-0 z-30 md:sticky md:left-[48px] md:z-40 bg-[#292e40]`}>
+                      <SortableHeader
+                        label="Asset"
+                        active={sortKey === "token"}
+                        dir={sortDir}
+                        onClick={() => toggleSort("token")}
+                      />
+                    </th>
+                    <th className={`${TAILWIND.table.header} sticky top-0 z-30 text-right md:sticky md:left-[138px] md:z-40 bg-[#292e40]`}>
+                      <SortableHeader
+                        label="APR"
+                        active={sortKey === "max_arb"}
+                        dir={sortDir}
+                        onClick={() => toggleSort("max_arb")}
+                      />
+                    </th>
+                    {displayColumns.map((col) => {
+                      const isPinned = pinnedColumnKey === col.column_key;
+                      const isGmxGroup = !!col.isGmxGroup;
+                      return (
+                        <th
+                          key={col.column_key}
+                          className={`${TAILWIND.table.header} sticky top-0 z-30 text-center whitespace-nowrap bg-[#292e40] ${isPinned ? "bg-[#353b52]/60" : ""}`}
+                        >
+                          <div className="flex flex-col items-center gap-1">
+                            <div className="flex items-center gap-1">
+                              <ExchangeIcon exchange={col.exchange} size={22} />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPinnedDirty(true);
+                                  setPinnedColumnKey((prev) => (prev === col.column_key ? null : col.column_key));
+                                }}
+                                className={`p-0.5 rounded ${isPinned ? "text-[#FA814D]" : "text-gray-500 hover:text-gray-300"}`}
+                                aria-label={isPinned ? "Unpin exchange" : "Pin exchange"}
+                                title={isPinned ? "Unpin" : "Pin"}
+                              >
+                                <Pin size={12} />
+                              </button>
+                            </div>
+                            {isGmxGroup ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <SortableHeader
+                                  label={formatColumnHeader(col, exchangesWithMultipleQuotes)}
+                                  active={sortKey === col.column_key}
+                                  dir={sortDir}
+                                  onClick={() => toggleSort(col.column_key)}
+                                />
+                                <GmxInfo />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    applyGmxSide(
+                                      gmxPreferredSide === "long" ? "short" : "long"
+                                    );
+                                  }}
+                                  className="relative inline-flex h-4 w-9 items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[9px] font-medium text-gray-400"
+                                  title={
+                                    gmxPreferredSide === "long"
+                                      ? "Long rates"
+                                      : "Short rates"
+                                  }
+                                  aria-label="Toggle GMX side"
+                                >
+                                  <span className="relative z-10 grid w-full grid-cols-2">
+                                    <span
+                                      className={`text-center transition-colors ${
+                                        gmxPreferredSide === "long"
+                                          ? "text-emerald-200"
+                                          : "text-gray-400"
+                                      }`}
+                                    >
+                                      L
+                                    </span>
+                                    <span
+                                      className={`text-center transition-colors ${
+                                        gmxPreferredSide === "short"
+                                          ? "text-red-200"
+                                          : "text-gray-400"
+                                      }`}
+                                    >
+                                      S
+                                    </span>
+                                  </span>
+                                  <span
+                                    className={`absolute left-0.5 top-1/2 h-3 w-[calc(50%-2px)] -translate-y-1/2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                                      gmxPreferredSide === "long"
+                                        ? "translate-x-0 bg-emerald-500/25"
+                                        : "translate-x-full bg-red-500/25"
+                                    }`}
+                                  />
+                                </button>
+                              </div>
+                            ) : (
                               <SortableHeader
                                 label={formatColumnHeader(col, exchangesWithMultipleQuotes)}
                                 active={sortKey === col.column_key}
                                 dir={sortDir}
                                 onClick={() => toggleSort(col.column_key)}
+                                centered
                               />
-                              <GmxInfo />
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  applyGmxSide(
-                                    gmxPreferredSide === "long" ? "short" : "long"
-                                  );
-                                }}
-                                className="relative inline-flex h-4 w-9 items-center rounded-full border border-[#343a4e] bg-[#23283a] p-0.5 text-[9px] font-medium text-gray-400"
-                                title={
-                                  gmxPreferredSide === "long"
-                                    ? "Long rates"
-                                    : "Short rates"
-                                }
-                                aria-label="Toggle GMX side"
-                              >
-                                <span className="relative z-10 grid w-full grid-cols-2">
-                                  <span
-                                    className={`text-center transition-colors ${
-                                      gmxPreferredSide === "long"
-                                        ? "text-emerald-200"
-                                        : "text-gray-400"
-                                    }`}
-                                  >
-                                    L
-                                  </span>
-                                  <span
-                                    className={`text-center transition-colors ${
-                                      gmxPreferredSide === "short"
-                                        ? "text-red-200"
-                                        : "text-gray-400"
-                                    }`}
-                                  >
-                                    S
-                                  </span>
-                                </span>
-                                <span
-                                  className={`absolute left-0.5 top-1/2 h-3 w-[calc(50%-2px)] -translate-y-1/2 rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                                    gmxPreferredSide === "long"
-                                      ? "translate-x-0 bg-emerald-500/25"
-                                      : "translate-x-full bg-red-500/25"
-                                  }`}
-                                />
-                              </button>
-                            </div>
-                          ) : (
-                            <SortableHeader
-                              label={formatColumnHeader(col, exchangesWithMultipleQuotes)}
-                              active={sortKey === col.column_key}
-                              dir={sortDir}
-                              onClick={() => toggleSort(col.column_key)}
-                              centered
-                            />
-                          )}
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
 
-              <tbody>
+                <tbody>
                 {loading ? (
                   <tr>
                     <td
@@ -1501,26 +1535,26 @@ export default function FundingScreener({
                     );
                   })
                 )}
-              </tbody>
-            </table>
+                </tbody>
+                {paginatedRows.length < filtered.length && (
+                  <tfoot>
+                    <tr>
+                      <td
+                        colSpan={3 + displayColumns.length}
+                        className="px-4 py-3 text-center text-xs text-gray-400"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <span className="h-3 w-3 rounded-full border border-gray-600 border-t-blue-400 animate-spin" />
+                          Loading more…
+                        </span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
           </div>
 
-          {/* ---------- bottom pagination ---------- */}
-          {paginatedRows.length > 0 && (
-            <div className="px-4 py-3 border-t border-[#343a4e] hidden min-[960px]:block">
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                limit={limit}
-                onPageChange={setPage}
-                onLimitChange={(newLimit) => {
-                  setLimit(newLimit);
-                  resetPage();
-                }}
-                showPagination={limit !== -1}
-              />
-            </div>
-          )}
         </div>
       </section>
 
