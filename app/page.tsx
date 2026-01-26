@@ -110,14 +110,14 @@ export default function Home() {
           <div className="grid gap-8 md:grid-cols-[1.4fr_1fr]">
             <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[320px] group">
               <span
-                className="pointer-events-none absolute -right-20 -top-2 h-[26rem] w-[26rem] opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-50"
+                className="pointer-events-none absolute -right-20 -top-8 h-[30rem] w-[30rem] opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-55"
                 style={{
-                  background: "radial-gradient(circle, rgba(107,124,255,0.35) 0%, rgba(107,124,255,0) 70%)",
-                  filter: "blur(12px)",
+                  background: "radial-gradient(circle, rgba(107,124,255,0.35) 0%, rgba(107,124,255,0) 72%)",
+                  filter: "blur(18px)",
                 }}
               />
               <span
-                className="pointer-events-none absolute -right-20 -top-2 h-[26rem] w-[26rem] opacity-20"
+                className="pointer-events-none absolute -right-20 -top-6 h-[26rem] w-[26rem] opacity-20"
                 style={{
                   background: "linear-gradient(135deg, #8BD3FF 0%, #6B7CFF 55%, #E5D6FF 100%)",
                   WebkitMaskImage: "url(/brand/logo_icon.svg)",
@@ -130,7 +130,7 @@ export default function Home() {
                   maskSize: "contain",
                 }}
               />
-              <div className="mt-auto pt-24">
+              <div className="relative z-10 mt-auto pt-24">
                 <h3 className="text-xl font-semibold text-[#201D1D]">
                   Compare
                 </h3>
@@ -143,14 +143,14 @@ export default function Home() {
             <div className="grid gap-8">
               <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[200px] group">
                 <span
-                  className="pointer-events-none absolute -right-16 -top-12 h-56 w-56 opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-50"
+                  className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-55"
                   style={{
-                    background: "radial-gradient(circle, rgba(255,122,61,0.35) 0%, rgba(255,122,61,0) 70%)",
-                    filter: "blur(10px)",
+                    background: "radial-gradient(circle, rgba(255,122,61,0.35) 0%, rgba(255,122,61,0) 72%)",
+                    filter: "blur(16px)",
                   }}
                 />
                 <span
-                  className="pointer-events-none absolute -right-16 -top-12 h-56 w-56 opacity-20"
+                  className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 opacity-20"
                   style={{
                     background: "linear-gradient(135deg, #FFC5A1 0%, #FF7A3D 55%, #FF3B00 100%)",
                     WebkitMaskImage: "url(/brand/logo_icon.svg)",
@@ -163,7 +163,7 @@ export default function Home() {
                     maskSize: "contain",
                   }}
                 />
-                <div className="mt-auto pt-20">
+                <div className="relative z-10 mt-auto pt-20">
                   <h3 className="text-xl font-semibold text-[#201D1D]">
                     Neutral
                   </h3>
@@ -175,14 +175,14 @@ export default function Home() {
 
               <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[200px] group">
                 <span
-                  className="pointer-events-none absolute -right-16 -top-12 h-56 w-56 opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-50"
+                  className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-55"
                   style={{
-                    background: "radial-gradient(circle, rgba(122,230,161,0.35) 0%, rgba(122,230,161,0) 70%)",
-                    filter: "blur(10px)",
+                    background: "radial-gradient(circle, rgba(122,230,161,0.35) 0%, rgba(122,230,161,0) 72%)",
+                    filter: "blur(16px)",
                   }}
                 />
                 <span
-                  className="pointer-events-none absolute -right-16 -top-12 h-56 w-56 opacity-20"
+                  className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 opacity-20"
                   style={{
                     background: "linear-gradient(135deg, #D5F5DC 0%, #7AE6A1 55%, #4AC68B 100%)",
                     WebkitMaskImage: "url(/brand/logo_icon.svg)",
@@ -195,7 +195,7 @@ export default function Home() {
                     maskSize: "contain",
                   }}
                 />
-                <div className="mt-auto pt-20">
+                <div className="relative z-10 mt-auto pt-20">
                   <h3 className="text-xl font-semibold text-[#201D1D]">
                     History
                   </h3>
