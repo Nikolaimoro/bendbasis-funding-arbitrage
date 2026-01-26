@@ -34,7 +34,7 @@ export default function LandingFaq() {
   };
 
   return (
-    <section className="relative z-10 pt-32 pb-24">
+    <section className="relative z-10 pt-24 pb-24">
       <div className="mx-auto max-w-[1100px] px-8">
         <div className="grid gap-10 lg:grid-cols-[220px_1fr]">
           <h2 className="text-3xl font-semibold text-[#201D1D]">FAQs</h2>

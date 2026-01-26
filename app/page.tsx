@@ -61,7 +61,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 pb-48">
+      <section className="relative z-10 pb-24">
         <div className="mx-auto max-w-[1200px]">
           <div className="relative">
             <div className="pointer-events-none absolute -left-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />
@@ -102,32 +102,35 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 py-48">
+      <section className="relative z-10 py-24">
         <div className="mx-auto max-w-[1100px] px-8">
-          <h2 className="mb-8 text-2xl font-semibold text-[#201D1D]">
+          <h2 className="mb-10 text-3xl font-semibold text-[#201D1D]">
             A better way to view funding
           </h2>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-7 md:grid-cols-2">
             {[
               {
                 title: "Compare",
                 body: "Funding rates across exchanges, side by side.",
                 accent: "bg-[#EEF3FF]",
+                size: "md:row-span-2",
               },
               {
                 title: "Neutral",
                 body: "Built for delta-neutral positioning.",
                 accent: "bg-[#F1F6F1]",
+                size: "",
               },
               {
                 title: "History",
                 body: "Focus on consistent funding, not isolated spikes.",
                 accent: "bg-[#FFF3E8]",
+                size: "",
               },
             ].map((item) => (
               <div
                 key={item.title}
-                className="relative overflow-hidden rounded-3xl bg-[#F9F9F9] p-6"
+                className={`relative overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 ${item.size}`}
               >
                 <div
                   className={`absolute -right-10 -top-10 h-28 w-28 rounded-full ${item.accent}`}
@@ -144,6 +147,77 @@ export default function Home() {
       </section>
 
       <LandingFaq />
+
+      <footer className="relative z-10 pb-16">
+        <div className="mx-auto max-w-[1200px] rounded-[28px] bg-[#F9F9F9] px-8 py-12">
+          <div className="grid gap-10 md:grid-cols-[1.2fr_1fr]">
+            <div>
+              <img
+                src="/brand/logo_full.svg"
+                alt="bendbasis"
+                className="h-[20px] w-auto"
+              />
+              <div className="mt-10 flex items-center gap-4 text-[#201D1D]">
+                <a
+                  href="https://x.com/bendbasis"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Bendbasis on X"
+                  className="inline-flex h-9 w-9 items-center justify-center"
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 fill-current"
+                  >
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.504 11.24h-6.662l-5.213-6.818-5.967 6.818H1.68l7.73-8.844L1.25 2.25h6.83l4.713 6.231L18.244 2.25zm-1.161 17.52h1.833L7.08 4.126H5.114l11.97 15.644z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://t.me/bendbasis"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Bendbasis on Telegram"
+                  className="inline-flex h-9 w-9 items-center justify-center"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="h-4 w-4 inline-block"
+                    style={{
+                      backgroundColor: "currentColor",
+                      WebkitMaskImage: "url(/icons/social/telegram.svg)",
+                      maskImage: "url(/icons/social/telegram.svg)",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskPosition: "center",
+                      maskPosition: "center",
+                      WebkitMaskSize: "contain",
+                      maskSize: "contain",
+                    }}
+                  />
+                </a>
+              </div>
+            </div>
+            <div className="grid gap-3">
+              <h3 className="text-sm font-semibold text-[#201D1D]">App</h3>
+              <nav className="space-y-2 text-sm text-[#5C5854]">
+                <Link href="/funding" className="block hover:text-[#201D1D]">
+                  Funding
+                </Link>
+                <Link href="/markets" className="block hover:text-[#201D1D]">
+                  Markets
+                </Link>
+                <Link href="/arbitrage" className="block hover:text-[#201D1D]">
+                  Arbitrage
+                </Link>
+                <Link href="/backtester" className="block hover:text-[#201D1D]">
+                  Backtester
+                </Link>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
