@@ -217,7 +217,7 @@ export default function Home() {
                     History
                   </h3>
                   <p className="mt-3 text-base text-[#5C5854]">
-                    Focus on consistent funding, not isolated spikes.
+                    Focus on consistent funding.
                   </p>
                 </div>
               </div>
