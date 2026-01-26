@@ -46,9 +46,11 @@ export const fetchAll = async (
 
     if (data.length < PAGE_SIZE) break;
     if (keysetColumn) {
-      const last = data[data.length - 1] as Record<string, unknown> | undefined;
+      const last = data[data.length - 1];
+      const lastRecord =
+        last && typeof last === "object" ? (last as Record<string, unknown>) : null;
       lastValue =
-        (last?.[keysetColumn] as string | number | null | undefined) ??
+        (lastRecord?.[keysetColumn] as string | number | null | undefined) ??
         lastValue;
       if (lastValue === null || lastValue === undefined) break;
     } else {
