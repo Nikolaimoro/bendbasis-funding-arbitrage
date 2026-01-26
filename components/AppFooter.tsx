@@ -1,6 +1,11 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+
 export default function AppFooter() {
+  const path = usePathname();
+  if (path === "/") return null;
+
   return (
     <footer className="mt-12 border-t border-[#343a4e] py-6 flex items-center justify-end gap-3">
       <a

@@ -36,6 +36,7 @@ function BurgerIcon({ open, color = "white", onClick }: BurgerIconProps) {
 
 export default function AppHeader() {
   const path = usePathname();
+  const isHome = path === "/";
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -84,6 +85,7 @@ export default function AppHeader() {
   }, [lastScrollY]);
 
   const logoToneByPath: Record<string, "light" | "dark"> = {
+    "/": "dark",
     "/markets": "light",
     "/funding": "light",
     "/arbitrage": "light",
@@ -105,9 +107,9 @@ export default function AppHeader() {
       <Link
         href={href}
         className={[
-          "group relative text-base text-white font-roboto font-normal",
+          "group relative text-base font-roboto font-normal",
+          isHome ? "text-[#201D1D] hover:bg-[#F2EFEC]" : "text-white hover:bg-[#383d50]",
           "px-2 py-2 rounded-lg transition-colors duration-200",
-          "hover:bg-[#383d50]",
           isFirst ? "ml-6" : "",
           // For non-active links, change origin on hover for left-to-right disappear
           !active ? "[&:not(:hover)>span]:origin-right [&:hover>span]:origin-left" : "",
@@ -131,7 +133,9 @@ export default function AppHeader() {
       <Link
         href={href}
         onClick={() => setMobileMenuOpen(false)}
-        className="block w-full text-lg font-roboto font-normal py-3 text-left text-white"
+        className={`block w-full text-lg font-roboto font-normal py-3 text-left ${
+          isHome ? "text-[#201D1D]" : "text-white"
+        }`}
       >
         {label}
       </Link>
@@ -146,7 +150,10 @@ export default function AppHeader() {
       <div
         className={[
           "fixed top-0 left-0 right-0 z-50",
-          "flex gap-2 border-b border-[#343a4e] py-2 items-center bg-[#1c202f]",
+          "flex gap-2 border-b py-2 items-center",
+          isHome
+            ? "border-[#E7E2E0] bg-white"
+            : "border-[#343a4e] bg-[#1c202f]",
           "max-w-[1600px] mx-auto px-6",
           "transition-transform duration-300",
           !isVisible && !mobileMenuOpen ? "-translate-y-full" : "translate-y-0",
@@ -166,11 +173,26 @@ export default function AppHeader() {
 
         {/* Desktop navigation */}
         <div className="hidden md:flex items-center gap-3">
-          {navLink("/funding", "Funding", true)}
-          {navLink("/markets", "Markets")}
-          {navLink("/arbitrage", "Arbitrage")}
-          {navLink("/backtester", "Backtester")}
+          {!isHome && (
+            <>
+              {navLink("/funding", "Funding", true)}
+              {navLink("/markets", "Markets")}
+              {navLink("/arbitrage", "Arbitrage")}
+              {navLink("/backtester", "Backtester")}
+            </>
+          )}
         </div>
+
+        {isHome && (
+          <div className="hidden md:flex ml-auto">
+            <Link
+              href="/funding"
+              className="inline-flex items-center justify-center rounded-full bg-[#201D1D] text-white text-sm font-medium px-6 py-2.5 hover:opacity-90 transition-opacity"
+            >
+              Open App
+            </Link>
+          </div>
+        )}
 
         {/* Mobile burger */}
         <div className="md:hidden ml-auto">
@@ -185,7 +207,8 @@ export default function AppHeader() {
       {/* Mobile full-screen menu */}
       <div
         className={[
-          "fixed inset-0 z-40 bg-[#1c202f] pt-[52px]",
+          "fixed inset-0 z-40 pt-[52px]",
+          isHome ? "bg-white" : "bg-[#1c202f]",
           "flex flex-col",
           "transition-all duration-300 ease-out md:hidden",
           mobileMenuOpen
@@ -198,10 +221,17 @@ export default function AppHeader() {
           {mobileNavLink("/markets", "Markets")}
           {mobileNavLink("/arbitrage", "Arbitrage")}
           {mobileNavLink("/backtester", "Backtester")}
+          <Link
+            href="/funding"
+            onClick={() => setMobileMenuOpen(false)}
+            className="mt-6 w-full inline-flex items-center justify-center rounded-2xl bg-[#201D1D] text-white text-base font-medium py-3"
+          >
+            Open App
+          </Link>
         </nav>
         <div className="mt-auto w-full px-10 pb-8">
-          <div className="border-t border-[#343a4e] pt-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-3">
+          <div className={`border-t pt-5 ${isHome ? "border-[#E7E2E0]" : "border-[#343a4e]"}`}>
+            <p className={`text-xs uppercase tracking-[0.2em] mb-3 ${isHome ? "text-[#8B847E]" : "text-gray-500"}`}>
               Social
             </p>
             <div className="flex items-center gap-3">
@@ -210,7 +240,11 @@ export default function AppHeader() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Bendbasis on X"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#343a4e] bg-[#23283a] text-gray-200 transition hover:border-white"
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${
+                  isHome
+                    ? "border-[#E7E2E0] bg-white text-[#201D1D] hover:border-[#201D1D]"
+                    : "border-[#343a4e] bg-[#23283a] text-gray-200 hover:border-white"
+                }`}
               >
                 <XIcon size={18} />
               </a>
@@ -219,7 +253,11 @@ export default function AppHeader() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Bendbasis on Telegram"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#343a4e] bg-[#23283a] text-gray-200 transition hover:border-white"
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${
+                  isHome
+                    ? "border-[#E7E2E0] bg-white text-[#201D1D] hover:border-[#201D1D]"
+                    : "border-[#343a4e] bg-[#23283a] text-gray-200 hover:border-white"
+                }`}
               >
                 <Send size={18} />
               </a>
