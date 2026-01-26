@@ -36,16 +36,16 @@ export default function Home() {
   return (
     <main className="relative -mx-6 -my-4 min-h-screen bg-white px-6 py-4 text-[#201D1D]">
       <div className="fixed inset-0 z-0 bg-white" />
-      <div className="pointer-events-none absolute left-1/2 top-[-420px] z-0 h-[1260px] w-[1720px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.2),_rgba(250,129,77,0.16),_transparent_65%)] blur-3xl opacity-70" />
+      <div className="pointer-events-none absolute left-1/2 top-[-420px] z-0 h-[1260px] w-[1720px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.16),_rgba(250,129,77,0.12),_transparent_65%)] blur-3xl opacity-70" />
 
       <section className="relative z-10 pt-28 pb-12">
         <div className="mx-auto flex max-w-[860px] flex-col items-center text-center">
           <h1 className="text-[42px] leading-[1.05] font-semibold sm:text-[64px]">
-            Funding arbitrage
-            <span className="block">without the noise</span>
+            Structured
+            <span className="block">funding arbitrage</span>
           </h1>
           <p className="mt-4 text-lg text-[#5C5854] max-w-[640px]">
-            Find delta-neutral funding arbitrage opportunities across multiple exchanges.
+            Built for identifying delta-neutral funding opportunities.
           </p>
           <div className="mt-7">
             <Link
@@ -61,16 +61,16 @@ export default function Home() {
       <section className="relative z-10 pb-20">
         <div className="mx-auto max-w-[1200px]">
           <div className="relative">
-            <div className="pointer-events-none absolute -left-16 top-1/2 h-36 w-36 -translate-y-1/2 rounded-full bg-white/95 blur-3xl" />
-            <div className="pointer-events-none absolute -right-16 top-1/2 h-36 w-36 -translate-y-1/2 rounded-full bg-white/95 blur-3xl" />
+            <div className="pointer-events-none absolute -left-20 top-1/2 h-44 w-44 -translate-y-1/2 rounded-full bg-white/95 blur-[70px]" />
+            <div className="pointer-events-none absolute -right-20 top-1/2 h-44 w-44 -translate-y-1/2 rounded-full bg-white/95 blur-[70px]" />
             <div className="space-y-4">
               {[0, 1, 2].map((row) => {
                 const rowItems = exchangeCards.slice(row * 6, row * 6 + 6);
-                const leftPad = row === 1 ? "pl-10" : row === 2 ? "pl-4" : "pl-0";
+                const leftPad = row === 1 ? "pl-16" : "pl-0";
                 return (
                   <div
                     key={`row-${row}`}
-                    className={`flex flex-wrap justify-center gap-x-5 gap-y-4 ${leftPad}`}
+                    className={`flex flex-wrap justify-center gap-x-3 gap-y-3 ${leftPad}`}
                   >
                     {rowItems.map((exchange) => {
                       const width = Math.min(240, Math.max(160, 110 + exchange.label.length * 6));

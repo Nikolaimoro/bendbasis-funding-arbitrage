@@ -38,6 +38,7 @@ export default function AppHeader() {
   const isHome = path === "/";
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Close mobile menu on route change
@@ -60,6 +61,7 @@ export default function AppHeader() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      setIsScrolled(currentScrollY > 8);
       
       // After 50px scroll, start hide/show behavior
       if (currentScrollY > 50) {
@@ -142,7 +144,9 @@ export default function AppHeader() {
           "fixed top-0 left-0 right-0 z-50",
           "flex gap-2 border-b py-2 items-center",
           isHome
-            ? "border-transparent bg-white"
+            ? isScrolled
+              ? "border-[#E7E2E0] bg-white/90 backdrop-blur"
+              : "border-transparent bg-transparent"
             : "border-[#343a4e] bg-[#1c202f]",
           isHome ? "max-w-[1100px] px-8" : "max-w-[1600px] px-6",
           "mx-auto transition-transform duration-300",
