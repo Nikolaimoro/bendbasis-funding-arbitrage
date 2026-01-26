@@ -61,7 +61,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 pb-20">
+      <section className="relative z-10 pb-32">
         <div className="mx-auto max-w-[1200px]">
           <div className="relative">
             <div className="pointer-events-none absolute -left-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />

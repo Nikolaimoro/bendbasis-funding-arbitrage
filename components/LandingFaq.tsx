@@ -30,21 +30,21 @@ export default function LandingFaq() {
 
   return (
     <section className="relative z-10 pb-24">
-      <div className="mx-auto max-w-[1100px] px-2">
+      <div className="mx-auto max-w-[1100px] px-8">
         <div className="grid gap-10 lg:grid-cols-[220px_1fr]">
           <h2 className="text-3xl font-semibold text-[#201D1D]">FAQs</h2>
-          <div className="space-y-4">
+          <div className="space-y-3 max-w-[720px] justify-self-end">
             {FAQ_ITEMS.map((item, index) => {
               const isOpen = openIndex === index;
               const hasAnswer = item.answer.trim().length > 0;
               return (
                 <div
                   key={item.question}
-                  className="rounded-2xl border border-[#E7E2E0] bg-[#FAF8F5] px-6 py-5"
+                  className="rounded-2xl bg-[#FCFCFC] px-6 py-5"
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between gap-4 text-left"
+                    className="flex w-full items-center justify-between gap-4 text-left cursor-pointer"
                     onClick={() => {
                       if (!hasAnswer) return;
                       setOpenIndex((prev) => (prev === index ? null : index));
@@ -57,12 +57,10 @@ export default function LandingFaq() {
                     {hasAnswer && (
                       <span className="relative h-5 w-5 shrink-0">
                         <span
-                          className={`absolute left-0 top-1/2 h-[2px] w-full -translate-y-1/2 bg-[#201D1D] transition-transform duration-300 ${
-                            isOpen ? "rotate-0" : "rotate-0"
-                          }`}
+                          className="absolute left-0 top-1/2 h-[2px] w-full -translate-y-1/2 bg-[#201D1D] transition-transform duration-300"
                         />
                         <span
-                          className={`absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 bg-[#201D1D] transition-transform duration-300 ${
+                          className={`absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 bg-[#201D1D] transition-[transform,opacity] duration-300 ${
                             isOpen ? "rotate-90 opacity-0" : "rotate-0 opacity-100"
                           }`}
                         />
@@ -71,13 +69,15 @@ export default function LandingFaq() {
                   </button>
                   {hasAnswer && (
                     <div
-                      className={`overflow-hidden transition-[max-height,opacity,transform] duration-500 ease-out ${
-                        isOpen ? "max-h-[260px] opacity-100 translate-y-0" : "max-h-0 opacity-0 -translate-y-1"
+                      className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                        isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                       }`}
                     >
-                      <p className="mt-4 text-sm leading-relaxed text-[#5C5854]">
-                        {item.answer}
-                      </p>
+                      <div className="overflow-hidden">
+                        <p className="mt-4 text-sm leading-relaxed text-[#5C5854]">
+                          {item.answer}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
