@@ -149,15 +149,15 @@ export default function Home() {
       <LandingFaq />
 
       <footer className="relative z-10 pb-16">
-        <div className="mx-auto max-w-[1200px] rounded-[28px] bg-[#F9F9F9] px-8 py-12">
+        <div className="mx-auto max-w-[1100px] rounded-[28px] bg-[#F9F9F9] px-8 py-12">
           <div className="grid gap-10 md:grid-cols-[1.2fr_1fr]">
             <div>
               <img
                 src="/brand/logo_full.svg"
                 alt="bendbasis"
-                className="h-[20px] w-auto"
+                className="h-[18px] w-auto opacity-70"
               />
-              <div className="mt-10 flex items-center gap-4 text-[#201D1D]">
+              <div className="mt-10 flex items-center gap-3 text-[#8B847E]">
                 <a
                   href="https://x.com/bendbasis"
                   target="_blank"
@@ -199,7 +199,7 @@ export default function Home() {
               </div>
             </div>
             <div className="grid gap-3">
-              <h3 className="text-sm font-semibold text-[#201D1D]">App</h3>
+              <h3 className="text-sm font-medium text-[#201D1D]">App</h3>
               <nav className="space-y-2 text-sm text-[#5C5854]">
                 <Link href="/funding" className="block hover:text-[#201D1D]">
                   Funding
