@@ -107,51 +107,83 @@ export default function Home() {
           <h2 className="mb-12 text-3xl font-semibold text-[#201D1D]">
             A better way to view funding
           </h2>
-          <div className="grid gap-8 md:grid-cols-2">
-            {[
-              {
-                title: "Compare",
-                body: "Funding rates across exchanges, side by side.",
-                accent: "from-[#BEEBFF] via-[#7CD3FF] to-[#BEEBFF]",
-                inner: "bg-[#9ADFFF]",
-                size: "md:col-span-2 md:min-h-[260px]",
-                bubble: "h-56 w-56",
-              },
-              {
-                title: "Neutral",
-                body: "Built for delta-neutral positioning.",
-                accent: "from-[#FFD7B5] via-[#FF8B3A] to-[#FF3B00]",
-                inner: "bg-[#FFB37A]",
-                size: "md:min-h-[200px]",
-                bubble: "h-32 w-32",
-              },
-              {
-                title: "History",
-                body: "Focus on consistent funding, not isolated spikes.",
-                accent: "from-[#F1E1FF] via-[#A79BFF] to-[#D6C9FF]",
-                inner: "bg-[#C7BCFF]",
-                size: "md:min-h-[200px]",
-                bubble: "h-32 w-32",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className={`relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 ${item.size}`}
-              >
-                <div
-                  className={`absolute -right-10 -top-10 rounded-full bg-gradient-to-br ${item.accent} ${item.bubble}`}
+          <div className="grid gap-8 md:grid-cols-[1.4fr_1fr]">
+            <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[320px]">
+              <span
+                className="pointer-events-none absolute -right-20 -top-16 h-72 w-72 opacity-40"
+                style={{
+                  background: "linear-gradient(135deg, #8BD3FF 0%, #6B7CFF 55%, #E5D6FF 100%)",
+                  WebkitMaskImage: "url(/brand/logo_icon.svg)",
+                  maskImage: "url(/brand/logo_icon.svg)",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center",
+                  maskPosition: "center",
+                  WebkitMaskSize: "contain",
+                  maskSize: "contain",
+                }}
+              />
+              <div className="mt-auto pt-24">
+                <h3 className="text-lg font-semibold text-[#201D1D]">
+                  Compare
+                </h3>
+                <p className="mt-3 text-sm text-[#5C5854]">
+                  Funding rates across exchanges, side by side.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-8">
+              <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[200px]">
+                <span
+                  className="pointer-events-none absolute -right-16 -top-12 h-56 w-56 opacity-40"
+                  style={{
+                    background: "linear-gradient(135deg, #FFC5A1 0%, #FF7A3D 55%, #FF3B00 100%)",
+                    WebkitMaskImage: "url(/brand/logo_icon.svg)",
+                    maskImage: "url(/brand/logo_icon.svg)",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                  }}
                 />
-                <div
-                  className={`absolute right-8 top-8 h-10 w-10 rounded-full ${item.inner} opacity-70`}
-                />
-                <div className="mt-auto pt-24">
+                <div className="mt-auto pt-20">
                   <h3 className="text-lg font-semibold text-[#201D1D]">
-                    {item.title}
+                    Neutral
                   </h3>
-                  <p className="mt-3 text-sm text-[#5C5854]">{item.body}</p>
+                  <p className="mt-3 text-sm text-[#5C5854]">
+                    Built for delta-neutral positioning.
+                  </p>
                 </div>
               </div>
-            ))}
+
+              <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[200px]">
+                <span
+                  className="pointer-events-none absolute -right-16 -top-12 h-56 w-56 opacity-40"
+                  style={{
+                    background: "linear-gradient(135deg, #D5F5DC 0%, #7AE6A1 55%, #4AC68B 100%)",
+                    WebkitMaskImage: "url(/brand/logo_icon.svg)",
+                    maskImage: "url(/brand/logo_icon.svg)",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                  }}
+                />
+                <div className="mt-auto pt-20">
+                  <h3 className="text-lg font-semibold text-[#201D1D]">
+                    History
+                  </h3>
+                  <p className="mt-3 text-sm text-[#5C5854]">
+                    Focus on consistent funding, not isolated spikes.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
