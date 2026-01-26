@@ -51,37 +51,37 @@ export default function Home() {
             Built for identifying delta-neutral funding opportunities.
           </p>
           <div className="mt-7">
-            <Link
+            <a
               href="/funding"
               className="inline-flex items-center justify-center rounded-full bg-[#201D1D] text-white text-sm font-medium px-8 py-3 hover:opacity-90 transition-opacity"
             >
               Open App
-            </Link>
+            </a>
           </div>
         </div>
       </section>
 
       <section className="relative z-10 pb-24">
         <div className="mx-auto max-w-[1200px]">
-          <div className="relative">
+          <div className="relative max-md:grid max-md:grid-cols-2 max-md:gap-3 md:block">
             <div className="pointer-events-none absolute -left-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />
             <div className="pointer-events-none absolute -right-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />
             <div className="space-y-4">
               {[0, 1, 2].map((row) => {
                 const rowItems = exchangeCards.slice(row * 6, row * 6 + 6);
-                const leftPad = row === 1 ? "pl-24" : "pl-0";
+                const leftPad = row === 1 ? "md:pl-24" : "md:pl-0";
                 return (
                   <div
                     key={`row-${row}`}
-                    className={`flex flex-wrap justify-center gap-x-3 gap-y-3 ${leftPad}`}
+                    className={`flex flex-wrap justify-center gap-x-3 gap-y-3 ${leftPad} max-md:contents`}
                   >
                     {rowItems.map((exchange) => {
                       const width = Math.min(240, Math.max(160, 110 + exchange.label.length * 6));
                       return (
                         <div
                           key={exchange.key}
-                          className="flex items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-700 ease-out hover:-translate-y-1.5"
-                          style={{ width }}
+                          className="flex w-full items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-700 ease-out hover:-translate-y-1.5 md:w-[var(--card-width)]"
+                          style={{ ["--card-width" as any]: `${width}px` }}
                         >
                           <ExchangeIcon
                             exchange={exchange.key}
@@ -214,7 +214,7 @@ export default function Home() {
       <footer className="relative z-10 pb-16">
         <div className="mx-auto max-w-[1100px] rounded-[28px] bg-[#F9F9F9] px-8 py-12">
           <div className="grid gap-10 md:grid-cols-[1.2fr_1fr]">
-            <div className="flex h-full flex-col">
+            <div className="flex min-h-[180px] flex-col">
               <span
                 className="inline-block h-[18px] w-[140px]"
                 aria-label="bendbasis"
