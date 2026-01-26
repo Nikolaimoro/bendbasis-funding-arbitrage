@@ -34,7 +34,7 @@ export default function LandingFaq() {
   };
 
   return (
-    <section className="relative z-10 pb-24">
+    <section className="relative z-10 pt-32 pb-24">
       <div className="mx-auto max-w-[1100px] px-8">
         <div className="grid gap-10 lg:grid-cols-[220px_1fr]">
           <h2 className="text-3xl font-semibold text-[#201D1D]">FAQs</h2>
@@ -45,7 +45,7 @@ export default function LandingFaq() {
               return (
                 <div
                   key={item.question}
-                  className="rounded-2xl bg-[#F0F0F0] px-6 py-5"
+                  className="rounded-2xl bg-[#F9F9F9] px-6 py-5"
                 >
                   <button
                     type="button"

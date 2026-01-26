@@ -61,7 +61,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 pb-20">
+      <section className="relative z-10 pb-48">
         <div className="mx-auto max-w-[1200px]">
           <div className="relative">
             <div className="pointer-events-none absolute -left-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />
@@ -102,8 +102,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 pb-24">
+      <section className="relative z-10 py-48">
         <div className="mx-auto max-w-[1100px] px-8">
+          <h2 className="mb-8 text-2xl font-semibold text-[#201D1D]">
+            A better way to view funding
+          </h2>
           <div className="grid gap-6 md:grid-cols-3">
             {[
               {
@@ -124,7 +127,7 @@ export default function Home() {
             ].map((item) => (
               <div
                 key={item.title}
-                className="relative overflow-hidden rounded-3xl bg-[#FCFCFC] p-6"
+                className="relative overflow-hidden rounded-3xl bg-[#F9F9F9] p-6"
               >
                 <div
                   className={`absolute -right-10 -top-10 h-28 w-28 rounded-full ${item.accent}`}
