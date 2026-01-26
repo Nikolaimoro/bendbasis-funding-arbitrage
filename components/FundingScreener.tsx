@@ -754,6 +754,7 @@ export default function FundingScreener({
     });
   }, [gmxOptionsByToken, gmxDefaultKeyByToken, gmxPreferredSide, gmxSideLocked]);
 
+
   const getPinnedKeyForRow = (row: FundingMatrixRow) => {
     if (!pinnedColumnKey) return null;
     if (!gmxColumnKeySet.has(pinnedColumnKey)) return pinnedColumnKey;
@@ -1225,8 +1226,8 @@ export default function FundingScreener({
           />
 
           {/* ---------- table ---------- */}
-          <div className="overflow-x-auto min-[960px]:block hidden">
-            <div className="sticky top-[52px] z-30 border-b border-[#343a4e] bg-[#292e40]">
+          <div className="min-[960px]:block hidden">
+            <div className="overflow-x-auto">
               <table className="table-fixed w-max border-separate border-spacing-0 text-xs whitespace-nowrap">
                 <colgroup>
                   <col className="w-[48px]" />
@@ -1241,12 +1242,12 @@ export default function FundingScreener({
                 </colgroup>
                 <thead>
                   <tr className="border-b border-[#343a4e] bg-[#292e40]">
-                    <th className={`${TAILWIND.table.header} text-center md:sticky md:left-0 md:z-40 bg-[#292e40]`}>
+                    <th className={`${TAILWIND.table.header} sticky top-[52px] z-30 text-center md:sticky md:left-0 md:z-40 bg-[#292e40]`}>
                       <span className="inline-flex w-full justify-center">
                         <GradientStar filled size={14} />
                       </span>
                     </th>
-                    <th className={`${TAILWIND.table.header} md:sticky md:left-[48px] md:z-40 bg-[#292e40]`}>
+                    <th className={`${TAILWIND.table.header} sticky top-[52px] z-30 md:sticky md:left-[48px] md:z-40 bg-[#292e40]`}>
                       <SortableHeader
                         label="Asset"
                         active={sortKey === "token"}
@@ -1254,7 +1255,7 @@ export default function FundingScreener({
                         onClick={() => toggleSort("token")}
                       />
                     </th>
-                    <th className={`${TAILWIND.table.header} text-right md:sticky md:left-[138px] md:z-40 bg-[#292e40]`}>
+                    <th className={`${TAILWIND.table.header} sticky top-[52px] z-30 text-right md:sticky md:left-[138px] md:z-40 bg-[#292e40]`}>
                       <SortableHeader
                         label="APR"
                         active={sortKey === "max_arb"}
@@ -1268,7 +1269,7 @@ export default function FundingScreener({
                       return (
                         <th
                           key={col.column_key}
-                          className={`${TAILWIND.table.header} text-center whitespace-nowrap bg-[#292e40] ${isPinned ? "bg-[#353b52]/60" : ""}`}
+                          className={`${TAILWIND.table.header} sticky top-[52px] z-30 text-center whitespace-nowrap bg-[#292e40] ${isPinned ? "bg-[#353b52]/60" : ""}`}
                         >
                           <div className="flex flex-col items-center gap-1">
                             <div className="flex items-center gap-1">
@@ -1356,35 +1357,8 @@ export default function FundingScreener({
                     })}
                   </tr>
                 </thead>
-              </table>
-            </div>
 
-            <table className="table-fixed w-max border-separate border-spacing-0 text-xs whitespace-nowrap">
-              <colgroup>
-                <col className="w-[48px]" />
-                <col className="w-[90px]" />
-                <col className="w-[80px]" />
-                {displayColumns.map((col) => (
-                  <col
-                    key={col.column_key}
-                    className={col.isGmxGroup ? "w-[110px]" : "w-[75px]"}
-                  />
-                ))}
-              </colgroup>
-              <thead className="sr-only" aria-hidden="true">
-                <tr>
-                  <th className={`${TAILWIND.table.header} text-center`}>Fav</th>
-                  <th className={`${TAILWIND.table.header}`}>Asset</th>
-                  <th className={`${TAILWIND.table.header} text-right`}>APR</th>
-                  {displayColumns.map((col) => (
-                    <th key={col.column_key} className={`${TAILWIND.table.header} text-center`}>
-                      {formatColumnHeader(col, exchangesWithMultipleQuotes)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
+                <tbody>
                 {loading ? (
                   <tr>
                     <td
@@ -1528,8 +1502,9 @@ export default function FundingScreener({
                     );
                   })
                 )}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* ---------- bottom pagination ---------- */}
