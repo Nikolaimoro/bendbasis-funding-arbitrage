@@ -53,6 +53,9 @@ const PINNED_QUERY_KEY = "pinned";
 const CACHE_KEY = "cache-funding-screener-data";
 const CACHE_TTL_MS = 3 * 60 * 1000;
 const GMX_EXCHANGE = "gmx";
+const TABLE_ROW_HEIGHT = 36;
+const TABLE_HEADER_HEIGHT = 38;
+const MAX_ROWS_IN_VIEW = 100;
 
 type DisplayColumn = ExchangeColumn & {
   isGmxGroup?: boolean;
@@ -977,6 +980,14 @@ export default function FundingScreener({
   const totalPages = limit === -1 ? 1 : Math.ceil(filtered.length / limit);
   const paginatedRows =
     limit === -1 ? filtered : filtered.slice(page * limit, page * limit + limit);
+  const rowsForHeight = useMemo(() => {
+    if (limit === -1) {
+      const count = filtered.length || 20;
+      return Math.min(Math.max(count, 20), MAX_ROWS_IN_VIEW);
+    }
+    return Math.min(limit, MAX_ROWS_IN_VIEW);
+  }, [limit, filtered.length]);
+  const tableHeight = TABLE_HEADER_HEIGHT + rowsForHeight * TABLE_ROW_HEIGHT;
 
   const sortOptions = useMemo(() => {
     const base = [
@@ -1227,7 +1238,10 @@ export default function FundingScreener({
 
           {/* ---------- table ---------- */}
           <div className="min-[960px]:block hidden">
-            <div className="max-h-[calc(100vh-220px)] overflow-auto overscroll-contain">
+            <div
+              className="overflow-auto overscroll-contain"
+              style={{ height: `${tableHeight}px` }}
+            >
               <table className="table-fixed w-max border-separate border-spacing-0 text-xs whitespace-nowrap">
                 <colgroup>
                   <col className="w-[48px]" />
