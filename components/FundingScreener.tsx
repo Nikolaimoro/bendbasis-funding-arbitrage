@@ -55,6 +55,8 @@ const GMX_EXCHANGE = "gmx";
 const TABLE_ROW_HEIGHT = 36;
 const TABLE_HEADER_HEIGHT = 38;
 const MAX_ROWS_IN_VIEW = 100;
+const PAGE_SIZE = 20;
+const INITIAL_PAGES = 2;
 
 type DisplayColumn = ExchangeColumn & {
   isGmxGroup?: boolean;
@@ -270,7 +272,7 @@ export default function FundingScreener({
 
   const [page, setPage] = useState(0);
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
-  const limit = 20;
+  const limit = PAGE_SIZE;
 
   /* ---------- fetch data ---------- */
   useEffect(() => {
@@ -982,7 +984,7 @@ export default function FundingScreener({
 
   /* ---------- pagination ---------- */
   const paginatedRows = useMemo(
-    () => filtered.slice(0, (page + 1) * limit),
+    () => filtered.slice(0, (page + INITIAL_PAGES) * limit),
     [filtered, page, limit]
   );
   const rowsForHeight = Math.min(limit, MAX_ROWS_IN_VIEW);
@@ -996,7 +998,7 @@ export default function FundingScreener({
       if (container.scrollTop + container.clientHeight < container.scrollHeight - 120) return;
       setPage((prev) => {
         const next = prev + 1;
-        const maxPage = Math.max(0, Math.ceil(filtered.length / limit) - 1);
+        const maxPage = Math.max(0, Math.ceil(filtered.length / limit) - INITIAL_PAGES);
         return prev >= maxPage ? prev : next;
       });
     };
@@ -1534,6 +1536,21 @@ export default function FundingScreener({
                   })
                 )}
                 </tbody>
+                {paginatedRows.length < filtered.length && (
+                  <tfoot>
+                    <tr>
+                      <td
+                        colSpan={3 + displayColumns.length}
+                        className="px-4 py-3 text-center text-xs text-gray-400"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <span className="h-3 w-3 rounded-full border border-gray-600 border-t-blue-400 animate-spin" />
+                          Loading more…
+                        </span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           </div>
