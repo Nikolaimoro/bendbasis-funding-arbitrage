@@ -3,6 +3,7 @@ import Link from "next/link";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import LandingHeader from "@/components/LandingHeader";
 import LandingFaq from "@/components/LandingFaq";
+import LandingEffects from "@/components/LandingEffects";
 
 const exchangeCards = [
   { key: "binance", label: "Binance" },
@@ -37,12 +38,13 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main className="relative -mx-6 -my-4 min-h-screen bg-white px-6 py-4 text-[#201D1D]">
+      <LandingEffects />
       <LandingHeader />
       <div className="fixed inset-0 z-0 bg-white" />
-      <div className="pointer-events-none absolute left-1/2 top-[-160px] z-0 h-[420px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.16),_rgba(250,129,77,0.12),_transparent_65%)] blur-3xl opacity-70 md:top-[-420px] md:h-[1260px] md:w-[1720px]" />
+      <div className="landing-gradient pointer-events-none absolute left-1/2 top-[-160px] z-0 h-[420px] w-[560px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.16),_rgba(250,129,77,0.12),_transparent_65%)] blur-3xl opacity-70 md:top-[-420px] md:h-[1260px] md:w-[1720px]" />
 
       <section className="relative z-10 pt-28 pb-12">
-        <div className="mx-auto flex max-w-[860px] flex-col items-center text-center md:text-center px-2 md:px-0">
+        <div className="reveal mx-auto flex max-w-[860px] flex-col items-center text-center md:text-center px-2 md:px-0" data-reveal>
           <h1 className="text-[42px] leading-[1.05] font-semibold sm:text-[64px]">
             Structured
             <span className="block">funding arbitrage</span>
@@ -63,7 +65,7 @@ export default function Home() {
 
       <section className="relative z-10 pb-24">
         <div className="mx-auto max-w-[1200px]">
-          <div className="relative">
+          <div className="relative reveal" data-reveal>
             <div className="pointer-events-none absolute -left-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />
             <div className="pointer-events-none absolute -right-24 top-0 h-full w-28 bg-white/80 backdrop-blur-3xl" />
             <div className="hidden md:block space-y-4">
@@ -80,8 +82,10 @@ export default function Home() {
                       return (
                         <div
                           key={exchange.key}
-                          className="flex items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-700 ease-out hover:-translate-y-1.5 md:w-[var(--card-width)]"
+                          className="reveal flex items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-700 ease-out hover:-translate-y-1.5 md:w-[var(--card-width)]"
                           style={{ ["--card-width" as any]: `${width}px` }}
+                          data-reveal
+                          data-reveal-delay={String(row * 60)}
                         >
                           <ExchangeIcon
                             exchange={exchange.key}
@@ -102,7 +106,8 @@ export default function Home() {
               {exchangeCards.map((exchange) => (
                 <div
                   key={exchange.key}
-                  className="flex items-center justify-center gap-2 rounded-full border border-[#E7E2E0] bg-white px-4 py-2"
+                  className="reveal flex items-center justify-center gap-2 rounded-full border border-[#E7E2E0] bg-white px-4 py-2"
+                  data-reveal
                 >
                   <ExchangeIcon
                     exchange={exchange.key}
@@ -121,11 +126,11 @@ export default function Home() {
 
       <section className="relative z-10 py-24">
         <div className="mx-auto max-w-[1100px] px-8">
-          <h2 className="mb-12 text-[34px] font-semibold text-[#201D1D] text-left">
+          <h2 className="reveal mb-12 text-[34px] font-semibold text-[#201D1D] text-left" data-reveal>
             A better way to view funding
           </h2>
           <div className="grid gap-8 md:grid-cols-[1.4fr_1fr]">
-            <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[320px] group">
+            <div className="reveal relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[320px] group" data-reveal>
               <span
                 className="pointer-events-none absolute -right-20 -top-8 h-[30rem] w-[30rem] opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-55"
                 style={{
@@ -158,7 +163,7 @@ export default function Home() {
             </div>
 
             <div className="grid gap-8">
-              <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[200px] group">
+              <div className="reveal relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[200px] group" data-reveal data-reveal-delay="80">
                 <span
                   className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-55"
                   style={{
@@ -190,7 +195,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[200px] group">
+              <div className="reveal relative flex flex-col overflow-hidden rounded-3xl bg-[#F9F9F9] p-6 md:min-h-[200px] group" data-reveal data-reveal-delay="140">
                 <span
                   className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-55"
                   style={{
@@ -217,7 +222,7 @@ export default function Home() {
                     History
                   </h3>
                   <p className="mt-3 text-base text-[#5C5854]">
-                    Focus on consistent funding, not isolated spikes.
+                    Focus on consistent funding.
                   </p>
                 </div>
               </div>
@@ -229,7 +234,7 @@ export default function Home() {
       <LandingFaq />
 
       <footer className="relative z-10 pb-16">
-        <div className="mx-auto max-w-[1100px] rounded-[28px] bg-[#F9F9F9] px-8 py-12">
+        <div className="reveal mx-auto max-w-[1100px] rounded-[28px] bg-[#F9F9F9] px-8 py-12" data-reveal>
           <div className="flex flex-col gap-6 md:grid md:grid-cols-[1.2fr_1fr] md:gap-10">
             <div className="flex flex-col gap-6">
               <span

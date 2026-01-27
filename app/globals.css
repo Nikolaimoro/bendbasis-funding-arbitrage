@@ -28,6 +28,33 @@ body {
   min-height: 100%;
 }
 
+/* Landing page reveal animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+.landing-gradient {
+  transform: translate(-50%, 0) translate(var(--grad-x, 0px), var(--grad-y, 0px));
+  transition: transform 0.2s ease-out;
+}
+
 /* Roboto font - for headings and navigation */
 .font-roboto {
   font-family: var(--font-roboto), system-ui, -apple-system, sans-serif;

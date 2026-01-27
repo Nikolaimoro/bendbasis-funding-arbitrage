@@ -37,7 +37,9 @@ export default function LandingFaq() {
     <section className="relative z-10 pt-24 pb-24">
       <div className="mx-auto max-w-[1100px] px-8">
         <div className="grid gap-10 lg:grid-cols-[220px_1fr]">
-          <h2 className="text-3xl font-semibold text-[#201D1D]">FAQs</h2>
+          <h2 className="reveal text-3xl font-semibold text-[#201D1D] text-left" data-reveal>
+            FAQs
+          </h2>
           <div className="space-y-3 max-w-[720px] justify-self-end">
             {FAQ_ITEMS.map((item, index) => {
               const isOpen = openIndex === index;
@@ -45,7 +47,9 @@ export default function LandingFaq() {
               return (
                 <div
                   key={item.question}
-                  className="rounded-2xl bg-[#F9F9F9] px-6 py-5"
+                  className="reveal rounded-2xl bg-[#F9F9F9] px-6 py-5"
+                  data-reveal
+                  data-reveal-delay={String(index * 60)}
                 >
                   <button
                     type="button"
