@@ -82,19 +82,21 @@ export default function Home() {
                       return (
                         <div
                           key={exchange.key}
-                          className="reveal flex items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-[1200ms] ease-out hover:-translate-y-1 md:w-[var(--card-width)]"
+                          className="reveal group rounded-full border border-[#E7E2E0] bg-white px-5 py-2 md:w-[var(--card-width)]"
                           style={{ ["--card-width" as any]: `${width}px` }}
                           data-reveal
                           data-reveal-delay={String(row * 60)}
                         >
-                          <ExchangeIcon
-                            exchange={exchange.key}
-                            size={22}
-                            bgColor="#201D1D"
-                          />
-                          <span className="text-sm font-medium text-[#201D1D]">
-                            {exchange.label}
-                          </span>
+                          <div className="flex items-center justify-center gap-3 transition-transform duration-[1200ms] ease-out group-hover:-translate-y-1">
+                            <ExchangeIcon
+                              exchange={exchange.key}
+                              size={22}
+                              bgColor="#201D1D"
+                            />
+                            <span className="text-sm font-medium text-[#201D1D]">
+                              {exchange.label}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
@@ -106,17 +108,19 @@ export default function Home() {
               {exchangeCards.map((exchange) => (
                 <div
                   key={exchange.key}
-                  className="reveal flex items-center justify-center gap-2 rounded-full border border-[#E7E2E0] bg-white px-4 py-2 transition-transform duration-[1200ms] ease-out hover:-translate-y-1"
+                  className="reveal group rounded-full border border-[#E7E2E0] bg-white px-4 py-2"
                   data-reveal
                 >
-                  <ExchangeIcon
-                    exchange={exchange.key}
-                    size={20}
-                    bgColor="#201D1D"
-                  />
-                  <span className="text-[13px] font-medium text-[#201D1D]">
-                    {exchange.label}
-                  </span>
+                  <div className="flex items-center justify-center gap-2 transition-transform duration-[1200ms] ease-out group-hover:-translate-y-1">
+                    <ExchangeIcon
+                      exchange={exchange.key}
+                      size={20}
+                      bgColor="#201D1D"
+                    />
+                    <span className="text-[13px] font-medium text-[#201D1D]">
+                      {exchange.label}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

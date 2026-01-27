@@ -22,6 +22,7 @@ export const EXCHANGE_LABEL: Record<string, string> = {
   pacifica: "Pacifica",
   reya: "REYA",
   gmx: "GMX",
+  bitget: "Bitget",
 };
 
 export const EXCHANGE_SEO_LIST = Object.values(EXCHANGE_LABEL);
