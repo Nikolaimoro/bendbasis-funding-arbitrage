@@ -41,7 +41,7 @@ export default function Home() {
       <LandingEffects />
       <LandingHeader />
       <div className="fixed inset-0 z-0 bg-white" />
-      <div className="landing-gradient pointer-events-none absolute left-1/2 top-[-160px] z-0 h-[420px] w-[560px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.16),_rgba(250,129,77,0.12),_transparent_65%)] blur-3xl opacity-70 md:top-[-420px] md:h-[1260px] md:w-[1720px]" />
+      <div className="pointer-events-none absolute left-1/2 top-[-160px] z-0 h-[420px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(158,93,238,0.16),_rgba(250,129,77,0.12),_transparent_65%)] blur-3xl opacity-70 md:top-[-420px] md:h-[1260px] md:w-[1720px]" />
 
       <section className="relative z-10 pt-28 pb-12">
         <div className="reveal mx-auto flex max-w-[860px] flex-col items-center text-center md:text-center px-2 md:px-0" data-reveal>
@@ -82,7 +82,7 @@ export default function Home() {
                       return (
                         <div
                           key={exchange.key}
-                          className="reveal flex items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-700 ease-out hover:-translate-y-1.5 md:w-[var(--card-width)]"
+                          className="reveal flex items-center justify-center gap-3 rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-700 ease-out hover:-translate-y-1 md:w-[var(--card-width)]"
                           style={{ ["--card-width" as any]: `${width}px` }}
                           data-reveal
                           data-reveal-delay={String(row * 60)}
@@ -106,7 +106,7 @@ export default function Home() {
               {exchangeCards.map((exchange) => (
                 <div
                   key={exchange.key}
-                  className="reveal flex items-center justify-center gap-2 rounded-full border border-[#E7E2E0] bg-white px-4 py-2"
+                  className="reveal flex items-center justify-center gap-2 rounded-full border border-[#E7E2E0] bg-white px-4 py-2 transition-transform duration-700 ease-out hover:-translate-y-1"
                   data-reveal
                 >
                   <ExchangeIcon
