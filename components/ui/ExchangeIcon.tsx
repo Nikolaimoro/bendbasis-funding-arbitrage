@@ -1,5 +1,6 @@
 "use client";
 
+import { Bitcoin } from "lucide-react";
 import Image from "next/image";
 
 /**
@@ -27,6 +28,7 @@ export const EXCHANGE_ICONS: Record<string, { file: string; bg?: string; scale?:
   pacifica: { file: "pacifica.svg", bg: "#1a1a2e" },
   reya: { file: "reya.svg", bg: "#1a1a2e", scale: 0.55 },
   gmx: { file: "gmx.svg", bg: "#1a1a2e" },
+  bitget: { file: "bitget.png", bg: "#1a1a2e", scale: 1 },
 };
 
 interface ExchangeIconProps {

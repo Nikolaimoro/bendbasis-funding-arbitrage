@@ -52,6 +52,7 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState<BacktesterChartData | null>(initialToken && initialLongEx && initialShortEx ? { token: initialToken, longEx: initialLongEx, shortEx: initialShortEx, longQuote: "", shortQuote: "", longMarketId: 0, shortMarketId: 0, longRefUrl: null, shortRefUrl: null, longVolume24h: null, shortVolume24h: null, longOpenInterest: null, shortOpenInterest: null } : null);
   const [runToken, setRunToken] = useState(0);
+  const lastTokenRef = useRef<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -148,6 +149,54 @@ export default function BacktesterForm({ tokens, exchanges, initialToken = "", i
       }
     }
   }, [selectedToken, exchanges]);
+
+  useEffect(() => {
+    if (!selectedToken) return;
+    if (lastTokenRef.current === selectedToken) return;
+    lastTokenRef.current = selectedToken;
+
+    if (selectedLongEx) {
+      const ex = exchanges.find(e => e.exchange === selectedLongEx);
+      const normalizedToken = normalizeToken(selectedToken);
+      const baseAsset = ex?.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
+      if (baseAsset?.quotes?.length) {
+        const filteredQuotes = filterQuotesForSide(baseAsset.quotes, selectedLongEx, "long");
+        const nextQuote =
+          filteredQuotes.find(q => q.asset === selectedLongQuote) ??
+          filteredQuotes.find(q => q.asset === "USDT") ??
+          filteredQuotes[0];
+        if (nextQuote) {
+          setSelectedLongQuote(nextQuote.asset);
+          setSelectedLongMarketId(nextQuote.marketId);
+          setSelectedLongRefUrl(nextQuote.refUrl);
+          setSelectedLongVolume24h(nextQuote.volume24h ?? null);
+          setSelectedLongOpenInterest(nextQuote.openInterest ?? null);
+          setSelectedLongSide(nextQuote.side ?? null);
+        }
+      }
+    }
+
+    if (selectedShortEx) {
+      const ex = exchanges.find(e => e.exchange === selectedShortEx);
+      const normalizedToken = normalizeToken(selectedToken);
+      const baseAsset = ex?.baseAssets.find(ba => normalizeToken(ba.asset) === normalizedToken);
+      if (baseAsset?.quotes?.length) {
+        const filteredQuotes = filterQuotesForSide(baseAsset.quotes, selectedShortEx, "short");
+        const nextQuote =
+          filteredQuotes.find(q => q.asset === selectedShortQuote) ??
+          filteredQuotes.find(q => q.asset === "USDT") ??
+          filteredQuotes[0];
+        if (nextQuote) {
+          setSelectedShortQuote(nextQuote.asset);
+          setSelectedShortMarketId(nextQuote.marketId);
+          setSelectedShortRefUrl(nextQuote.refUrl);
+          setSelectedShortVolume24h(nextQuote.volume24h ?? null);
+          setSelectedShortOpenInterest(nextQuote.openInterest ?? null);
+          setSelectedShortSide(nextQuote.side ?? null);
+        }
+      }
+    }
+  }, [selectedToken, selectedLongEx, selectedShortEx, selectedLongQuote, selectedShortQuote, exchanges]);
 
   // Auto-fill quote when exchange is selected (prefer USDT, fallback to first available)
   useEffect(() => {
