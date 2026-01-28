@@ -381,7 +381,7 @@ export default function BacktesterPnLChart({ chartData, runToken }: BacktesterPn
   }, [rows]);
 
   const FULL_RANGE = Math.max(1, maxX - minX);
-  const MIN_RANGE = CHART_CONFIG.SEVEN_DAYS_MS;
+const MIN_RANGE = CHART_CONFIG.FIVE_DAYS_MS;
 
   const options = useMemo<ChartOptions<"bar">>(
     () => ({

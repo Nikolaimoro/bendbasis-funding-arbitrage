@@ -394,11 +394,28 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     return map;
   }, [marketItems]);
 
+  const unifiedXs = useMemo(() => {
+    if (!selectedMarketIds.length) return [];
+    const selectedIdsSet = new Set<number>(selectedMarketIds);
+    const xs = new Set<number>();
+    chartRows.forEach((row) => {
+      const marketId = Number(row.market_id);
+      if (!selectedIdsSet.has(marketId)) return;
+      if (row.funding_apr_8h == null) return;
+      const apr = Number(row.funding_apr_8h);
+      if (!Number.isFinite(apr)) return;
+      const x = new Date(normalizeFundingTimestamp(row.h)).getTime();
+      if (!Number.isFinite(x)) return;
+      xs.add(x);
+    });
+    return Array.from(xs).sort((a, b) => a - b);
+  }, [chartRows, selectedMarketIds]);
+
   const pointsByMarketId = useMemo(() => {
-    if (!selectedMarketIds.length) return new Map<number, { x: number; y: number }[]>();
+    if (!selectedMarketIds.length) return new Map<number, Map<number, number>>();
     const allowedMarketIds = new Set<number>(marketItems.map((m) => m.marketId));
     const selectedIdsSet = new Set<number>(selectedMarketIds);
-    const map = new Map<number, { x: number; y: number }[]>();
+    const map = new Map<number, Map<number, number>>();
 
     chartRows.forEach((row) => {
       const marketId = Number(row.market_id);
@@ -409,11 +426,14 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       if (!Number.isFinite(apr)) return;
       const x = new Date(normalizeFundingTimestamp(row.h)).getTime();
       if (!Number.isFinite(x)) return;
-      if (!map.has(marketId)) map.set(marketId, []);
-      map.get(marketId)!.push({ x, y: apr });
+      let inner = map.get(marketId);
+      if (!inner) {
+        inner = new Map<number, number>();
+        map.set(marketId, inner);
+      }
+      inner.set(x, apr);
     });
 
-    map.forEach((rows) => rows.sort((a, b) => a.x - b.x));
     return map;
   }, [chartRows, marketItems, selectedMarketIds]);
 
@@ -438,9 +458,13 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   const datasets = useMemo(() => {
     const activeMarkets = marketItems.filter((m) => selectedMarketKeys.includes(m.key));
     return activeMarkets.map((market) => {
-      const data = pointsByMarketId.get(market.marketId) ?? [];
+      const pointMap = pointsByMarketId.get(market.marketId);
+      const data = unifiedXs.map((x) => ({
+        x,
+        y: pointMap?.get(x) ?? null,
+      }));
       const color = colorByKey.get(market.key) ?? COLORS.chart.primary;
-      const validCount = data.length;
+      const validCount = pointMap?.size ?? 0;
       return {
         label: market.label,
         data,
@@ -453,7 +477,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
         parsing: false as const,
       };
     });
-  }, [marketItems, selectedMarketKeys, pointsByMarketId, colorByKey]);
+  }, [marketItems, selectedMarketKeys, pointsByMarketId, unifiedXs, colorByKey]);
 
   const chartData = useMemo(
     () => ({
@@ -463,9 +487,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   );
 
   const { minX, maxX } = useMemo(() => {
-    const xs = datasets
-      .flatMap((dataset) => (dataset.data as { x: number }[]).map((point) => point.x))
-      .filter((x) => Number.isFinite(x)) as number[];
+    const xs = unifiedXs.filter((x) => Number.isFinite(x)) as number[];
 
     if (!xs.length) {
       return {
@@ -475,10 +497,10 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     }
 
     return { minX: Math.min(...xs), maxX: Math.max(...xs) };
-  }, [datasets]);
+  }, [unifiedXs]);
 
   const fullRange = Math.max(1, maxX - minX);
-  const minRange = CHART_CONFIG.SEVEN_DAYS_MS;
+  const minRange = CHART_CONFIG.FIVE_DAYS_MS;
 
   const options = useMemo<ChartOptions<"line">>(
     () => ({

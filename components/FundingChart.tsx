@@ -160,7 +160,7 @@ export default function FundingChart(props: FundingChartProps) {
   }, [rows]);
 
   const fullRange = Math.max(1, maxX - minX);
-  const minRange = CHART_CONFIG.SEVEN_DAYS_MS;
+  const minRange = CHART_CONFIG.FIVE_DAYS_MS;
 
   const chartData = useMemo(
     () => ({
