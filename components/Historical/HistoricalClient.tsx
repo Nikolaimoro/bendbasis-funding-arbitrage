@@ -334,10 +334,6 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     const filtered = selectedMarketKeys.filter((key) => validKeys.has(key));
     if (filtered.length !== selectedMarketKeys.length) {
       setSelectedMarketKeys(filtered);
-      return;
-    }
-    if (filtered.length === 0 && marketItems.length) {
-      setSelectedMarketKeys(marketItems.map((m) => m.key));
     }
   }, [selectedAsset, marketItems, selectedMarketKeys]);
 
@@ -460,12 +456,9 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   );
 
   const { minX, maxX } = useMemo(() => {
-    const xs = chartRows
-      .map((row) => {
-        const ts = row.h.includes("T") ? row.h : row.h.replace(" ", "T");
-        const time = new Date(ts).getTime();
-        return Number.isFinite(time) ? time : NaN;
-      })
+    const xs = Object.values(seriesByMarketId)
+      .flat()
+      .map((point) => new Date(point.funding_time).getTime())
       .filter((x) => Number.isFinite(x)) as number[];
 
     if (!xs.length) {
@@ -476,7 +469,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     }
 
     return { minX: Math.min(...xs), maxX: Math.max(...xs) };
-  }, [chartRows]);
+  }, [seriesByMarketId]);
 
   const fullRange = Math.max(1, maxX - minX);
   const minRange = CHART_CONFIG.SEVEN_DAYS_MS;
@@ -560,10 +553,17 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
             `;
 
             const { offsetLeft, offsetTop } = chart.canvas;
+            const { chartArea } = chart;
+            const midX = chartArea.left + chartArea.width / 2;
+            const isRight = tooltip.caretX > midX;
+            const anchorX = offsetLeft + tooltip.caretX;
+            const anchorY = offsetTop + chartArea.top + chartArea.height * 0.5;
             tooltipEl.style.opacity = "1";
-            tooltipEl.style.left = `${offsetLeft + tooltip.caretX}px`;
-            tooltipEl.style.top = `${offsetTop + tooltip.caretY}px`;
-            tooltipEl.style.transform = "translate(-50%, -110%)";
+            tooltipEl.style.left = `${anchorX}px`;
+            tooltipEl.style.top = `${anchorY}px`;
+            tooltipEl.style.transform = isRight
+              ? "translate(-110%, -50%)"
+              : "translate(10%, -50%)";
           },
         },
       },
