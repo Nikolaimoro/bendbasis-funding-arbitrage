@@ -386,43 +386,6 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     [selectedMarketKeys, marketIdByKey]
   );
 
-  const seriesByMarketId = useMemo(() => {
-    if (!marketItems.length || selectedMarketIds.length === 0) return {};
-    const allowedMarketIds = new Set<number>(marketItems.map((m) => m.marketId));
-    const selectedIdsSet = new Set<number>(selectedMarketIds);
-    const next: Record<number, FundingChartPoint[]> = {};
-
-    chartRows.forEach((row) => {
-      const marketId = Number(row.market_id);
-      if (!allowedMarketIds.has(marketId)) return;
-      if (!selectedIdsSet.has(marketId)) return;
-      if (row.funding_apr_8h == null) return;
-      const apr = Number(row.funding_apr_8h);
-      if (!Number.isFinite(apr)) return;
-      if (!next[marketId]) next[marketId] = [];
-      const normalized = normalizeFundingTimestamp(row.h);
-      next[marketId].push({ funding_time: normalized, apr });
-    });
-
-    return next;
-  }, [chartRows, marketItems, selectedMarketIds]);
-
-  const fallbackSeriesByExchange = useMemo(() => {
-    const next: Record<string, FundingChartPoint[]> = {};
-    chartRows.forEach((row) => {
-      if (row.funding_apr_8h == null) return;
-      const apr = Number(row.funding_apr_8h);
-      if (!Number.isFinite(apr)) return;
-      const exchange = row.exchange;
-      if (!exchange) return;
-      const normalized = normalizeFundingTimestamp(row.h);
-      if (!next[exchange]) next[exchange] = [];
-      next[exchange].push({ funding_time: normalized, apr });
-    });
-    Object.values(next).forEach((rows) => rows.sort((a, b) => new Date(a.funding_time).getTime() - new Date(b.funding_time).getTime()));
-    return next;
-  }, [chartRows]);
-
   const exchangeCounts = useMemo(() => {
     const map = new Map<string, number>();
     marketItems.forEach((m) => {
@@ -430,6 +393,66 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     });
     return map;
   }, [marketItems]);
+
+  const unifiedXs = useMemo(() => {
+    if (!selectedMarketIds.length) return [];
+    const selectedIdsSet = new Set<number>(selectedMarketIds);
+    const xs = new Set<number>();
+    chartRows.forEach((row) => {
+      const marketId = Number(row.market_id);
+      if (!selectedIdsSet.has(marketId)) return;
+      const apr = Number(row.funding_apr_8h);
+      if (!Number.isFinite(apr)) return;
+      const x = new Date(normalizeFundingTimestamp(row.h)).getTime();
+      if (!Number.isFinite(x)) return;
+      xs.add(x);
+    });
+    return Array.from(xs).sort((a, b) => a - b);
+  }, [chartRows, selectedMarketIds]);
+
+  const pointsByMarketId = useMemo(() => {
+    if (!selectedMarketIds.length) return new Map<number, Map<number, number>>();
+    const allowedMarketIds = new Set<number>(marketItems.map((m) => m.marketId));
+    const selectedIdsSet = new Set<number>(selectedMarketIds);
+    const map = new Map<number, Map<number, number>>();
+
+    chartRows.forEach((row) => {
+      const marketId = Number(row.market_id);
+      if (!allowedMarketIds.has(marketId)) return;
+      if (!selectedIdsSet.has(marketId)) return;
+      const apr = Number(row.funding_apr_8h);
+      if (!Number.isFinite(apr)) return;
+      const x = new Date(normalizeFundingTimestamp(row.h)).getTime();
+      if (!Number.isFinite(x)) return;
+      let inner = map.get(marketId);
+      if (!inner) {
+        inner = new Map<number, number>();
+        map.set(marketId, inner);
+      }
+      inner.set(x, apr);
+    });
+
+    return map;
+  }, [chartRows, marketItems, selectedMarketIds]);
+
+  const pointsByExchange = useMemo(() => {
+    const map = new Map<string, Map<number, number>>();
+    chartRows.forEach((row) => {
+      const apr = Number(row.funding_apr_8h);
+      if (!Number.isFinite(apr)) return;
+      const exchange = row.exchange;
+      if (!exchange) return;
+      const x = new Date(normalizeFundingTimestamp(row.h)).getTime();
+      if (!Number.isFinite(x)) return;
+      let inner = map.get(exchange);
+      if (!inner) {
+        inner = new Map<number, number>();
+        map.set(exchange, inner);
+      }
+      inner.set(x, apr);
+    });
+    return map;
+  }, [chartRows]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -452,40 +475,30 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   const datasets = useMemo(() => {
     const activeMarkets = marketItems.filter((m) => selectedMarketKeys.includes(m.key));
     return activeMarkets.map((market) => {
-      const rows = seriesByMarketId[market.marketId] ?? [];
-      const fallback =
-        rows.length === 0 && (exchangeCounts.get(market.exchange) ?? 0) === 1
-          ? fallbackSeriesByExchange[market.exchange] ?? []
-          : [];
-      const buildData = (source: FundingChartPoint[]) =>
-        source
-          .filter((r) => Number.isFinite(r.apr))
-          .map((r) => {
-            const x = new Date(r.funding_time).getTime();
-            return Number.isFinite(x) ? { x, y: r.apr } : null;
-          })
-          .filter((point): point is { x: number; y: number } => point !== null);
+      const marketPoints = pointsByMarketId.get(market.marketId);
+      const hasSingleMarket = (exchangeCounts.get(market.exchange) ?? 0) === 1;
+      const exchangePoints = hasSingleMarket ? pointsByExchange.get(market.exchange) : undefined;
 
-      let data = buildData(rows.length ? rows : fallback);
-      if (!data.length && fallback.length && rows.length) {
-        data = buildData(fallback);
-      }
-      data.sort((a, b) => a.x - b.x);
+      const data = unifiedXs.map((x) => ({
+        x,
+        y: marketPoints?.get(x) ?? exchangePoints?.get(x) ?? null,
+      }));
+
       const color = colorByKey.get(market.key) ?? COLORS.chart.primary;
+      const validCount = data.filter((point) => Number.isFinite(point.y)).length;
       return {
         label: market.label,
         data,
         borderColor: color,
         borderWidth: 2,
-        pointRadius: data.length < 2 ? 3 : 0,
+        pointRadius: validCount < 2 ? 3 : 0,
         pointHitRadius: 8,
         tension: 0.25,
-        spanGaps: true,
         showLine: true,
         parsing: false as const,
       };
     });
-  }, [marketItems, selectedMarketKeys, seriesByMarketId, colorByKey]);
+  }, [marketItems, selectedMarketKeys, pointsByMarketId, pointsByExchange, unifiedXs, exchangeCounts, colorByKey]);
 
   const chartData = useMemo(
     () => ({
@@ -495,9 +508,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   );
 
   const { minX, maxX } = useMemo(() => {
-    const xs = datasets
-      .flatMap((dataset) => (dataset.data as { x: number }[]).map((point) => point.x))
-      .filter((x) => Number.isFinite(x)) as number[];
+    const xs = unifiedXs.filter((x) => Number.isFinite(x)) as number[];
 
     if (!xs.length) {
       return {
@@ -507,7 +518,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     }
 
     return { minX: Math.min(...xs), maxX: Math.max(...xs) };
-  }, [datasets]);
+  }, [unifiedXs]);
 
   const fullRange = Math.max(1, maxX - minX);
   const minRange = CHART_CONFIG.SEVEN_DAYS_MS;
