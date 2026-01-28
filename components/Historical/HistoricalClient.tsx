@@ -163,6 +163,17 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     }
   }, [assets, selectedAsset]);
 
+  const filteredAssets = useMemo(() => {
+    if (!assetSearch) return assets;
+    const q = assetSearch.trim().toUpperCase();
+    return assets.filter((asset) => asset.startsWith(q));
+  }, [assets, assetSearch]);
+
+  const assetRows = useMemo(() => {
+    if (!selectedAsset) return [];
+    return initialRows.filter((row) => row.base_asset === selectedAsset);
+  }, [initialRows, selectedAsset]);
+
   useEffect(() => {
     setGmxSideByQuote({});
   }, [selectedAsset]);
@@ -214,17 +225,6 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       setGmxSideByQuote(next);
     }
   }, [assetRows, chartRows, gmxSideByQuote]);
-
-  const filteredAssets = useMemo(() => {
-    if (!assetSearch) return assets;
-    const q = assetSearch.trim().toUpperCase();
-    return assets.filter((asset) => asset.startsWith(q));
-  }, [assets, assetSearch]);
-
-  const assetRows = useMemo(() => {
-    if (!selectedAsset) return [];
-    return initialRows.filter((row) => row.base_asset === selectedAsset);
-  }, [initialRows, selectedAsset]);
 
   const exchangeMarkets = useMemo<ExchangeMarket[]>(() => {
     const map = new Map<string, FundingDashboardRow[]>();
