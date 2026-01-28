@@ -271,7 +271,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       const exchange = exchangeByMarketId.get(Number(row.market_id)) ?? row.exchange;
       if (!exchange || !selectedExchanges.includes(exchange)) return;
       if (!next[exchange]) next[exchange] = [];
-      next[exchange].push({ funding_time: row.h, apr: row.funding_apr_8h });
+      const apr = Number(row.funding_apr_8h);
+      next[exchange].push({ funding_time: row.h, apr: Number.isFinite(apr) ? apr : null });
     });
 
     return next;
@@ -446,7 +447,9 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
             style={{
               left: 4,
               width: "calc((100% - 8px) / 5)",
-              transform: `translateX(calc(${TIME_WINDOWS.findIndex((w) => w.key === selectedWindow.key)} * 100%))`,
+              transform: `translateX(calc(${TIME_WINDOWS.findIndex(
+                (w) => w.key === selectedWindow.key
+              )} * 100%))`,
             }}
           />
           {TIME_WINDOWS.map((window) => (
@@ -454,7 +457,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
               key={window.key}
               type="button"
               onClick={() => setSelectedWindow(window)}
-              className={`relative z-10 px-3 py-1.5 text-xs rounded-md transition-colors ${
+              className={`relative z-10 w-full py-1.5 text-xs rounded-md text-center transition-colors ${
                 selectedWindow.key === window.key
                   ? "text-gray-100"
                   : "text-gray-400 hover:text-gray-200 hover:bg-[#353b52]"
@@ -466,7 +469,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-[#2a3044] bg-[#1f2434] p-4">
+      <div className="mt-6 rounded-2xl bg-[#1f2434] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-roboto text-gray-100">Funding Rate Chart</h2>
@@ -507,8 +510,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
             <Line data={chartData} options={options} />
           </div>
 
-          <div className="rounded-xl bg-[#242a3d] overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-[#2f354a]">
+          <div className="rounded-xl bg-[#22273a] overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-[#2b3147]">
               <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Legend</span>
               <span className="text-[11px] text-gray-500">
                 {selectedExchanges.length}/{exchangeMarkets.length}
