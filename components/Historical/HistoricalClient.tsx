@@ -169,14 +169,13 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
 
   const filteredAssets = useMemo(() => {
     if (!assetSearch) return assets;
-    const q = normalizeToken(assetSearch);
-    return assets.filter((asset) => normalizeToken(asset).startsWith(q));
+    const q = assetSearch.trim().toUpperCase();
+    return assets.filter((asset) => asset.startsWith(q));
   }, [assets, assetSearch]);
 
   const assetRows = useMemo(() => {
     if (!selectedAsset) return [];
-    const normalized = normalizeToken(selectedAsset);
-    return initialRows.filter((row) => normalizeToken(row.base_asset) === normalized);
+    return initialRows.filter((row) => row.base_asset === selectedAsset);
   }, [initialRows, selectedAsset]);
 
   const exchangeMarkets = useMemo<ExchangeMarket[]>(() => {
@@ -225,7 +224,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     setLoading(true);
     setError("");
 
-    const assetNorm = normalizeToken(selectedAsset).toUpperCase();
+    const assetNorm = selectedAsset;
     fetchTokenFundingChartsAll({
       assetNorm,
       days: selectedWindow.days,
