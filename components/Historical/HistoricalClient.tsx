@@ -270,9 +270,10 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     filtered.forEach((row) => {
       const exchange = exchangeByMarketId.get(Number(row.market_id)) ?? row.exchange;
       if (!exchange || !selectedExchanges.includes(exchange)) return;
-      if (!next[exchange]) next[exchange] = [];
       const apr = Number(row.funding_apr_8h);
-      next[exchange].push({ funding_time: row.h, apr: Number.isFinite(apr) ? apr : null });
+      if (!Number.isFinite(apr)) return;
+      if (!next[exchange]) next[exchange] = [];
+      next[exchange].push({ funding_time: row.h, apr });
     });
 
     return next;
