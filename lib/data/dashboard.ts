@@ -79,13 +79,15 @@ export const fetchAll = async (
 const FUNDING_SELECT_COLUMNS =
   "market_id,exchange,market,ref_url,open_interest,volume_24h,funding_rate_now,1d,3d,7d,15d,30d,base_asset,quote_asset";
 
-export const fetchFundingRows = async () =>
+import type { FundingRow } from "@/lib/types";
+
+export const fetchFundingRows = async (): Promise<FundingRow[]> =>
   fetchAll(
     SUPABASE_TABLES.FUNDING_DASHBOARD_MV,
     undefined,
     FUNDING_SELECT_COLUMNS,
     "market_id"
-  );
+  ) as FundingRow[];
 
 export const fetchArbitrageRows = async () =>
   fetchAll(SUPABASE_TABLES.ARB_OPPORTUNITIES, {
