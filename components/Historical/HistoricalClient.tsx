@@ -401,6 +401,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     chartRows.forEach((row) => {
       const marketId = Number(row.market_id);
       if (!selectedIdsSet.has(marketId)) return;
+      if (row.funding_apr_8h == null) return;
       const apr = Number(row.funding_apr_8h);
       if (!Number.isFinite(apr)) return;
       const x = new Date(normalizeFundingTimestamp(row.h)).getTime();
@@ -420,6 +421,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       const marketId = Number(row.market_id);
       if (!allowedMarketIds.has(marketId)) return;
       if (!selectedIdsSet.has(marketId)) return;
+      if (row.funding_apr_8h == null) return;
       const apr = Number(row.funding_apr_8h);
       if (!Number.isFinite(apr)) return;
       const x = new Date(normalizeFundingTimestamp(row.h)).getTime();
@@ -438,6 +440,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   const pointsByExchange = useMemo(() => {
     const map = new Map<string, Map<number, number>>();
     chartRows.forEach((row) => {
+      if (row.funding_apr_8h == null) return;
       const apr = Number(row.funding_apr_8h);
       if (!Number.isFinite(apr)) return;
       const exchange = row.exchange;
