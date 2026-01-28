@@ -31,6 +31,7 @@ export const COLORS = {
 
 export const CHART_CONFIG = {
   SEVEN_DAYS_MS: 7 * 24 * 60 * 60 * 1000,
+  FIVE_DAYS_MS: 5 * 24 * 60 * 60 * 1000,
   THIRTY_DAYS_MS: 30 * 24 * 60 * 60 * 1000,
   TOOLTIP_FORMAT: "yyyy-MM-dd HH:mm",
   MODAL_HEIGHT: "520px",

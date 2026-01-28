@@ -11,6 +11,8 @@ export type FundingRow = {
   exchange: string;
   market: string;
   ref_url: string | null;
+  base_asset: string;
+  quote_asset: string;
 
   open_interest: number | null;
   volume_24h: number | null;

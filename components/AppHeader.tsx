@@ -175,6 +175,7 @@ export default function AppHeader() {
               {navLink("/funding", "Funding", true)}
               {navLink("/markets", "Markets")}
               {navLink("/arbitrage", "Arbitrage")}
+              {navLink("/historical", "Historical")}
               {navLink("/backtester", "Backtester")}
             </>
           )}
@@ -217,6 +218,7 @@ export default function AppHeader() {
           {mobileNavLink("/funding", "Funding")}
           {mobileNavLink("/markets", "Markets")}
           {mobileNavLink("/arbitrage", "Arbitrage")}
+          {mobileNavLink("/historical", "Historical")}
           {mobileNavLink("/backtester", "Backtester")}
           {isHome && (
             <Link

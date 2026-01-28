@@ -213,7 +213,7 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
   }, [rows]);
 
   const FULL_RANGE = Math.max(1, maxX - minX);
-  const MIN_RANGE = CHART_CONFIG.SEVEN_DAYS_MS;
+const MIN_RANGE = CHART_CONFIG.FIVE_DAYS_MS;
 
   const options = useMemo<ChartOptions<"bar">>(
     () => ({
@@ -279,8 +279,26 @@ export default function BacktesterChart({ chartData, selectedLongEx, selectedSho
       scales: {
         x: {
           type: "time",
-          time: { tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT },
-          ticks: { autoSkip: true, maxRotation: 0, color: COLORS.text.secondary },
+          time: {
+            tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT,
+            unit: "day",
+            displayFormats: { day: "MMM d" },
+          },
+          ticks: {
+            autoSkip: true,
+            maxRotation: 0,
+            color: COLORS.text.secondary,
+            source: "auto",
+            maxTicksLimit: 8,
+            callback: (value) => {
+              const ts = Number(value);
+              if (!Number.isFinite(ts)) return "";
+              return new Date(ts).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+            },
+          },
           grid: { color: COLORS.chart.grid },
         },
         y: {

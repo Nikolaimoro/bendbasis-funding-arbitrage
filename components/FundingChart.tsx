@@ -160,7 +160,7 @@ export default function FundingChart(props: FundingChartProps) {
   }, [rows]);
 
   const fullRange = Math.max(1, maxX - minX);
-  const minRange = CHART_CONFIG.SEVEN_DAYS_MS;
+  const minRange = CHART_CONFIG.FIVE_DAYS_MS;
 
   const chartData = useMemo(
     () => ({
@@ -272,11 +272,23 @@ export default function FundingChart(props: FundingChartProps) {
           type: "time",
           time: {
             tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT,
+            unit: "day",
+            displayFormats: { day: "MMM d" },
           },
           ticks: {
             autoSkip: true,
             maxRotation: 0,
             color: COLORS.text.secondary,
+            source: "auto",
+            maxTicksLimit: 8,
+            callback: (value) => {
+              const ts = Number(value);
+              if (!Number.isFinite(ts)) return "";
+              return new Date(ts).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+            },
           },
           grid: {
             color: COLORS.chart.grid,

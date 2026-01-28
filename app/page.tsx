@@ -87,7 +87,7 @@ export default function Home() {
                           data-reveal
                           data-reveal-delay={String(row * 60)}
                         >
-                          <div className="group rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-[1200ms] ease-out hover:-translate-y-1">
+                          <div className="group w-full rounded-full border border-[#E7E2E0] bg-white px-5 py-2 transition-transform duration-[1200ms] ease-out hover:-translate-y-1">
                             <div className="flex items-center justify-center gap-3">
                               <ExchangeIcon
                                 exchange={exchange.key}
@@ -113,7 +113,7 @@ export default function Home() {
                   className="reveal"
                   data-reveal
                 >
-                  <div className="group rounded-full border border-[#E7E2E0] bg-white px-4 py-2 transition-transform duration-[1200ms] ease-out hover:-translate-y-1">
+                  <div className="group w-full rounded-full border border-[#E7E2E0] bg-white px-4 py-2 transition-transform duration-[1200ms] ease-out hover:-translate-y-1">
                     <div className="flex items-center justify-center gap-2">
                       <ExchangeIcon
                         exchange={exchange.key}
