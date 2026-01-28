@@ -57,7 +57,7 @@ type ExchangeMarket = {
 
 type TokenFundingChartRow = {
   exchange: string;
-  market_id: number;
+  market_id: number | string;
   h: string;
   funding_apr_8h: number;
   funding_count: number;
@@ -212,10 +212,19 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     return list.sort((a, b) => a.label.localeCompare(b.label));
   }, [assetRows]);
 
-  const availableExchanges = useMemo(
-    () => exchangeMarkets.map((m) => m.exchange),
-    [exchangeMarkets]
-  );
+  const availableExchanges = useMemo(() => {
+    const set = new Set<string>(exchangeMarkets.map((m) => m.exchange));
+    chartRows.forEach((row) => {
+      if (row.exchange) set.add(row.exchange);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [exchangeMarkets, chartRows]);
+
+  const exchangeMarketByExchange = useMemo(() => {
+    const map = new Map<string, ExchangeMarket>();
+    exchangeMarkets.forEach((market) => map.set(market.exchange, market));
+    return map;
+  }, [exchangeMarkets]);
 
   useEffect(() => {
     if (!exchangeMarkets.length) {
@@ -264,16 +273,19 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     const exchangeByMarketId = new Map<number, string>();
     exchangeMarkets.forEach((market) => {
       if (market.row.market_id != null) {
-        allowedMarketIds.add(market.row.market_id);
-        exchangeByMarketId.set(market.row.market_id, market.exchange);
+        const marketId = Number(market.row.market_id);
+        allowedMarketIds.add(marketId);
+        exchangeByMarketId.set(marketId, market.exchange);
       }
     });
 
-    const filtered = chartRows.filter((row) => allowedMarketIds.has(row.market_id));
+    const filtered = chartRows.filter((row) =>
+      allowedMarketIds.has(Number(row.market_id))
+    );
 
     const next: Record<string, FundingChartPoint[]> = {};
     filtered.forEach((row) => {
-      const exchange = exchangeByMarketId.get(row.market_id) ?? row.exchange;
+      const exchange = exchangeByMarketId.get(Number(row.market_id)) ?? row.exchange;
       if (!exchange || !selectedExchanges.includes(exchange)) return;
       if (!next[exchange]) next[exchange] = [];
       next[exchange].push({ funding_time: row.h, apr: row.funding_apr_8h });
@@ -400,8 +412,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   return (
     <section className="px-4 pb-16" ref={containerRef}>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[160px]">
-          <label className="block text-xs text-gray-500 mb-1">Asset</label>
+        <div className="relative w-[150px]">
           <button
             type="button"
             onClick={() => setOpenAsset((prev) => !prev)}
@@ -446,16 +457,23 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           )}
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg border border-[#343a4e] bg-[#292e40] p-1">
+        <div className="relative inline-grid grid-cols-5 gap-1 rounded-lg border border-[#343a4e] bg-[#292e40] p-1">
+          <div
+            className="absolute top-1 bottom-1 rounded-md bg-[#3b435a] transition-transform duration-300 ease-out"
+            style={{
+              width: "calc((100% - 16px) / 5)",
+              transform: `translateX(${TIME_WINDOWS.findIndex((w) => w.key === selectedWindow.key) * 100}%)`,
+            }}
+          />
           {TIME_WINDOWS.map((window) => (
             <button
               key={window.key}
               type="button"
               onClick={() => setSelectedWindow(window)}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+              className={`relative z-10 px-3 py-1.5 text-xs rounded-md transition-colors ${
                 selectedWindow.key === window.key
-                  ? "bg-[#3b435a] text-gray-100"
-                  : "text-gray-400 hover:text-gray-200"
+                  ? "text-gray-100"
+                  : "text-gray-400 hover:text-gray-200 hover:bg-[#353b52]"
               }`}
             >
               {window.label}
@@ -522,28 +540,30 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
                     {selectedExchanges.length}/{availableExchanges.length}
                   </span>
                 </div>
-                <div className="max-h-[320px] overflow-y-auto p-2 space-y-1">
-                  {exchangeMarkets.map((market, idx) => {
-                    const color = CHART_COLORS[idx % CHART_COLORS.length];
-                    const active = selectedExchanges.includes(market.exchange);
-                    return (
-                      <button
-                        key={market.exchange}
-                        type="button"
-                        onClick={() => toggleExchange(market.exchange)}
-                        className={`w-full flex items-center gap-2 rounded-lg px-2 py-2 text-left transition ${
-                          active ? "bg-[#2f364a]" : "hover:bg-[#2b3144]"
-                        }`}
-                      >
-                        <span
-                          className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: color, opacity: active ? 1 : 0.35 }}
-                        />
-                        <ExchangeIcon exchange={market.exchange} size={16} />
-                        <span className="text-sm text-gray-200 truncate">{market.label}</span>
-                      </button>
-                    );
-                  })}
+            <div className="max-h-[320px] overflow-y-auto p-2 space-y-1">
+              {availableExchanges.map((exchange, idx) => {
+                const market = exchangeMarketByExchange.get(exchange);
+                const label = market?.label ?? formatExchange(exchange);
+                const color = CHART_COLORS[idx % CHART_COLORS.length];
+                const active = selectedExchanges.includes(exchange);
+                return (
+                  <button
+                    key={exchange}
+                    type="button"
+                    onClick={() => toggleExchange(exchange)}
+                    className={`w-full flex items-center gap-2 rounded-lg px-2 py-2 text-left transition ${
+                      active ? "bg-[#2f364a]" : "hover:bg-[#2b3144]"
+                    }`}
+                  >
+                    <span
+                      className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: color, opacity: active ? 1 : 0.35 }}
+                    />
+                    <ExchangeIcon exchange={exchange} size={16} />
+                    <span className="text-sm text-gray-200 truncate">{label}</span>
+                  </button>
+                );
+              })}
               {!exchangeMarkets.length && (
                 <div className="px-2 py-2 text-sm text-gray-500">No exchanges</div>
               )}
