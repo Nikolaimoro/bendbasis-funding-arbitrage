@@ -15,7 +15,6 @@ import {
 } from "chart.js";
 import "chartjs-adapter-date-fns";
 import { Line } from "react-chartjs-2";
-import ExchangeFilter from "@/components/Table/ExchangeFilter";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import { formatExchange, normalizeToken } from "@/lib/formatters";
 import { COLORS, CHART_CONFIG, TAILWIND } from "@/lib/theme";
@@ -149,7 +148,6 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   const [selectedAsset, setSelectedAsset] = useState<string>("");
   const [selectedWindow, setSelectedWindow] = useState<(typeof TIME_WINDOWS)[number]>(TIME_WINDOWS[4]);
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
-  const [exchangeOpen, setExchangeOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -211,20 +209,6 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
 
     return list.sort((a, b) => a.label.localeCompare(b.label));
   }, [assetRows]);
-
-  const availableExchanges = useMemo(() => {
-    const set = new Set<string>(exchangeMarkets.map((m) => m.exchange));
-    chartRows.forEach((row) => {
-      if (row.exchange) set.add(row.exchange);
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [exchangeMarkets, chartRows]);
-
-  const exchangeMarketByExchange = useMemo(() => {
-    const map = new Map<string, ExchangeMarket>();
-    exchangeMarkets.forEach((market) => map.set(market.exchange, market));
-    return map;
-  }, [exchangeMarkets]);
 
   useEffect(() => {
     if (!exchangeMarkets.length) {
@@ -298,7 +282,6 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpenAsset(false);
-        setExchangeOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -406,7 +389,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     );
   };
 
-  const selectAllExchanges = () => setSelectedExchanges(availableExchanges);
+  const selectAllExchanges = () =>
+    setSelectedExchanges(exchangeMarkets.map((market) => market.exchange));
   const clearAllExchanges = () => setSelectedExchanges([]);
 
   return (
@@ -457,12 +441,13 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           )}
         </div>
 
-        <div className="relative inline-grid grid-cols-5 gap-1 rounded-lg border border-[#343a4e] bg-[#292e40] p-1">
+        <div className="relative inline-grid grid-cols-5 gap-0 rounded-lg border border-[#343a4e] bg-[#292e40] p-1">
           <div
             className="absolute top-1 bottom-1 rounded-md bg-[#3b435a] transition-transform duration-300 ease-out"
             style={{
-              width: "calc((100% - 16px) / 5)",
-              transform: `translateX(${TIME_WINDOWS.findIndex((w) => w.key === selectedWindow.key) * 100}%)`,
+              left: 4,
+              width: "calc((100% - 8px) / 5)",
+              transform: `translateX(calc(${TIME_WINDOWS.findIndex((w) => w.key === selectedWindow.key)} * 100%))`,
             }}
           />
           {TIME_WINDOWS.map((window) => (
@@ -480,19 +465,9 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
             </button>
           ))}
         </div>
-
-        <ExchangeFilter
-          exchanges={availableExchanges}
-          selectedExchanges={selectedExchanges}
-          onToggleExchange={toggleExchange}
-          onCheckAll={selectAllExchanges}
-          onUncheckAll={clearAllExchanges}
-          open={exchangeOpen}
-          onOpenChange={setExchangeOpen}
-        />
       </div>
 
-      <div className="mt-6 rounded-2xl border border-[#343a4e] bg-[#1f2434] p-4">
+      <div className="mt-6 rounded-2xl border border-[#2a3044] bg-[#1f2434] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-roboto text-gray-100">Funding Rate Chart</h2>
@@ -518,8 +493,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
-          <div className="relative min-h-[540px] lg:min-h-[620px] rounded-xl border border-[#343a4e] bg-[#1b2030] p-2">
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4">
+          <div className="relative min-h-[540px] lg:min-h-[620px] rounded-xl bg-[#1b2030] p-2">
             {loading && (
               <div className="absolute inset-0 flex items-center justify-center bg-[#1b2030]/70 backdrop-blur-sm z-10">
                 <div className="h-6 w-6 rounded-full border-2 border-gray-500 border-t-transparent animate-spin" />
@@ -533,17 +508,17 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
             <Line data={chartData} options={options} />
           </div>
 
-          <div className="rounded-xl border border-[#343a4e] bg-[#242a3d] overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-[#343a4e]">
-                  <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Legend</span>
-                  <span className="text-[11px] text-gray-500">
-                    {selectedExchanges.length}/{availableExchanges.length}
-                  </span>
-                </div>
+          <div className="rounded-xl bg-[#242a3d] overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-[#2f354a]">
+              <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Legend</span>
+              <span className="text-[11px] text-gray-500">
+                {selectedExchanges.length}/{exchangeMarkets.length}
+              </span>
+            </div>
             <div className="max-h-[320px] overflow-y-auto p-2 space-y-1">
-              {availableExchanges.map((exchange, idx) => {
-                const market = exchangeMarketByExchange.get(exchange);
-                const label = market?.label ?? formatExchange(exchange);
+              {exchangeMarkets.map((market, idx) => {
+                const exchange = market.exchange;
+                const label = market.label ?? formatExchange(exchange);
                 const color = CHART_COLORS[idx % CHART_COLORS.length];
                 const active = selectedExchanges.includes(exchange);
                 return (
