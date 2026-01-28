@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Chart as ChartJS } from "chart.js";
 import { Search, ExternalLink } from "lucide-react";
 import {
-  Chart as ChartJS,
   LineElement,
   PointElement,
   LinearScale,
@@ -21,16 +21,18 @@ import { formatExchange, normalizeToken } from "@/lib/formatters";
 import { COLORS, CHART_CONFIG, TAILWIND } from "@/lib/theme";
 import type { FundingChartPoint } from "@/lib/types";
 
-ChartJS.register(
-  LineElement,
-  PointElement,
-  LinearScale,
-  TimeScale,
-  Tooltip,
-  Legend,
-  Filler,
-  zoomPlugin
-);
+if (typeof window !== "undefined") {
+  ChartJS.register(
+    LineElement,
+    PointElement,
+    LinearScale,
+    TimeScale,
+    Tooltip,
+    Legend,
+    Filler,
+    zoomPlugin
+  );
+}
 
 const LineChart = dynamic(
   () => import("react-chartjs-2").then((mod) => mod.Line),
