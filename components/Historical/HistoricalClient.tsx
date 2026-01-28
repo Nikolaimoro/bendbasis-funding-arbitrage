@@ -167,6 +167,54 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     setGmxSideByQuote({});
   }, [selectedAsset]);
 
+  useEffect(() => {
+    if (!assetRows.length || !chartRows.length) return;
+
+    const dataByMarketId = new Set<number>();
+    chartRows.forEach((row) => {
+      if (row.funding_apr_8h == null) return;
+      const val = Number(row.funding_apr_8h);
+      if (!Number.isFinite(val)) return;
+      dataByMarketId.add(Number(row.market_id));
+    });
+
+    const gmxRows = assetRows.filter((row) => row.exchange === "gmx");
+    if (!gmxRows.length) return;
+
+    const byQuote = new Map<string, FundingDashboardRow[]>();
+    gmxRows.forEach((row) => {
+      if (!byQuote.has(row.quote_asset)) {
+        byQuote.set(row.quote_asset, []);
+      }
+      byQuote.get(row.quote_asset)?.push(row);
+    });
+
+    let changed = false;
+    const next: Record<string, "long" | "short"> = { ...gmxSideByQuote };
+
+    byQuote.forEach((rows, quote) => {
+      const longRow = rows.find((row) => row.market.endsWith(" LONG"));
+      const shortRow = rows.find((row) => row.market.endsWith(" SHORT"));
+      const longId = longRow?.market_id ? Number(longRow.market_id) : null;
+      const shortId = shortRow?.market_id ? Number(shortRow.market_id) : null;
+      const current = next[quote] ?? "short";
+      const currentId = current === "long" ? longId : shortId;
+      const otherId = current === "long" ? shortId : longId;
+
+      const currentHasData = currentId != null && dataByMarketId.has(currentId);
+      const otherHasData = otherId != null && dataByMarketId.has(otherId);
+
+      if (!currentHasData && otherHasData) {
+        next[quote] = current === "long" ? "short" : "long";
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      setGmxSideByQuote(next);
+    }
+  }, [assetRows, chartRows, gmxSideByQuote]);
+
   const filteredAssets = useMemo(() => {
     if (!assetSearch) return assets;
     const q = assetSearch.trim().toUpperCase();
@@ -337,8 +385,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       const marketId = Number(row.market_id);
       if (!allowedMarketIds.has(marketId)) return;
       if (!selectedIdsSet.has(marketId)) return;
-      const count = Number(row.funding_count);
-      if (row.funding_apr_8h == null || !Number.isFinite(count) || count <= 0) return;
+      if (row.funding_apr_8h == null) return;
       const apr = Number(row.funding_apr_8h);
       if (!Number.isFinite(apr)) return;
       if (!next[marketId]) next[marketId] = [];
@@ -425,7 +472,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
-      interaction: { mode: "nearest", intersect: false },
+      interaction: { mode: "index", intersect: false },
       plugins: {
         zoom: {
           pan: {
@@ -456,9 +503,16 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           titleColor: "#e2e8f0",
           bodyColor: "#e2e8f0",
           callbacks: {
+            title: (items) => {
+              if (!items.length) return "";
+              const ts = items[0].parsed.x;
+              return typeof ts === "number" ? new Date(ts).toLocaleString() : "";
+            },
             label: (ctx) => {
               const v = ctx.parsed.y;
-              return Number.isFinite(v) ? `APR: ${Number(v).toFixed(2)}%` : "";
+              if (!Number.isFinite(v)) return "";
+              const label = ctx.dataset.label ?? "";
+              return `${label}: ${Number(v).toFixed(2)}%`;
             },
           },
         },
