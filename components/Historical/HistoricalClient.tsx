@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Search, ExternalLink } from "lucide-react";
 import type { ChartOptions } from "chart.js";
 import "chartjs-adapter-date-fns";
@@ -782,7 +782,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           const gmxRows = assetRows.filter((row) => row.exchange === "gmx");
           const nonGmxRows = assetRows.filter((row) => row.exchange !== "gmx");
 
-          const links: JSX.Element[] = [];
+          const links: ReactNode[] = [];
 
           nonGmxRows
             .filter((row) => row.ref_url)
