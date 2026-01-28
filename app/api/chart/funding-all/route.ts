@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase as anonClient } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import { RPC_FUNCTIONS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +23,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "asset required" }, { status: 400 });
     }
 
-    const { data, error } = await supabase.rpc(
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const client =
+      serviceKey && serviceKey.length > 0
+        ? createClient(supabaseUrl, serviceKey, {
+            auth: { persistSession: false },
+          })
+        : anonClient;
+
+    const { data, error } = await client.rpc(
       RPC_FUNCTIONS.TOKEN_FUNDING_CHARTS_ALL,
       {
-        p_base_asset_norm: asset,
+        p_base_asset: asset,
         p_days: Number.isFinite(days) ? days : 30,
       }
     );
