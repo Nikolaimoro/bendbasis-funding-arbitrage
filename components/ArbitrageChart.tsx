@@ -335,11 +335,17 @@ export default function ArbitrageChart(props: ArbitrageChartProps) {
       scales: {
         x: {
           type: "time",
-          time: { tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT, unit: "day" },
+          time: {
+            tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT,
+            unit: "day",
+            displayFormats: { day: "MMM d" },
+          },
           ticks: {
             autoSkip: true,
             maxRotation: 0,
             color: COLORS.text.secondary,
+            source: "data",
+            maxTicksLimit: 8,
             callback: (value) => {
               const ts = Number(value);
               if (!Number.isFinite(ts)) return "";

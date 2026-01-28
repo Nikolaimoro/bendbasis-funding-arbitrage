@@ -273,11 +273,14 @@ export default function FundingChart(props: FundingChartProps) {
           time: {
             tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT,
             unit: "day",
+            displayFormats: { day: "MMM d" },
           },
           ticks: {
             autoSkip: true,
             maxRotation: 0,
             color: COLORS.text.secondary,
+            source: "data",
+            maxTicksLimit: 8,
             callback: (value) => {
               const ts = Number(value);
               if (!Number.isFinite(ts)) return "";

@@ -573,6 +573,9 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           time: {
             tooltipFormat: CHART_CONFIG.TOOLTIP_FORMAT,
             unit: "day",
+            displayFormats: {
+              day: "MMM d",
+            },
           },
           grid: {
             color: COLORS.chart.grid,
@@ -582,6 +585,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
             font: {
               size: 11,
             },
+            source: "data",
+            maxTicksLimit: 8,
             callback: (value) => {
               const ts = Number(value);
               if (!Number.isFinite(ts)) return "";
