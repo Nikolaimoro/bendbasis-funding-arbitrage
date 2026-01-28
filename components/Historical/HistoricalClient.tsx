@@ -40,10 +40,13 @@ type ExchangeMarket = {
 };
 
 type MarketItem = {
+  key: string;
   marketId: number;
   exchange: string;
   quote: string;
   label: string;
+  isGmx: boolean;
+  side: "long" | "short" | null;
 };
 
 type TokenFundingChartRow = {
@@ -139,7 +142,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   const [openAsset, setOpenAsset] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<string>("");
   const [selectedWindow, setSelectedWindow] = useState<(typeof TIME_WINDOWS)[number]>(TIME_WINDOWS[4]);
-  const [selectedMarketIds, setSelectedMarketIds] = useState<number[]>([]);
+  const [selectedMarketKeys, setSelectedMarketKeys] = useState<string[]>([]);
+  const [gmxSideByQuote, setGmxSideByQuote] = useState<Record<string, "long" | "short">>({});
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -158,6 +162,10 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       setSelectedAsset(assets.includes("BTC") ? "BTC" : assets[0]);
     }
   }, [assets, selectedAsset]);
+
+  useEffect(() => {
+    setGmxSideByQuote({});
+  }, [selectedAsset]);
 
   const filteredAssets = useMemo(() => {
     if (!assetSearch) return assets;
@@ -210,29 +218,66 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       quotesByExchange.get(row.exchange)?.add(row.quote_asset);
     });
 
-    return assetRows
-      .filter((row) => row.market_id != null)
-      .map((row) => {
-        const quotes = quotesByExchange.get(row.exchange);
-        const hasMultiple = quotes ? quotes.size > 1 : false;
-        const label = `${formatExchange(row.exchange)}${hasMultiple ? ` (${row.quote_asset})` : ""}`;
-        return {
-          marketId: Number(row.market_id),
-          exchange: row.exchange,
-          quote: row.quote_asset,
+    const gmxRows = assetRows.filter((row) => row.exchange === "gmx");
+    const nonGmxRows = assetRows.filter((row) => row.exchange !== "gmx");
+
+    const items: MarketItem[] = [];
+
+    nonGmxRows.forEach((row) => {
+      if (row.market_id == null) return;
+      const quotes = quotesByExchange.get(row.exchange);
+      const hasMultiple = quotes ? quotes.size > 1 : false;
+      const label = `${formatExchange(row.exchange)}${hasMultiple ? ` (${row.quote_asset})` : ""}`;
+      items.push({
+        key: `${row.exchange}|${row.market_id}`,
+        marketId: Number(row.market_id),
+        exchange: row.exchange,
+        quote: row.quote_asset,
+        label,
+        isGmx: false,
+        side: null,
+      });
+    });
+
+    if (gmxRows.length) {
+      const byQuote = new Map<string, FundingDashboardRow[]>();
+      gmxRows.forEach((row) => {
+        if (!byQuote.has(row.quote_asset)) {
+          byQuote.set(row.quote_asset, []);
+        }
+        byQuote.get(row.quote_asset)?.push(row);
+      });
+
+      byQuote.forEach((rows, quote) => {
+        const side = gmxSideByQuote[quote] ?? "short";
+        const match = rows.find((row) => row.market.endsWith(` ${side.toUpperCase()}`));
+        const fallback = match ?? rows[0];
+        if (!fallback?.market_id) return;
+        const label = `${formatExchange("gmx")} (${quote})`;
+        items.push({
+          key: `gmx|${quote}`,
+          marketId: Number(fallback.market_id),
+          exchange: "gmx",
+          quote,
           label,
-        };
-      })
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [assetRows]);
+          isGmx: true,
+          side,
+        });
+      });
+    }
+
+    return items.sort((a, b) => a.label.localeCompare(b.label));
+  }, [assetRows, gmxSideByQuote]);
 
   useEffect(() => {
     if (!marketItems.length) {
-      setSelectedMarketIds([]);
+      setSelectedMarketKeys([]);
       return;
     }
-    setSelectedMarketIds(marketItems.map((m) => m.marketId));
-  }, [selectedAsset, marketItems]);
+    if (selectedMarketKeys.length === 0) {
+      setSelectedMarketKeys(marketItems.map((m) => m.key));
+    }
+  }, [selectedAsset, marketItems.length, selectedMarketKeys.length]);
 
   useEffect(() => {
     if (!selectedAsset) return;
@@ -267,15 +312,28 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     };
   }, [selectedAsset, selectedWindow]);
 
+  const marketIdByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    marketItems.forEach((m) => map.set(m.key, m.marketId));
+    return map;
+  }, [marketItems]);
+
+  const selectedMarketIds = useMemo(
+    () => selectedMarketKeys.map((key) => marketIdByKey.get(key)).filter(Boolean) as number[],
+    [selectedMarketKeys, marketIdByKey]
+  );
+
   const seriesByMarketId = useMemo(() => {
     if (!marketItems.length || selectedMarketIds.length === 0) return {};
     const allowedMarketIds = new Set<number>(marketItems.map((m) => m.marketId));
+    const selectedIdsSet = new Set<number>(selectedMarketIds);
     const next: Record<number, FundingChartPoint[]> = {};
 
     chartRows.forEach((row) => {
       const marketId = Number(row.market_id);
       if (!allowedMarketIds.has(marketId)) return;
-      if (!selectedMarketIds.includes(marketId)) return;
+      if (!selectedIdsSet.has(marketId)) return;
+      if (row.funding_apr_8h == null || row.funding_count === 0) return;
       const apr = Number(row.funding_apr_8h);
       if (!Number.isFinite(apr)) return;
       if (!next[marketId]) next[marketId] = [];
@@ -296,9 +354,17 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const colorByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    marketItems.forEach((market, index) => {
+      map.set(market.key, CHART_COLORS[index % CHART_COLORS.length]);
+    });
+    return map;
+  }, [marketItems]);
+
   const datasets = useMemo(() => {
-    const activeMarkets = marketItems.filter((m) => selectedMarketIds.includes(m.marketId));
-    return activeMarkets.map((market, index) => {
+    const activeMarkets = marketItems.filter((m) => selectedMarketKeys.includes(m.key));
+    return activeMarkets.map((market) => {
       const rows = seriesByMarketId[market.marketId] ?? [];
       const data = rows
         .filter((r) => Number.isFinite(r.apr))
@@ -306,7 +372,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           x: new Date(r.funding_time).getTime(),
           y: r.apr,
         }));
-      const color = CHART_COLORS[index % CHART_COLORS.length];
+      const color = colorByKey.get(market.key) ?? COLORS.chart.primary;
       return {
         label: market.label,
         data,
@@ -318,7 +384,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
         parsing: false as const,
       };
     });
-  }, [marketItems, selectedMarketIds, seriesByMarketId]);
+  }, [marketItems, selectedMarketKeys, seriesByMarketId, colorByKey]);
 
   const chartData = useMemo(
     () => ({
@@ -431,17 +497,19 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     [minX, maxX, fullRange, minRange]
   );
 
-  const toggleMarket = (marketId: number) => {
-    setSelectedMarketIds((prev) =>
-      prev.includes(marketId)
-        ? prev.filter((id) => id !== marketId)
-        : [...prev, marketId]
+  const toggleMarket = (key: string) => {
+    setSelectedMarketKeys((prev) =>
+      prev.includes(key) ? prev.filter((id) => id !== key) : [...prev, key]
     );
   };
 
   const selectAllMarkets = () =>
-    setSelectedMarketIds(marketItems.map((market) => market.marketId));
-  const clearAllMarkets = () => setSelectedMarketIds([]);
+    setSelectedMarketKeys(marketItems.map((market) => market.key));
+  const clearAllMarkets = () => setSelectedMarketKeys([]);
+
+  const setGmxSide = (quote: string, side: "long" | "short") => {
+    setGmxSideByQuote((prev) => ({ ...prev, [quote]: side }));
+  };
 
   return (
     <section className="px-4 pb-16" ref={containerRef}>
@@ -545,8 +613,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4 items-stretch">
-          <div className="relative h-full min-h-[540px] lg:min-h-[620px] rounded-xl bg-[#1b2030] p-2">
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4 h-[520px] lg:h-[620px] items-stretch">
+          <div className="relative h-full rounded-xl bg-[#1b2030] p-2">
             {loading && (
               <div className="absolute inset-0 flex items-center justify-center bg-[#1b2030]/70 backdrop-blur-sm z-10">
                 <div className="h-6 w-6 rounded-full border-2 border-gray-500 border-t-transparent animate-spin" />
@@ -564,20 +632,20 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
             <div className="flex items-center justify-between px-3 py-2 border-b border-[#2b3147]">
               <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Legend</span>
               <span className="text-[11px] text-gray-500">
-                {selectedMarketIds.length}/{marketItems.length}
+                {selectedMarketKeys.length}/{marketItems.length}
               </span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {marketItems.map((market, idx) => {
                 const exchange = market.exchange;
                 const label = market.label ?? formatExchange(exchange);
-                const color = CHART_COLORS[idx % CHART_COLORS.length];
-                const active = selectedMarketIds.includes(market.marketId);
+                const color = colorByKey.get(market.key) ?? COLORS.chart.primary;
+                const active = selectedMarketKeys.includes(market.key);
                 return (
                   <button
-                    key={market.marketId}
+                    key={market.key}
                     type="button"
-                    onClick={() => toggleMarket(market.marketId)}
+                    onClick={() => toggleMarket(market.key)}
                     className={`w-full flex items-center gap-2 rounded-lg px-2 py-2 text-left transition ${
                       active ? "bg-[#2f364a]" : "hover:bg-[#2b3144]"
                     }`}
@@ -588,6 +656,37 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
                     />
                     <ExchangeIcon exchange={exchange} size={16} />
                     <span className="text-sm text-gray-200 truncate">{label}</span>
+                    {market.isGmx && (
+                      <span
+                        onClick={(event) => {
+                          event.stopPropagation();
+                        }}
+                        className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#2b3144] p-1"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setGmxSide(market.quote, "long")}
+                          className={`px-2 py-0.5 text-[10px] rounded-full transition ${
+                            market.side === "long"
+                              ? "bg-[#3b435a] text-gray-100"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                        >
+                          Long
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGmxSide(market.quote, "short")}
+                          className={`px-2 py-0.5 text-[10px] rounded-full transition ${
+                            market.side === "short"
+                              ? "bg-[#3b435a] text-gray-100"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                        >
+                          Short
+                        </button>
+                      </span>
+                    )}
                   </button>
                 );
               })}
