@@ -279,12 +279,15 @@ export default function FundingChart(props: FundingChartProps) {
             autoSkip: true,
             maxRotation: 0,
             color: COLORS.text.secondary,
-            source: "data",
+            source: "auto",
             maxTicksLimit: 8,
             callback: (value) => {
               const ts = Number(value);
               if (!Number.isFinite(ts)) return "";
-              return new Date(ts).toLocaleDateString();
+              return new Date(ts).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
             },
           },
           grid: {

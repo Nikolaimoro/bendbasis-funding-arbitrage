@@ -92,6 +92,11 @@ const CHART_COLORS = [
   "#0ea5e9",
 ];
 
+const normalizeFundingTimestamp = (value: string) => {
+  const ts = value.includes("T") ? value : value.replace(" ", "T");
+  return ts.replace(/\+00(?::?00)?$/, "Z");
+};
+
 async function fetchTokenFundingChartsAll(params: {
   assetNorm: string;
   days?: number;
@@ -395,13 +400,36 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       const apr = Number(row.funding_apr_8h);
       if (!Number.isFinite(apr)) return;
       if (!next[marketId]) next[marketId] = [];
-      const ts = row.h.includes("T") ? row.h : row.h.replace(" ", "T");
-      const normalized = ts.replace(/\+00(:?00)?$/, "Z");
+      const normalized = normalizeFundingTimestamp(row.h);
       next[marketId].push({ funding_time: normalized, apr });
     });
 
     return next;
   }, [chartRows, marketItems, selectedMarketIds]);
+
+  const fallbackSeriesByExchange = useMemo(() => {
+    const next: Record<string, FundingChartPoint[]> = {};
+    chartRows.forEach((row) => {
+      if (row.funding_apr_8h == null) return;
+      const apr = Number(row.funding_apr_8h);
+      if (!Number.isFinite(apr)) return;
+      const exchange = row.exchange;
+      if (!exchange) return;
+      const normalized = normalizeFundingTimestamp(row.h);
+      if (!next[exchange]) next[exchange] = [];
+      next[exchange].push({ funding_time: normalized, apr });
+    });
+    Object.values(next).forEach((rows) => rows.sort((a, b) => new Date(a.funding_time).getTime() - new Date(b.funding_time).getTime()));
+    return next;
+  }, [chartRows]);
+
+  const exchangeCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    marketItems.forEach((m) => {
+      map.set(m.exchange, (map.get(m.exchange) ?? 0) + 1);
+    });
+    return map;
+  }, [marketItems]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -425,12 +453,23 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     const activeMarkets = marketItems.filter((m) => selectedMarketKeys.includes(m.key));
     return activeMarkets.map((market) => {
       const rows = seriesByMarketId[market.marketId] ?? [];
-      const data = rows
-        .filter((r) => Number.isFinite(r.apr))
-        .map((r) => ({
-          x: new Date(r.funding_time).getTime(),
-          y: r.apr,
-        }));
+      const fallback =
+        rows.length === 0 && (exchangeCounts.get(market.exchange) ?? 0) === 1
+          ? fallbackSeriesByExchange[market.exchange] ?? []
+          : [];
+      const buildData = (source: FundingChartPoint[]) =>
+        source
+          .filter((r) => Number.isFinite(r.apr))
+          .map((r) => {
+            const x = new Date(r.funding_time).getTime();
+            return Number.isFinite(x) ? { x, y: r.apr } : null;
+          })
+          .filter((point): point is { x: number; y: number } => point !== null);
+
+      let data = buildData(rows.length ? rows : fallback);
+      if (!data.length && fallback.length && rows.length) {
+        data = buildData(fallback);
+      }
       data.sort((a, b) => a.x - b.x);
       const color = colorByKey.get(market.key) ?? COLORS.chart.primary;
       return {
@@ -456,9 +495,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
   );
 
   const { minX, maxX } = useMemo(() => {
-    const xs = Object.values(seriesByMarketId)
-      .flat()
-      .map((point) => new Date(point.funding_time).getTime())
+    const xs = datasets
+      .flatMap((dataset) => (dataset.data as { x: number }[]).map((point) => point.x))
       .filter((x) => Number.isFinite(x)) as number[];
 
     if (!xs.length) {
@@ -469,7 +507,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
     }
 
     return { minX: Math.min(...xs), maxX: Math.max(...xs) };
-  }, [seriesByMarketId]);
+  }, [datasets]);
 
   const fullRange = Math.max(1, maxX - minX);
   const minRange = CHART_CONFIG.SEVEN_DAYS_MS;
@@ -585,12 +623,15 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
             font: {
               size: 11,
             },
-            source: "data",
+            source: "auto",
             maxTicksLimit: 8,
             callback: (value) => {
               const ts = Number(value);
               if (!Number.isFinite(ts)) return "";
-              return new Date(ts).toLocaleDateString();
+              return new Date(ts).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
             },
           },
         },
