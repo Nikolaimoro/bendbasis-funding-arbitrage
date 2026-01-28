@@ -273,7 +273,8 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       const apr = Number(row.funding_apr_8h);
       if (!Number.isFinite(apr)) return;
       if (!next[exchange]) next[exchange] = [];
-      next[exchange].push({ funding_time: row.h, apr });
+      const ts = row.h.includes("T") ? row.h : row.h.replace(" ", "T");
+      next[exchange].push({ funding_time: ts, apr });
     });
 
     return next;
@@ -442,15 +443,15 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
           )}
         </div>
 
-        <div className="relative inline-grid grid-cols-5 gap-0 rounded-lg border border-[#343a4e] bg-[#292e40] p-1">
+        <div className="relative inline-grid grid-cols-5 gap-0 min-w-[260px] rounded-lg border border-[#343a4e] bg-[#292e40] p-1">
           <div
             className="absolute top-1 bottom-1 rounded-md bg-[#3b435a] transition-transform duration-300 ease-out"
             style={{
               left: 4,
               width: "calc((100% - 8px) / 5)",
-              transform: `translateX(calc(${TIME_WINDOWS.findIndex(
+              transform: `translateX(${TIME_WINDOWS.findIndex(
                 (w) => w.key === selectedWindow.key
-              )} * 100%))`,
+              ) * 100}%)`,
             }}
           />
           {TIME_WINDOWS.map((window) => (
@@ -458,7 +459,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
               key={window.key}
               type="button"
               onClick={() => setSelectedWindow(window)}
-              className={`relative z-10 w-full py-1.5 text-xs rounded-md text-center transition-colors ${
+              className={`relative z-10 px-3 py-1.5 text-xs rounded-md text-center transition-colors ${
                 selectedWindow.key === window.key
                   ? "text-gray-100"
                   : "text-gray-400 hover:text-gray-200 hover:bg-[#353b52]"
@@ -551,21 +552,36 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        {exchangeMarkets
-          .filter((market) => market.row.ref_url)
-          .map((market) => (
-            <a
-              key={market.exchange}
-              href={market.row.ref_url ?? "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-[#343a4e] bg-[#292e40] px-3 py-2 text-xs text-gray-200 hover:border-white transition"
-            >
-              <ExchangeIcon exchange={market.exchange} size={14} />
-              {market.label}
-              <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
-            </a>
-          ))}
+        {(() => {
+          const quotesByExchange = new Map<string, Set<string>>();
+          assetRows.forEach((row) => {
+            if (!quotesByExchange.has(row.exchange)) {
+              quotesByExchange.set(row.exchange, new Set());
+            }
+            quotesByExchange.get(row.exchange)?.add(row.quote_asset);
+          });
+
+          return assetRows
+            .filter((row) => row.ref_url)
+            .map((row) => {
+              const quotes = quotesByExchange.get(row.exchange);
+              const hasMultiple = quotes ? quotes.size > 1 : false;
+              const label = `${formatExchange(row.exchange)}${hasMultiple ? ` (${row.quote_asset})` : ""}`;
+              return (
+                <a
+                  key={`${row.exchange}-${row.market_id}`}
+                  href={row.ref_url ?? "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-[#343a4e] bg-[#292e40] px-3 py-2 text-xs text-gray-200 hover:border-white transition"
+                >
+                  <ExchangeIcon exchange={row.exchange} size={14} />
+                  {label}
+                  <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
+                </a>
+              );
+            });
+        })()}
       </div>
     </section>
   );
