@@ -15,7 +15,7 @@ import {
 } from "chart.js";
 import zoomPlugin from "chartjs-plugin-zoom";
 import "chartjs-adapter-date-fns";
-import { Line } from "react-chartjs-2";
+import dynamic from "next/dynamic";
 import ExchangeIcon from "@/components/ui/ExchangeIcon";
 import { formatExchange, normalizeToken } from "@/lib/formatters";
 import { COLORS, CHART_CONFIG, TAILWIND } from "@/lib/theme";
@@ -30,6 +30,11 @@ ChartJS.register(
   Legend,
   Filler,
   zoomPlugin
+);
+
+const LineChart = dynamic(
+  () => import("react-chartjs-2").then((mod) => mod.Line),
+  { ssr: false }
 );
 
 type FundingDashboardRow = {
@@ -574,7 +579,7 @@ export default function HistoricalClient({ initialRows }: { initialRows: Funding
                 {error}
               </div>
             )}
-            <Line data={chartData} options={options} />
+            <LineChart data={chartData} options={options} />
           </div>
 
           <div className="rounded-xl bg-[#22273a] overflow-hidden h-full flex flex-col">
